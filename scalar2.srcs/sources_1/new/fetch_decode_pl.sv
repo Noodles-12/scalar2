@@ -2,16 +2,14 @@
 
 module fetch_decode_pl(clk, instr_a, instr_b, opcode_a, opcode_b);
     input clk;
-    input [0:30] instr_a;
-    input [0:30] instr_b;
+    input [0:29] instr_a;
+    input [0:29] instr_b;
     
     output logic [0:5] opcode_a;
-    
-
     output logic [0:5] opcode_b;
     
-    logic [0:30] instr_a_reg;
-    logic [0:30] instr_b_reg;
+    logic [0:29] instr_a_reg;
+    logic [0:29] instr_b_reg;
 
     always_ff @ (posedge clk) begin
         instr_a_reg <= instr_a;
