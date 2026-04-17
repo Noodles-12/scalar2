@@ -4,14 +4,14 @@ module fetch_decode_pl_tb();
     logic clk;
     logic [0:29] instr_a;
     logic [0:29] instr_b;
-    logic [0:5] opcode_a;
-    logic [0:5] opcode_b;
+    logic [0:29] instr_op_a [0:7];
+    logic [0:29] instr_op_b [0:7];
 
     fetch_decode_pl fd(.clk(clk),
                        .instr_a(instr_a),
                        .instr_b(instr_b),
-                       .opcode_a(opcode_a),
-                       .opcode_b(opcode_b) );
+                       .instr_op_a(instr_op_a),
+                       .instr_op_b(instr_op_b) );
                        
     initial clk = 0;
     always #5 clk = ~clk;
