@@ -3,8 +3,8 @@
 import config_pkg::*;
 // Include CarryOut & 
 module alu(input1, input2, opcode, result, is_zero);
-    input [0:36] input1;
-    input [0:36] input2;
+    input [0:35] input1;
+    input [0:35] input2;
     input [0:5] opcode;
     
     output logic [0:36] result;
