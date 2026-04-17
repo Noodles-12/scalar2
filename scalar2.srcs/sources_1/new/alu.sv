@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 import config_pkg::*;
-
+// Include CarryOut & 
 module alu(input1, input2, opcode, result, is_zero);
     input [0:36] input1;
     input [0:36] input2;
@@ -29,7 +29,7 @@ module alu(input1, input2, opcode, result, is_zero);
             ALU_NOR:  result <= ~(input1 | input2);
             ALU_NAND: result <= ~(input1 & input2);
             ALU_XOR:  result <= input1 ^ input2;
-        default:  result <= 0;
-    endcase
+            default:  result <= 0;
+        endcase
     end
 endmodule
