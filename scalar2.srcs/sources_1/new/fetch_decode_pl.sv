@@ -11,8 +11,8 @@ module fetch_decode_pl(clk, instr_a, instr_b, instr_op_a, instr_op_b);
     logic [0:29] instr_a_reg;
     logic [0:29] instr_b_reg;
     
-    logic [2:0] code_a;
-    logic [2:0] code_b;
+    logic [0:2] code_a;
+    logic [0:2] code_b;
     
     demux_1x8 d_a(.data(instr_a_reg),
                   .code(code_a),
@@ -28,12 +28,12 @@ module fetch_decode_pl(clk, instr_a, instr_b, instr_op_a, instr_op_b);
     end
     
     always_comb begin
-        if (instr_a_reg[0:5] > 0 && instr_a_reg[0:5] < 16) begin
-            code_a <= 1;
+        if (instr_a_reg[24:29] > 0 && instr_a_reg[24:29] < 16) begin
+            code_a = 1;
         end
         
-        if (instr_b_reg[0:5] > 0 && instr_b_reg[0:5] < 16) begin
-            code_b <= 1;
+        if (instr_b_reg[24:29] > 0 && instr_b_reg[24:29] < 16) begin
+            code_b = 1;
         end
     end
 endmodule

@@ -20,4 +20,10 @@ package config_pkg;
     localparam ALU_NOR      = 13;
     localparam ALU_NAND     = 14;
     localparam ALU_XOR      = 16;
+    
+    // --- 
+    localparam INSTR_WIDTH  = 30;
+    localparam NUM_REGS_BITS    = 4;
+    localparam NUM_REGS     = (1 << NUM_REGS_BITS);
+    localparam DATABUS_WIDTH    = 36;
 endpackage

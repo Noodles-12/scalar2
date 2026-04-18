@@ -8,7 +8,7 @@ module alu(input1, input2, opcode, result, is_zero, carry_out, neg);
     input [0:35] input2;
     input [0:5] opcode;
     
-    output logic [0:35] result;
+    output logic [0:29] result;
     output logic is_zero;
     output logic carry_out;
     output logic neg;
