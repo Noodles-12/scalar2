@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import config_pkg::*;
+
 module decode_dispatch_int_tb();
     logic [0:29] instr_a;
     logic [0:29] instr_b;

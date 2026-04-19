@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 
 // Use code 0 to do nothing/go no where
-module demux_1x8(data, code, op);
-                    
+module demux_1x8(data, code, op);    
     input [0:29] data;
     input [2:0] code;
+    
     output logic [0:29] op [0:7];
     
     always_comb begin
