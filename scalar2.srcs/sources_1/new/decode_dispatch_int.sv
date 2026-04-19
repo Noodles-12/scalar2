@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+
 module decode_dispatch_int(instr_a, instr_b, clk,
                             opcode_a, instr_dest_a, instr_src1_a, instr_src2_a,
                             opcode_b, instr_dest_b, instr_src1_b, instr_src2_b);
