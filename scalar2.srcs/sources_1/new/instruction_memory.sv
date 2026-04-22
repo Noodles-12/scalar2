@@ -6,7 +6,7 @@ import config_pkg::*;
 module instruction_memory(clk, ip_addr, instr_a, instr_b);
     input clk;
     input [0:ADDRBUS_SIZE - 1] ip_addr;
-    output logic [0:INSTR_WIDTH - 1] instr_a, instr_b;
+    output instruction instr_a, instr_b;
 
     logic [0:INSTR_WIDTH - 1] memory [0:4095];
 

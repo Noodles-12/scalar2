@@ -4,8 +4,8 @@ module fetch_decode_pl_tb();
     logic clk;
     logic [0:29] instr_a;
     logic [0:29] instr_b;
-    logic [0:29] instr_op_a [0:7];
-    logic [0:29] instr_op_b [0:7];
+    instruction instr_op_a;
+    instruction instr_op_b;
 
     fetch_decode_pl fd(.clk(clk),
                        .instr_a(instr_a),
