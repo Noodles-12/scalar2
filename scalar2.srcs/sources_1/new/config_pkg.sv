@@ -26,5 +26,10 @@ package config_pkg;
     localparam NUM_REGS         = (1 << NUM_REGS_BITS);
     localparam DATABUS_WIDTH    = 36;
     localparam ADDRBUS_SIZE     = 12;
+    
+    // --- Structs ---
+    typedef struct packed {
+        logic [25:30] opcode;
+    } instr;
 
 endpackage
