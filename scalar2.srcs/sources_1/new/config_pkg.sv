@@ -42,6 +42,17 @@ package config_pkg;
         logic [0:DATABUS_WIDTH - 1] data;
     } phys_reg;
 
+    typedef struct packed {
+        logic [88:93] opcode;
+        logic [83:87] reg1;
+        logic [47:82] value1;
+        logic [46:46] check1;
+        logic [41:45] reg2;
+        logic [5:40]  value2;
+        logic [4:4]   check2;
+        logic [0:3]   dest;
+    } int_rs_instr;
+
     /*
     typedef union packed {
         logic [0:29] raw;
