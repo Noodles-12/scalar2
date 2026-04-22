@@ -27,9 +27,40 @@ package config_pkg;
     localparam DATABUS_WIDTH    = 36;
     localparam ADDRBUS_SIZE     = 12;
     
-    // --- Structs ---
+    // --- Types ---
     typedef struct packed {
-        logic [25:30] opcode;
-    } instr;
+            logic [24:29] opcode;
+            logic [20:23] reg_d;
+            logic [16:19] reg_s;
+            logic [12:15] reg_t;
+            logic [0:11] imm;
+    } instruction;
+    
+    typedef struct packed {
+        logic valid;
+        logic free;
+        logic [0:DATABUS_WIDTH - 1] data;
+    } phys_reg;
 
+    /*
+    typedef union packed {
+        logic [0:29] raw;
+        
+        struct packed {
+            logic [24:29] opcode;
+            logic [20:23] reg_d;
+            logic [16:19] reg_s1;
+            logic [12:15] reg_s2;
+            logic [0:11] unused;
+        } r_type;
+        
+        struct packed {
+            logic [24:29] opcode;
+            logic [20:23] reg_d;
+            logic [16:19] reg_s1;
+            logic [12:15] unused;
+            logic [0:11] imm;
+        } i_type;
+    } instruction;
+    */
 endpackage
