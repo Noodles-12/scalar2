@@ -48,8 +48,13 @@ module reg_file(clk, og_instr_a, og_instr_b);
             int_instr_a.reg2 = alias_table[instr_a_reg.reg_t];
             int_instr_a.value1 = phys_file[int_instr_a.reg_s].data;
             int_instr_a.value2 = phys_file[int_instr_a.reg_t].data;
-
+            int_instr_a.check1 = phys_file[int_instr_a.reg_s].valid;
+            int_instr_a.check2 = phys_file[int_instr_a.reg_t].valid;
             
+            // Find new physical register for architectural register
+            for(int i = 0; i < 32; i = i + 1) begin
+                
+            end
         end
     end
 endmodule
