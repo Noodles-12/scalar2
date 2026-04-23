@@ -44,7 +44,8 @@ module reg_file(clk, og_instr_a, og_instr_b,
     
     always_comb begin
         // Both R-Type Instructions
-        if(instr_a_reg.opcode inside {[1:15]} && instr_b_reg inside {[1:15]}) begin
+        $display("Instruction 1: %h, Instruction 2: %h", instr_a_reg.opcode, instr_b_reg.opcode);
+        if(instr_a_reg.opcode inside {[1:15]} && instr_b_reg.opcode inside {[1:15]}) begin
             int_instr_a.opcode = instr_a_reg.opcode;
             int_instr_a.reg1 = alias_table[instr_a_reg.reg_s];
             int_instr_a.reg2 = alias_table[instr_a_reg.reg_t];
@@ -82,6 +83,9 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
             int_instr_b.dest = phys_file[alias_table[instr_b_reg.reg_d]];
             phys_file[alias_table[instr_b_reg.reg_d]].valid = 0;
+        end else begin
+            int_instr_a = 0;
+            int_instr_b = 0;
         end
     end
 endmodule

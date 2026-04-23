@@ -18,6 +18,7 @@ module reg_file_tb();
 
     initial begin
         instr_a = 30'b000001_0001_0010_0011_000000000000;       // add r1, r2, r3
-        instr_b = 30'b000010_0100_0101_0110_000000000000; #10;  // sub r4, r8, r3
+        instr_b = 30'b000011_0100_0101_0110_000000000000; #10;  // sub r4, r8, r3
+        $finish;
     end
 endmodule

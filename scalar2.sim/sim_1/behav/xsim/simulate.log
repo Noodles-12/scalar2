@@ -1,1 +1,4 @@
 Time resolution is 1 ps
+Instruction 1: xx, Instruction 2: xx
+Instruction 1: 01, Instruction 2: 03
+$finish called at time : 10 ns : File "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sim_1/new/reg_file_tb.sv" Line 22
