@@ -51,7 +51,7 @@ package config_pkg;
         logic [5:40]  value2;
         logic [4:4]   check2;
         logic [0:3]   dest;
-    } int_rs_instr;
+    } int_rs_entry;
 
     /*
     typedef union packed {
