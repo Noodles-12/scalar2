@@ -2,20 +2,33 @@
 
 import config_pkg::*;
 
-// Currently using just the renamed int instruction, might use a union
-module rename_dispatch_pl(renamed_instr_a, renamed_instr_b, clk);
+module rename_dispatch_pl(clk, rename_a, rename_b,
+                            output_a, output_b);
     input clk;
-    input int_rs_entry renamed_instr_a, renamed_instr_b;
+    input rs_entry rename_a, rename_b;
+    output rs_entry output_a, output_b;
 
-    int_rs_entry renamed_instr_a_reg, renamed_instr_b_reg;
+    rs_entry rename_a_reg, rename_b_reg;
+    logic [0:1] code_a, code_b;
+
+    dispatch_demux_1x4 dispatch_a(.data(rename_a_reg),
+                                  .code(code_a),
+                                  .op(output_a) );
+
+    dispatch_demux_1x4 dispatch_b(.data(rename_b_reg),
+                                  .code(code_b),
+                                  .op(output_b) );
 
     always_ff @ (posedge clk) begin
-        renamed_instr_a_reg <= renamed_instr_a;
-        renamed_instr_b_reg <= renamed_instr_b;
+        rename_a_reg <= rename_a;
+        rename_b_reg <= rename_b;
     end
 
     always_comb begin
         // Dispatch Logic
-        
+        case(rename_a) inside
+            [1:15] : code_a = 0;
+            [16:27]: code_b = 1;
+        endcase
     end
 endmodule

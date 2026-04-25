@@ -3,15 +3,16 @@
 import config_pkg::*;
 
 module reg_file_tb();
+
     logic clk;
-    instruction instr_a, instr_b;
-    int_rs_entry rs_entry_a, rs_entry_b;
+    instruction instr_a, instr_b, instr_c;
+    rs_entry rs_entry_a, rs_entry_b;
 
     reg_file rf(.clk(clk),
                 .og_instr_a(instr_a),
                 .og_instr_b(instr_b),
-                .int_instr_a(rs_entry_a),
-                .int_instr_b(rs_entry_b) );
+                .rename_a(rs_entry_a),
+                .rename_b(rs_entry_b));
 
     initial clk = 0;
     always #5 clk = ~clk;
