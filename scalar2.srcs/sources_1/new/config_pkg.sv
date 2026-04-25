@@ -70,6 +70,11 @@ package config_pkg;
         logic [0:93] raw;
     } rs_entry;
 
+    typedef struct packed {
+        logic [5:10] next_phys_reg;
+        logic [0:4] next_alias_reg;
+    } next_alias_entry;
+
     /*
     typedef union packed {
         logic [0:29] raw;
