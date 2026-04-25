@@ -10,7 +10,7 @@ module instruction_memory(clk, ip_addr, instr_a, instr_b);
 
     logic [0:INSTR_WIDTH - 1] memory [0:4095];
 
-    always_comb begin
+    always_ff @ (posedge clk) begin
         instr_a = memory[ip_addr];
         instr_b = memory[ip_addr + 1];
     end

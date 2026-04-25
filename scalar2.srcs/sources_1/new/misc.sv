@@ -20,7 +20,7 @@ module rs_int_demux_1x16(data, code, op);
     input int_rs_entry data;
     input [0:3] code;
     
-    output logic int_rs_entry op [0:15];
+    output int_rs_entry op [0:15];
     
     always_comb begin
         for(int i = 0; i < 16; ++i) begin
