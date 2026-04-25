@@ -42,6 +42,7 @@ package config_pkg;
         logic [0:DATABUS_WIDTH - 1] data;
     } phys_reg;
 
+    // Rename at some point
     typedef struct packed {
         logic [88:93] opcode;
         logic [83:87] reg1;
@@ -52,6 +53,22 @@ package config_pkg;
         logic [4:4]   check2;
         logic [0:3]   dest;
     } int_rs_entry;
+
+    typedef struct packed {
+        logic [88:93] opcode;
+        logic [84:87] reg_s;
+        logic [48:83] value;
+        logic [47:47] check;
+        logic [35:46] imm;
+        logic [31:34] dest;
+        logic [0:30]  padding;
+    } imm_rs_entry;
+
+    typedef union packed {
+        int_rs_entry int_rs;
+        imm_rs_entry imm_rs;
+        logic [0:93] raw;
+    } rs_entry;
 
     /*
     typedef union packed {
