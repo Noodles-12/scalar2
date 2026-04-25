@@ -44,6 +44,7 @@ module reg_file(clk, og_instr_a, og_instr_b,
     
     always_comb begin
         // Both R-Type Instructions
+        // NEED TO REDO THIS; made horribly for some testing
         $display("Instruction 1: %h, Instruction 2: %h", instr_a_reg.opcode, instr_b_reg.opcode);
         if(instr_a_reg.opcode inside {[1:15]} && instr_b_reg.opcode inside {[1:15]}) begin
             int_instr_a.opcode = instr_a_reg.opcode;

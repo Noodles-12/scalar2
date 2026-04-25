@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import config_pkg::*;
+
 // Currently using just the renamed int instruction, might use a union
 module rename_dispatch_pl(renamed_instr_a, renamed_instr_b, clk);
     input clk;
@@ -14,8 +16,6 @@ module rename_dispatch_pl(renamed_instr_a, renamed_instr_b, clk);
 
     always_comb begin
         // Dispatch Logic
-        if(renamed_instr_a_reg.opcode inside {[1:15]}) begin
-            
-        end
+        
     end
 endmodule
