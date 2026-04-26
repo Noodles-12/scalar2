@@ -29,11 +29,11 @@ package config_pkg;
     
     // --- Types ---
     typedef struct packed {
-            logic [24:29] opcode;
-            logic [20:23] reg_d;
-            logic [16:19] reg_s;
-            logic [12:15] reg_t;
-            logic [0:11] imm;
+        logic [24:29] opcode;
+        logic [20:23] reg_d;
+        logic [16:19] reg_s;
+        logic [12:15] reg_t;
+        logic [0:11] imm;
     } instruction;
     
     typedef struct packed {
@@ -43,32 +43,35 @@ package config_pkg;
     } phys_reg;
 
     typedef struct packed {
-        logic [88:93] opcode;
-        logic [83:87] reg1;
-        logic [47:82] value1;
-        logic [46:46] check1;
-        logic [41:45] reg2;
-        logic [5:40]  value2;
-        logic [4:4]   check2;
-        logic [0:3]   dest;
+        logic [95:100] id;
+        logic [89:94]  opcode;
+        logic [84:88]  reg1;
+        logic [48:83]  value1;
+        logic [47:47]  check1;
+        logic [42:46]  reg2;
+        logic [6:41]   value2;
+        logic [5:5]    check2;
+        logic [0:4]    dest;
     } int_rs_entry;
 
     typedef struct packed {
-        logic [88:93] opcode;
-        logic [84:87] reg_s;
-        logic [48:83] value;
-        logic [47:47] check;
-        logic [35:46] imm;
-        logic [31:34] dest;
-        logic [0:30]  padding;
+        logic [95:100] id;
+        logic [89:94]  opcode;
+        logic [85:88]  reg_s;
+        logic [49:84]  value;
+        logic [48:48]  check;
+        logic [36:47]  imm;
+        logic [31:35]  dest;
+        logic [0:30]   padding;
     } imm_rs_entry;
 
     typedef union packed {
         int_rs_entry int_rs;
         imm_rs_entry imm_rs;
-        logic [0:93] raw;
+        logic [0:100] raw;
     } rs_entry;
 
+    //  --- Rename ID Parameters ---
     /*
     typedef union packed {
         logic [0:29] raw;
