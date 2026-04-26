@@ -1,14 +1,16 @@
 # compile verilog/system verilog design source files
 sv xil_defaultlib  --include "../../../../../../../../../AMDDesignTools/2025.2/Vivado/data/rsb/busdef" \
+"../../../../scalar2.srcs/sources_1/new/config_pkg.sv" \
 "../../../../scalar2.srcs/sources_1/new/instruction_memory.sv" \
-"../../../../scalar2.srcs/sources_1/new/misc.sv" \
 "../../../../scalar2.srcs/sources_1/new/program_counter.sv" \
 "../../../../scalar2.srcs/sources_1/new/reg_file.sv" \
 "../../../../scalar2.srcs/sources_1/new/alu.sv" \
-"../../../../scalar2.srcs/sources_1/new/config_pkg.sv" \
 "../../../../scalar2.srcs/sources_1/new/rename_dispatch_pl.sv" \
 "../../../../scalar2.srcs/sources_1/new/res_station_int.sv" \
 "../../../../scalar2.srcs/sources_1/new/res_station_imm.sv" \
+"../../../../scalar2.srcs/sources_1/imports/new/misc.sv" \
+"../../../../scalar2.srcs/sources_1/new/func_unit_int.sv" \
+"../../../../scalar2.srcs/sources_1/new/func_unit_imm.sv" \
 "../../../../scalar2.srcs/sim_1/new/alu_tb.sv" \
 "../../../../scalar2.srcs/sim_1/new/fetch_tb.sv" \
 "../../../../scalar2.srcs/sim_1/new/reg_file_tb.sv" \

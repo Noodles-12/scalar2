@@ -18,8 +18,8 @@ module res_station_int(clk, instr_a, instr_b, almost_full);
                          .op(res_station) );
 
     rs_demux1x16 demux_b(.data(instr_b_reg),
-                              .code(avail_entry_b),
-                              .op(res_station) );
+                         .code(avail_entry_b),
+                         .op(res_station) );
 
     initial begin
         avail_entry_a = 0;

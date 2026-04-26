@@ -21,6 +21,10 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
     instruction instr_a_reg, instr_b_reg;
 
+    // Intermediaries to hold alias table register (mainly for cleanliness)
+    logic [0:4] idx_a1, idx_a2; 
+    logic [0:4] idx_b1, idx_b2;
+
     initial begin
         // Instantiate PRF
         for(int i = 0; i < 32; i = i + 1) begin
@@ -32,7 +36,7 @@ module reg_file(clk, og_instr_a, og_instr_b,
         // Instantiate RAT (as well as taken physical registers)
         for(int i = 0; i < NUM_REGS; i = i + 1) begin
             alias_table[i] = i;
-            phys_file[i] = 0;
+            phys_file[i].free = 0;
         end
     end
 
@@ -51,73 +55,91 @@ module reg_file(clk, og_instr_a, og_instr_b,
         // Rename Instruction A
         case(instr_a_reg.opcode) inside
             [1:15] : begin
+                idx_a1 = alias_table[instr_a_reg.reg_s];
+                idx_a2 = alias_table[instr_a_reg.reg_t];
+                rename_a.int_rs.id = 0;
                 rename_a.int_rs.opcode = instr_a_reg.opcode;
-                rename_a.int_rs.reg1 = alias_table[instr_a_reg.reg_s];
-                rename_a.int_rs.reg2 = alias_table[instr_a_reg.reg_t];
-                rename_a.int_rs.value1 = phys_file[rename_a.int_rs.reg1].data;
-                rename_a.int_rs.value2 = phys_file[rename_a.int_rs.reg2].data;
-                rename_a.int_rs.check1 = phys_file[rename_a.int_rs.reg1].valid;
-                rename_a.int_rs.check2 = phys_file[rename_a.int_rs.reg2].valid;
+                rename_a.int_rs.reg1 = idx_a1;
+                rename_a.int_rs.reg2 = idx_a2;
+                rename_a.int_rs.value1 = phys_file[idx_a1].data;
+                rename_a.int_rs.value2 = phys_file[idx_a2].data;
+                rename_a.int_rs.check1 = phys_file[idx_a1].valid;
+                rename_a.int_rs.check2 = phys_file[idx_a2].valid;
 
                 for(int i = 0; i < 32; i++) begin
-                    next_alias_table[instr_a_reg.reg_d] = i;
-                    next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
+                    if(phys_file[i].free == 1) begin
+                        next_alias_table[instr_a_reg.reg_d] = i;
+                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
+                        rename_a.int_rs.dest = i;
+                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        break;
+                    end
                 end
-
-                rename_a.int_rs.dest = phys_file[alias_table[instr_a_reg.reg_d]];
-                next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
             end
 
             [16:27] : begin
+                idx_a1 = alias_table[instr_a_reg.reg_s];
+                rename_a.imm_rs.id = 0;
                 rename_a.imm_rs.opcode = instr_a_reg.opcode;
-                rename_a.imm_rs.reg_s = alias_table[instr_a_reg.reg_s];
-                rename_a.imm_rs.value = phys_file[rename_a.imm_rs.reg_s].data;
-                rename_a.imm_rs.check = phys_file[rename_a.imm_rs.reg_s].valid;
+                rename_a.imm_rs.reg_s = idx_a1;
+                rename_a.imm_rs.value = phys_file[idx_a1].data;
+                rename_a.imm_rs.check = phys_file[idx_a1].valid;
                 rename_a.imm_rs.imm = instr_a_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    next_alias_table[instr_a_reg.reg_d] = i;
-                    next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
+                    if(phys_file[i].free == 1) begin
+                        next_alias_table[instr_a_reg.reg_d] = i;
+                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
+                        rename_a.imm_rs.dest = i;
+                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        break;
+                    end
                 end
-
-                rename_a.imm_rs.dest = phys_file[alias_table[instr_a_reg.reg_d]];
-                next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
             end
         endcase
 
         case(instr_b_reg.opcode) inside
             [1:15] : begin
+                idx_b1 = next_alias_table[instr_b_reg.reg_s];
+                idx_b2 = next_alias_table[instr_b_reg.reg_t];
+                rename_b.int_rs.id = 0;
                 rename_b.int_rs.opcode = instr_b_reg.opcode;
-                rename_b.int_rs.reg1 = next_alias_table[instr_b_reg.reg_s];
-                rename_b.int_rs.reg2 = next_alias_table[instr_b_reg.reg_t];
-                rename_b.int_rs.value1 = next_phys_file[rename_b.int_rs.reg1].data;
-                rename_b.int_rs.value2 = next_phys_file[rename_b.int_rs.reg2].data;
-                rename_b.int_rs.check1 = next_phys_file[rename_b.int_rs.reg1].valid;
-                rename_b.int_rs.check2 = next_phys_file[rename_b.int_rs.reg2].valid;
+                rename_b.int_rs.reg1 = idx_b1;
+                rename_b.int_rs.reg2 = idx_b2;
+                rename_b.int_rs.value1 = next_phys_file[idx_b1].data;
+                rename_b.int_rs.value2 = next_phys_file[idx_b2].data;
+                rename_b.int_rs.check1 = next_phys_file[idx_b1].valid;
+                rename_b.int_rs.check2 = next_phys_file[idx_b2].valid;
 
                 for(int i = 0; i < 32; i++) begin
-                    next_alias_table[instr_b_reg.reg_d] = i;
-                    next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
+                    if(next_phys_file[i].free == 1) begin
+                        next_alias_table[instr_b_reg.reg_d] = i;
+                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
+                        rename_b.int_rs.dest = i;
+                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        break;
+                    end
                 end
-
-                rename_b.int_rs.dest = next_phys_file[next_alias_table[instr_b_reg.reg_d]];
-                next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
             end
 
             [16:27] : begin
+                idx_b1 = next_alias_table[instr_b_reg.reg_s];
+                rename_b.imm_rs.id = 0;
                 rename_b.imm_rs.opcode = instr_b_reg.opcode;
-                rename_b.imm_rs.reg_s = next_alias_table[instr_b_reg.reg_s];
-                rename_b.imm_rs.value = next_phys_file[rename_b.imm_rs.reg_s].data;
-                rename_b.imm_rs.check = next_phys_file[rename_b.imm_rs.reg_s].valid;
+                rename_b.imm_rs.reg_s = idx_b1;
+                rename_b.imm_rs.value = next_phys_file[idx_b1].data;
+                rename_b.imm_rs.check = next_phys_file[idx_b1].valid;
                 rename_b.imm_rs.imm = instr_b_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    next_alias_table[instr_b_reg.reg_d] = i;
-                    next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
+                    if(next_phys_file[i].free == 1) begin
+                        next_alias_table[instr_b_reg.reg_d] = i;
+                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
+                        rename_b.imm_rs.dest = i;
+                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        break;
+                    end
                 end
-
-                rename_b.imm_rs.dest = next_phys_file[next_alias_table[instr_b_reg.reg_d]];
-                next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
             end
         endcase
     end
