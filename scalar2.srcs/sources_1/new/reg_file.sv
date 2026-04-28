@@ -4,11 +4,13 @@ import config_pkg::*;
 
 // Decode already happens b/c of the struct type fields, so renaming happens in here
 module reg_file(clk, og_instr_a, og_instr_b,
-                    rename_a, rename_b);
+                    rename_a, rename_b, rob_a, rob_b);
 
-    input clk;
+    input logic clk;
     input instruction og_instr_a, og_instr_b;
+    
     output rs_entry rename_a, rename_b;
+    output rob_entry rob_a, rob_b;
 
     // Register Alias Table (RAT) - 16 Registers
     // Each register holds the index of a physical register in PRF (0-31)
@@ -52,13 +54,20 @@ module reg_file(clk, og_instr_a, og_instr_b,
         next_alias_table = alias_table;
         next_phys_file = phys_file;
 
+        rob_a = '0;
+        rob_b = '0;
+
+        // id & opcode share the same bits regardless of type
+        rename_a.int_rs.id = 0;
+        rename_a.int_rs.opcode = instr_a_reg.opcode;
+        rename_b.int_rs.id = 0;
+        rename_b.int_rs.opcode = instr_b_reg.opcode;
+
         // Rename Instruction A
         case(instr_a_reg.opcode) inside
             [1:15] : begin
                 idx_a1 = alias_table[instr_a_reg.reg_s];
                 idx_a2 = alias_table[instr_a_reg.reg_t];
-                rename_a.int_rs.id = 0;
-                rename_a.int_rs.opcode = instr_a_reg.opcode;
                 rename_a.int_rs.reg1 = idx_a1;
                 rename_a.int_rs.reg2 = idx_a2;
                 rename_a.int_rs.value1 = phys_file[idx_a1].data;
@@ -68,10 +77,14 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(phys_file[i].free == 1) begin
+                        rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
+                        rob_a.new_prf = i;
+                        rob_a.arch = instr_a_reg.reg_d;
+
                         next_alias_table[instr_a_reg.reg_d] = i;
                         next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
-                        rename_a.int_rs.dest = i;
                         next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        rename_a.int_rs.dest = i;
                         break;
                     end
                 end
@@ -79,8 +92,6 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
             [16:27] : begin
                 idx_a1 = alias_table[instr_a_reg.reg_s];
-                rename_a.imm_rs.id = 0;
-                rename_a.imm_rs.opcode = instr_a_reg.opcode;
                 rename_a.imm_rs.reg_s = idx_a1;
                 rename_a.imm_rs.value = phys_file[idx_a1].data;
                 rename_a.imm_rs.check = phys_file[idx_a1].valid;
@@ -88,22 +99,25 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(phys_file[i].free == 1) begin
+                        rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
+                        rob_a.new_prf = i;
+                        rob_a.arch = instr_a_reg.reg_d;
+
                         next_alias_table[instr_a_reg.reg_d] = i;
                         next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
-                        rename_a.imm_rs.dest = i;
                         next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        rename_a.imm_rs.dest = i;
                         break;
                     end
                 end
             end
         endcase
 
+        // Rename Instruction B (reads next_... stuff to use A's renaming updates)
         case(instr_b_reg.opcode) inside
             [1:15] : begin
                 idx_b1 = next_alias_table[instr_b_reg.reg_s];
                 idx_b2 = next_alias_table[instr_b_reg.reg_t];
-                rename_b.int_rs.id = 0;
-                rename_b.int_rs.opcode = instr_b_reg.opcode;
                 rename_b.int_rs.reg1 = idx_b1;
                 rename_b.int_rs.reg2 = idx_b2;
                 rename_b.int_rs.value1 = next_phys_file[idx_b1].data;
@@ -113,10 +127,14 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(next_phys_file[i].free == 1) begin
+                        rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
+                        rob_b.new_prf = i;
+                        rob_b.arch = instr_b_reg.reg_d;
+
                         next_alias_table[instr_b_reg.reg_d] = i;
                         next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
-                        rename_b.int_rs.dest = i;
                         next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        rename_b.int_rs.dest = i;
                         break;
                     end
                 end
@@ -124,8 +142,6 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
             [16:27] : begin
                 idx_b1 = next_alias_table[instr_b_reg.reg_s];
-                rename_b.imm_rs.id = 0;
-                rename_b.imm_rs.opcode = instr_b_reg.opcode;
                 rename_b.imm_rs.reg_s = idx_b1;
                 rename_b.imm_rs.value = next_phys_file[idx_b1].data;
                 rename_b.imm_rs.check = next_phys_file[idx_b1].valid;
@@ -133,10 +149,14 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(next_phys_file[i].free == 1) begin
+                        rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
+                        rob_b.new_prf = i;
+                        rob_b.arch = instr_b_reg.reg_d;
+
                         next_alias_table[instr_b_reg.reg_d] = i;
                         next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
-                        rename_b.imm_rs.dest = i;
                         next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        rename_b.imm_rs.dest = i;
                         break;
                     end
                 end
@@ -144,49 +164,3 @@ module reg_file(clk, og_instr_a, og_instr_b,
         endcase
     end
 endmodule
-
-// Junk Code
-/*
-if(instr_a_reg.opcode inside {[1:15]} && instr_b_reg.opcode inside {[1:15]}) begin
-            rename_a.opcode = instr_a_reg.opcode;
-            rename_a.reg1 = alias_table[instr_a_reg.reg_s];
-            rename_a.reg2 = alias_table[instr_a_reg.reg_t];
-            rename_a.value1 = phys_file[rename_a.reg1].data;
-            rename_a.value2 = phys_file[rename_a.reg2].data;
-            rename_a.check1 = phys_file[rename_a.reg1].valid;
-            rename_a.check2 = phys_file[rename_a.reg2].valid;
-
-            // Find new physical register for architectural register
-            for(int i = 0; i < 32; i = i + 1) begin
-                if(phys_file[i].free == 1) begin
-                    alias_table[instr_a_reg.reg_d] = i;
-                    phys_file[alias_table[instr_a_reg.reg_d]].free = 0;
-                end
-            end
-
-            rename_a.dest = phys_file[alias_table[instr_a_reg.reg_d]];
-            phys_file[alias_table[instr_a_reg.reg_d]].valid = 0;
-
-            rename_b.opcode = instr_b_reg.opcode;
-            rename_b.reg1 = alias_table[instr_b_reg.reg_s];
-            rename_b.reg2 = alias_table[instr_b_reg.reg_t];
-            rename_b.value1 = phys_file[rename_b.reg1].data;
-            rename_b.value2 = phys_file[rename_b.reg2].data;
-            rename_b.check1 = phys_file[rename_b.reg1].valid;
-            rename_b.check2 = phys_file[rename_b.reg2].valid;
-
-            // Find new physical register for architectural register
-            for(int i = 0; i < 32; i = i + 1) begin
-                if(phys_file[i].free == 1) begin
-                    alias_table[instr_b_reg.reg_d] = i;
-                    phys_file[alias_table[instr_b_reg.reg_d]].free = 0;
-                end
-            end
-
-            rename_b.dest = phys_file[alias_table[instr_b_reg.reg_d]];
-            phys_file[alias_table[instr_b_reg.reg_d]].valid = 0;
-        end else begin
-            rename_a = 0;
-            rename_b = 0;
-        end
-*/

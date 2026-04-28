@@ -71,26 +71,13 @@ package config_pkg;
         logic [0:100] raw;
     } rs_entry;
 
-    //  --- Rename ID Parameters ---
-    /*
-    typedef union packed {
-        logic [0:29] raw;
-        
-        struct packed {
-            logic [24:29] opcode;
-            logic [20:23] reg_d;
-            logic [16:19] reg_s1;
-            logic [12:15] reg_s2;
-            logic [0:11] unused;
-        } r_type;
-        
-        struct packed {
-            logic [24:29] opcode;
-            logic [20:23] reg_d;
-            logic [16:19] reg_s1;
-            logic [12:15] unused;
-            logic [0:11] imm;
-        } i_type;
-    } instruction;
-    */
+    typedef struct packed {
+        logic [63:68] id;
+        logic [62:62] done;
+        logic [26:61] result;
+        logic [21:25] new_prf;
+        logic [16:20] old_prf;
+        logic [12:15] arch;
+        logic [0:11]  mem_dest; // store instruction target address
+    } rob_entry;
 endpackage
