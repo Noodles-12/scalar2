@@ -1,19 +1,19 @@
 Vivado Simulator v2025.2
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
-Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L uvm -L unisims_ver -L unimacro_ver -L secureip --snapshot reg_file_tb_behav xil_defaultlib.reg_file_tb xil_defaultlib.glbl -log elaborate.log 
+Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L uvm -L unisims_ver -L unimacro_ver -L secureip --snapshot rename_rs_rob_tb_behav xil_defaultlib.rename_rs_rob_tb xil_defaultlib.glbl -log elaborate.log 
 Using 2 slave threads.
 Starting static elaboration
 Pass Through NonSizing Optimizer
-WARNING: [VRFC 10-3818] variable 'phys_file' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:19]
-WARNING: [VRFC 10-2921] 'phys_file' driven by this always_ff block should not be driven by any other process [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:43]
-WARNING: [VRFC 10-3818] variable 'alias_table' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:15]
+WARNING: [VRFC 10-3818] variable 'phys_file' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:21]
+WARNING: [VRFC 10-2921] 'phys_file' driven by this always_ff block should not be driven by any other process [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:45]
+WARNING: [VRFC 10-3818] variable 'alias_table' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:17]
 Completed static elaboration
 Starting simulation data flow analysis
 Completed simulation data flow analysis
 Time Resolution for simulation is 1ps
 Compiling package xil_defaultlib.config_pkg
 Compiling module xil_defaultlib.reg_file
-Compiling module xil_defaultlib.reg_file_tb
+Compiling module xil_defaultlib.rename_rs_rob_tb
 Compiling module xil_defaultlib.glbl
-Built simulation snapshot reg_file_tb_behav
+Built simulation snapshot rename_rs_rob_tb_behav
