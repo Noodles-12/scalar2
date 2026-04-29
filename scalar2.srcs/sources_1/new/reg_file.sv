@@ -56,6 +56,8 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
         rob_a = '0;
         rob_b = '0;
+        rename_a = '0;
+        rename_b = '0;
 
         // id & opcode share the same bits regardless of type
         rename_a.int_rs.id = 0;
