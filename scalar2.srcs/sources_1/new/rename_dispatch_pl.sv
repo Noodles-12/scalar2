@@ -21,11 +21,11 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
     logic id_list [0:63];
     logic next_id_list [0:63];
 
-    dispatch_demux_1x4 dispatch_a(.data(dispatch_a),
+    dispatch_demux_1x4 demux_a(.data(dispatch_a),
                                   .code(code_a),
                                   .op(rs_op_a) );
 
-    dispatch_demux_1x4 dispatch_b(.data(dispatch_b),
+    dispatch_demux_1x4 demux_b(.data(dispatch_b),
                                   .code(code_b),
                                   .op(rs_op_b) );
 

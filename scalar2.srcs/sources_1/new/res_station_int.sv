@@ -13,13 +13,6 @@ module res_station_int(clk, instr_a, instr_b, almost_full);
     int_rs_entry res_station [0:15];
 
     logic [0:3] avail_entry_a, avail_entry_b;
-    rs_demux1x16 demux_a(.data(instr_a_reg),
-                         .code(avail_entry_a),
-                         .op(res_station) );
-
-    rs_demux1x16 demux_b(.data(instr_b_reg),
-                         .code(avail_entry_b),
-                         .op(res_station) );
 
     initial begin
         avail_entry_a = 0;
