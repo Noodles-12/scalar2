@@ -8,7 +8,7 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
     input rs_entry rename_a, rename_b;
     input rob_entry rob_a, rob_b;
 
-    output rs_entry rs_op_a, rs_op_b;
+    output rs_entry rs_op_a [0:3], rs_op_b [0:3];
     output rob_entry rob_op_a, rob_op_b;
 
     rs_entry rename_a_reg, rename_b_reg;
