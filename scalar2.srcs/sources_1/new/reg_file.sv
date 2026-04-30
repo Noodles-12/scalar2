@@ -3,10 +3,10 @@
 import config_pkg::*;
 
 // Decode already happens b/c of the struct type fields, so renaming happens in here
-module reg_file(clk, og_instr_a, og_instr_b,
+module reg_file(clk, rst, og_instr_a, og_instr_b,
                     rename_a, rename_b, rob_a, rob_b);
 
-    input logic clk;
+    input logic clk, rst;
     input instruction og_instr_a, og_instr_b;
     
     output rs_entry rename_a, rename_b;
@@ -27,27 +27,23 @@ module reg_file(clk, og_instr_a, og_instr_b,
     logic [0:4] idx_a1, idx_a2; 
     logic [0:4] idx_b1, idx_b2;
 
-    initial begin
-        // Instantiate PRF
-        for(int i = 0; i < 32; i = i + 1) begin
-            phys_file[i].valid = 1;
-            phys_file[i].free = 1;
-            phys_file[i].data = 1;
-        end
-
-        // Instantiate RAT (as well as taken physical registers)
-        for(int i = 0; i < NUM_REGS; i = i + 1) begin
-            alias_table[i] = i;
-            phys_file[i].free = 0;
-        end
-    end
-
     always_ff @ (posedge clk) begin
-        instr_a_reg <= og_instr_a;
-        instr_b_reg <= og_instr_b;
-
-        phys_file <= next_phys_file;
-        alias_table <= next_alias_table;
+        if (rst) begin
+            for (int i = 0; i < 32; i++) begin
+                phys_file[i].valid <= 1;
+                phys_file[i].free  <= (i < NUM_REGS) ? 1'b0 : 1'b1;
+                phys_file[i].data  <= 1;
+            end
+            for (int i = 0; i < NUM_REGS; i++)
+                alias_table[i] <= i[4:0];
+            instr_a_reg <= '0;
+            instr_b_reg <= '0;
+        end else begin
+            instr_a_reg  <= og_instr_a;
+            instr_b_reg  <= og_instr_b;
+            phys_file    <= next_phys_file;
+            alias_table  <= next_alias_table;
+        end
     end
 
     always_comb begin
@@ -59,11 +55,9 @@ module reg_file(clk, og_instr_a, og_instr_b,
         rename_a = '0;
         rename_b = '0;
 
-        // id & opcode share the same bits regardless of type
-        rename_a.int_rs.id = 0;
-        rename_a.int_rs.opcode = instr_a_reg.opcode;
-        rename_b.int_rs.id = 0;
-        rename_b.int_rs.opcode = instr_b_reg.opcode;
+        // id & opcode share the same bits regardless of type; id stays 0 until dispatch assigns it
+        if (instr_a_reg.opcode != 0) rename_a.int_rs.opcode = instr_a_reg.opcode;
+        if (instr_b_reg.opcode != 0) rename_b.int_rs.opcode = instr_b_reg.opcode;
 
         // Rename Instruction A
         case(instr_a_reg.opcode) inside
@@ -79,6 +73,7 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(phys_file[i].free == 1) begin
+                        $display("Instr A | Free phys reg %d being assigned to arch reg %d", i, instr_a_reg.reg_d);
                         rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
                         rob_a.new_prf = i;
                         rob_a.arch = instr_a_reg.reg_d;
@@ -129,6 +124,7 @@ module reg_file(clk, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(next_phys_file[i].free == 1) begin
+                        $display("Instr B | Free phys reg %d being assigned to arch reg %d", i, instr_a_reg.reg_d);
                         rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
                         rob_b.new_prf = i;
                         rob_b.arch = instr_b_reg.reg_d;

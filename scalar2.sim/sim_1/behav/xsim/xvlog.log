@@ -9,10 +9,6 @@ INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Proj
 INFO: [VRFC 10-311] analyzing module alu
 INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/rename_dispatch_pl.sv" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module rename_dispatch_pl
-WARNING: [VRFC 10-9578] illegal assignment to variable input port 'rename_a' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/rename_dispatch_pl.sv:33]
-WARNING: [VRFC 10-9578] illegal assignment to variable input port 'rename_b' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/rename_dispatch_pl.sv:34]
-WARNING: [VRFC 10-9578] illegal assignment to variable input port 'rob_a' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/rename_dispatch_pl.sv:35]
-WARNING: [VRFC 10-9578] illegal assignment to variable input port 'rob_b' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/rename_dispatch_pl.sv:36]
 INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/res_station_int.sv" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module res_station_int
 INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/res_station_imm.sv" into library xil_defaultlib

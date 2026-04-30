@@ -17,8 +17,8 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
 
     logic [0:1] code_a, code_b;
 
-    // Each entry contains a boolean whether an id (index) is free (1) or not (0)
-    logic id_list [0:63];
+    // Each entry: 1 = free, 0 = taken
+    logic id_list [0:63] = '{default: 1'b1};
     logic next_id_list [0:63];
 
     dispatch_demux_1x4 demux_a(.data(dispatch_a),
@@ -28,22 +28,6 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
     dispatch_demux_1x4 demux_b(.data(dispatch_b),
                                .code(code_b),
                                .op(rs_op_b) );
-
-    initial begin
-        rename_a = 0;
-        rename_b = 0;
-        rob_a = 0;
-        rob_b = 0;
-
-        for(int i = 0; i < 4; i++) begin
-            rs_op_a[i] = 0;
-            rs_op_b[i] = 0;
-        end
-        
-        for(int i = 0; i < 64; i++) begin
-            id_list[i] = 1;
-        end
-    end
 
     always_ff @ (posedge clk) begin
         rename_a_reg <= rename_a;
@@ -68,7 +52,7 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
         for(int i = 0; i < 64; i++) begin
             if(next_id_list[i] == 1 & dispatch_a != 0) begin
                 dispatch_a.int_rs.id = i;
-                rob_a.id = i;
+                rob_op_a.id = i;
                 next_id_list[i] = 0;
                 break;
             end
@@ -77,7 +61,7 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
         for(int i = 0; i < 64; i++) begin
             if(next_id_list[i] == 1 & dispatch_b != 0) begin
                 dispatch_b.int_rs.id = i;
-                rob_b.id = i;
+                rob_op_b.id = i;
                 next_id_list[i] = 0;
                 break;
             end

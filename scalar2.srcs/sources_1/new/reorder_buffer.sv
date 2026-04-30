@@ -8,27 +8,16 @@ module reorder_buffer(clk, input_a, input_b,
     input rob_entry input_a, input_b;
     output rob_entry output_arr [0:3];
 
-    rob_entry buffer [0:63]; // A queue that behaves like a fixed size circular linked list
+    rob_entry buffer [0:63] = '{default: '0};
     rob_entry next_buffer [0:63];
 
-    logic [0:5] head, tail, count;
-    logic [0:5] next_head, next_tail, next_count; // Don't know if I really need these
+    logic [0:5] head = 0, tail = 0, count = 0;
+    logic [0:5] next_head, next_tail, next_count;
 
     logic empty, full, done;
 
     assign empty = (head == tail) & (count == 0);
     assign full = (head == tail) & (count > 0);
-
-    initial begin
-        head = 0;
-        tail = 0;
-        count = 0;
-        done = 0;
-
-        for(int i = 0; i < 64; i++) begin
-            buffer[i] = 0;
-        end
-    end
 
     always_ff @ (posedge clk) begin
         buffer <= next_buffer;
@@ -42,6 +31,7 @@ module reorder_buffer(clk, input_a, input_b,
         next_head = head;
         next_tail = tail;
         next_count = count;
+        done = 0;
 
         // Inserting into buffer
         if(input_a != 0 && !full) begin
