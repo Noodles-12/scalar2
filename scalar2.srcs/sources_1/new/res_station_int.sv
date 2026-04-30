@@ -14,27 +14,13 @@ module res_station_int(clk, instr_a, instr_b, almost_full,
 
     int_rs_entry instr_a_reg, instr_b_reg;
 
-    int_rs_entry res_station [0:15];
+    int_rs_entry res_station [0:15] = '{default: '0};
     int_rs_entry next_res_station [0:15];
 
     // a & b used for finding available entries; c & d used for pushing first two finished instructions
-    logic done_a, done_b, done_c, done_d; 
+    logic done_a, done_b, done_c, done_d;
 
     assign almost_full = (filled_stations >= 14);
-
-    initial begin
-        output_a = 0;
-        output_b = 0;
-
-        done_a = 0;
-        done_b = 0;
-        done_c = 0;
-        done_d = 0;
-
-        for(int i = 0; i < 16; i++) begin
-            res_station[i] = 0;
-        end    
-    end
 
     always_ff @ (posedge clk) begin
         instr_a_reg <= instr_a;
