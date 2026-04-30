@@ -2,8 +2,8 @@
 
 import config_pkg::*;
 
-module res_station_imm(clk, instr_a, instr_b, almost_full,
-                        output_a, output_b);
+module res_station_imm(clk, instr_a, instr_b, 
+                        almost_full, output_a, output_b);
     input logic clk;
     input imm_rs_entry instr_a, instr_b;
 

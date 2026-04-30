@@ -14,8 +14,17 @@ module rename_rs_rob_tb();
     rob_entry output_rob [0:3];
 
     int_rs_entry intrs_op_a, intrs_op_b;
+    imm_rs_entry immrs_op_a, immrs_op_b;
 
     logic almost_full_int, almost_full_imm;
+
+    logic [0:35] fu_int_result_a, fu_int_result_b;
+    logic [0:5]  fu_int_id_a,     fu_int_id_b;
+    logic [0:4]  fu_int_dest_a,   fu_int_dest_b;
+
+    logic [0:35] fu_imm_result_a, fu_imm_result_b;
+    logic [0:5]  fu_imm_id_a,     fu_imm_id_b;
+    logic [0:4]  fu_imm_dest_a,   fu_imm_dest_b;
 
     reg_file rf(.clk(clk),
                 .rst(rst),
@@ -48,14 +57,41 @@ module rename_rs_rob_tb();
                            .output_a(intrs_op_a),
                            .output_b(intrs_op_b) );
 
+    func_unit_int fu_int(.clk(clk),
+                         .int_instr_a(intrs_op_a),
+                         .int_instr_b(intrs_op_b),
+                         .result_a(fu_int_result_a),
+                         .result_b(fu_int_result_b),
+                         .id_a(fu_int_id_a),
+                         .id_b(fu_int_id_b),
+                         .dest_a(fu_int_dest_a),
+                         .dest_b(fu_int_dest_b) );
+
+    res_station_imm rs_imm(.clk(clk),
+                           .instr_a(rs_entry_a[1]),
+                           .instr_b(rs_entry_b[1]),
+                           .almost_full(almost_full_imm),
+                           .output_a(immrs_op_a),
+                           .output_b(immrs_op_b) );
+
+    func_unit_imm fu_imm(.clk(clk),
+                         .imm_instr_a(immrs_op_a),
+                         .imm_instr_b(immrs_op_b),
+                         .result_a(fu_imm_result_a),
+                         .result_b(fu_imm_result_b),
+                         .id_a(fu_imm_id_a),
+                         .id_b(fu_imm_id_b),
+                         .dest_a(fu_imm_dest_a),
+                         .dest_b(fu_imm_dest_b) );
+
     initial clk = 0;
     always #5 clk = ~clk;
 
     initial begin
         rst = 1; #10; rst = 0;
-        instr_a = 30'b000001_0001_0010_0011_000000000000;                 // add r1, r2, r3
-        instr_b = 30'b000011_0100_0001_0110_000000000000; #10;            // sub r4, r1, r3 RAW
-        instr_a = 0; instr_b = 0; #10; #10; #10; #10; 
+        instr_a = 30'b010000_0001_0010_0000_000000000111;                 // add r1, r2, r3
+        instr_b = 30'b000001_0100_0011_0110_000000000000; #10;            // sub r4, r1, r3 RAW
+        instr_a = 0; instr_b = 0; #10; #10; #10; #10; #10; #10;
         $finish;
     end
 
