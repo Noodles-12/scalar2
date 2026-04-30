@@ -4,11 +4,12 @@ import config_pkg::*;
 
 module dispatch_demux_1x4(data, code, op);    
     input rs_entry data;
-    input [1:0] code;
+    input [0:1] code;
     
     output rs_entry op [0:3];
     
     always_comb begin
+        $display("Code: %d", code);
         for(int i = 0; i < 4; ++i) begin
             op[i] = (i == code) ? data : 0;
         end

@@ -15,12 +15,12 @@ module func_unit_imm(clk,
 
     alu alu_a(.input1(imm_instr_a.value),
               .input2({24'b0, imm_instr_a.imm}), // Zero extended for ALU
-              .opcode(imm_instr_a.opcode),
+              .opcode(imm_instr_a.opcode - 15),
               .result(result_a_comb) );
 
     alu alu_b(.input1(imm_instr_b.value),
               .input2({24'b0, imm_instr_b.imm}),
-              .opcode(imm_instr_b.opcode),
+              .opcode(imm_instr_b.opcode - 15),
               .result(result_b_comb) );
 
     always_ff @ (posedge clk) begin

@@ -66,17 +66,20 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
                 break;
             end
         end
+
         // Dispatch Logic
-        case(rename_a) inside
+        // Any type of renamed instruction should have id & opcode in same bit positions
+        case(dispatch_a.int_rs.opcode) inside
             [1:15] : code_a = 0;
             [16:27]: code_a = 1;
             default: code_a = 0;
         endcase
 
-        case(rename_b) inside
+        case(dispatch_b.int_rs.opcode) inside
             [1:15] : code_b = 0;
             [16:27]: code_b = 1;
             default: code_b = 0;
         endcase;
+        //$display("A opcode: %d -> %d  B opcode: %d -> %d", rename_a.int_rs.opcode, code_a, rename_b.int_rs.opcode, code_b);
     end
 endmodule
