@@ -1,7 +1,7 @@
-Running: xsim.dir/rename_rs_rob_tb_behav/xsimk.exe -simmode gui -wdb rename_rs_rob_tb_behav.wdb -simrunnum 0 -socket 50340
+Running: xsim.dir/rename_rs_rob_tb_behav/xsimk.exe -simmode gui -wdb rename_rs_rob_tb_behav.wdb -simrunnum 0 -socket 55843
 Design successfully loaded
-Design Loading Memory Usage: 10664 KB (Peak: 10664 KB)
-Design Loading CPU Usage: 15 ms
+Design Loading Memory Usage: 10936 KB (Peak: 10936 KB)
+Design Loading CPU Usage: 77 ms
 Simulation completed
-Simulation Memory Usage: 11596 KB (Peak: 11596 KB)
-Simulation CPU Usage: 31 ms
+Simulation Memory Usage: 11808 KB (Peak: 11808 KB)
+Simulation CPU Usage: 218 ms

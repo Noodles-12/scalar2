@@ -32,3 +32,5 @@ INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Proj
 INFO: [VRFC 10-311] analyzing module reg_file_tb
 INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sim_1/new/rename_rs_rob_tb.sv" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module rename_rs_rob_tb
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/mahiy/Documents/Projects/scalar2/scalar2.sim/sim_1/behav/xsim/glbl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module glbl
