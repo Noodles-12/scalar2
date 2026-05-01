@@ -57,12 +57,12 @@ package config_pkg;
     typedef struct packed {
         logic [95:100] id;
         logic [89:94]  opcode;
-        logic [85:88]  reg_s;
-        logic [49:84]  value;
-        logic [48:48]  check;
-        logic [36:47]  imm;
-        logic [31:35]  dest;
-        logic [0:30]   padding;
+        logic [84:88]  reg_s;
+        logic [48:83]  value;
+        logic [47:47]  check;
+        logic [35:46]  imm;
+        logic [30:34]  dest;
+        logic [0:29]   padding;
     } imm_rs_entry;
 
     typedef union packed {
@@ -78,6 +78,12 @@ package config_pkg;
         logic [21:25] new_prf;
         logic [16:20] old_prf;
         logic [12:15] arch;
-        logic [0:11]  mem_dest; // store instruction target address
+        logic [0:11] mem_dest; // store instruction target address
     } rob_entry;
+
+    typedef struct packed {
+        logic [41:46] id;
+        logic [36:40] prf;
+        logic [0:35] result;
+    } cdb_entry;
 endpackage

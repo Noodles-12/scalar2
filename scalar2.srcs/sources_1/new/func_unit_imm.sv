@@ -2,34 +2,36 @@
 
 import config_pkg::*;
 
-module func_unit_imm(clk,
-                     imm_instr_a, result_a, id_a, dest_a,
-                     imm_instr_b, result_b, id_b, dest_b);
-    input  logic clk;
+module func_unit_imm(clk, imm_instr_a, out_a,
+                     imm_instr_b, out_b);
+    input logic clk;
     input  imm_rs_entry imm_instr_a, imm_instr_b;
-    output logic [0:35] result_a, result_b;
-    output logic [0:5]  id_a, id_b;
-    output logic [0:4]  dest_a, dest_b;
+    output cdb_entry out_a, out_b;
+
+    imm_rs_entry instr_a_reg, instr_b_reg;
 
     logic [0:35] result_a_comb, result_b_comb;
 
-    alu alu_a(.input1(imm_instr_a.value),
-              .input2({24'b0, imm_instr_a.imm}), // Zero extended for ALU
-              .opcode(imm_instr_a.opcode - 15),
+    alu alu_a(.input1(instr_a_reg.value),
+              .input2({24'b0, instr_a_reg.imm}),
+              .opcode(instr_a_reg.opcode - 15),
               .result(result_a_comb) );
 
-    alu alu_b(.input1(imm_instr_b.value),
-              .input2({24'b0, imm_instr_b.imm}),
-              .opcode(imm_instr_b.opcode - 15),
+    alu alu_b(.input1(instr_b_reg.value),
+              .input2({24'b0, instr_b_reg.imm}),
+              .opcode(instr_b_reg.opcode - 15),
               .result(result_b_comb) );
 
     always_ff @ (posedge clk) begin
-        result_a <= result_a_comb;
-        id_a     <= imm_instr_a.id;
-        dest_a   <= imm_instr_a.dest;
-
-        result_b <= result_b_comb;
-        id_b     <= imm_instr_b.id;
-        dest_b   <= imm_instr_b.dest;
+        instr_a_reg <= imm_instr_a;
+        instr_b_reg <= imm_instr_b;
     end
+
+    assign out_a.result = result_a_comb;
+    assign out_a.id     = instr_a_reg.id;
+    assign out_a.prf    = instr_a_reg.dest;
+
+    assign out_b.result = result_b_comb;
+    assign out_b.id     = instr_b_reg.id;
+    assign out_b.prf    = instr_b_reg.dest;
 endmodule
