@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import config_pkg::*;
+
 module rename_rs_rob_tb();
     // Inputs
     logic clk, rst;
@@ -18,13 +20,8 @@ module rename_rs_rob_tb();
 
     logic almost_full_int, almost_full_imm;
 
-    logic [0:35] fu_int_result_a, fu_int_result_b;
-    logic [0:5]  fu_int_id_a,     fu_int_id_b;
-    logic [0:4]  fu_int_dest_a,   fu_int_dest_b;
-
-    logic [0:35] fu_imm_result_a, fu_imm_result_b;
-    logic [0:5]  fu_imm_id_a,     fu_imm_id_b;
-    logic [0:4]  fu_imm_dest_a,   fu_imm_dest_b;
+    cdb_entry fu_int_a, fu_int_b;
+    cdb_entry fu_imm_a, fu_imm_b;
 
     reg_file rf(.clk(clk),
                 .rst(rst),
@@ -60,12 +57,8 @@ module rename_rs_rob_tb();
     func_unit_int fu_int(.clk(clk),
                          .int_instr_a(intrs_op_a),
                          .int_instr_b(intrs_op_b),
-                         .result_a(fu_int_result_a),
-                         .result_b(fu_int_result_b),
-                         .id_a(fu_int_id_a),
-                         .id_b(fu_int_id_b),
-                         .dest_a(fu_int_dest_a),
-                         .dest_b(fu_int_dest_b) );
+                         .out_a(fu_int_a),
+                         .out_b(fu_int_b) );
 
     res_station_imm rs_imm(.clk(clk),
                            .instr_a(rs_entry_a[1]),
@@ -77,12 +70,8 @@ module rename_rs_rob_tb();
     func_unit_imm fu_imm(.clk(clk),
                          .imm_instr_a(immrs_op_a),
                          .imm_instr_b(immrs_op_b),
-                         .result_a(fu_imm_result_a),
-                         .result_b(fu_imm_result_b),
-                         .id_a(fu_imm_id_a),
-                         .id_b(fu_imm_id_b),
-                         .dest_a(fu_imm_dest_a),
-                         .dest_b(fu_imm_dest_b) );
+                         .out_a(fu_imm_a),
+                         .out_b(fu_imm_b) );
 
     initial clk = 0;
     always #5 clk = ~clk;

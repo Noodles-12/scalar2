@@ -2,10 +2,12 @@
 
 import config_pkg::*;
 
-module reorder_buffer(clk, input_a, input_b,
+module reorder_buffer(clk, input_a, input_b, cdb_arr,
                         output_arr);
     input logic clk;
     input rob_entry input_a, input_b;
+    input cdb_entry cdb_arr [0:3];
+
     output rob_entry output_arr [0:3];
 
     rob_entry buffer [0:63] = '{default: '0};
@@ -56,6 +58,17 @@ module reorder_buffer(clk, input_a, input_b,
             end else begin
                 output_arr[i] = 0;
                 done = 1;
+            end
+        end
+
+        for(int i = 0; i < 4; i++) begin
+            if (cdb_arr[i] == 0) continue;
+
+            for(int j = 0; j < 63; j++) begin
+                if (next_buffer[i].id == cdb_arr[i].id) begin
+                    next_buffer[i].result = cdb_arr[i].result;
+                    next_buffer[i].done = 1;
+                end
             end
         end
     end

@@ -2,10 +2,11 @@
 
 import config_pkg::*;
 
-module res_station_imm(clk, instr_a, instr_b, 
+module res_station_imm(clk, instr_a, instr_b, cdb_arr,
                         almost_full, output_a, output_b);
     input logic clk;
     input imm_rs_entry instr_a, instr_b;
+    input cdb_entry cdb_arr [0:3];
 
     output imm_rs_entry output_a, output_b;
     output logic almost_full;
@@ -75,6 +76,19 @@ module res_station_imm(clk, instr_a, instr_b,
                 end else if (!done_b) begin
                     next_res_station[i] = instr_b_reg;
                     done_b = 1;
+                end
+            end
+        end
+
+        // Take in CDB to adjust RS entries
+        for(int i = 0; i < 4; i++) begin
+            if (cdb_arr[i] == 0) continue;
+            for(int j = 0; j < 16; j++) begin
+                if (next_res_station[j] == 0) continue;
+
+                if(next_res_station[j].reg_s == cdb_arr[i].prf) begin
+                    next_res_station[j].value = cdb_arr[i].result;
+                    next_res_station[j].check = 1;
                 end
             end
         end
