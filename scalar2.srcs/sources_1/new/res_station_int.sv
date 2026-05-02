@@ -76,11 +76,11 @@ module res_station_int(clk, instr_a, instr_b, cdb_arr, almost_full,
 
                 if (next_res_station[j].reg1 == cdb_arr[i].prf) begin
                     next_res_station[j].value1 = cdb_arr[i].result;
-                    next_res_statoin[j].check1 = 1;
+                    next_res_station[j].check1 = 1;
                 end
                 if (next_res_station[j].reg2 == cdb_arr[i].prf) begin
                     next_res_station[j].value2 = cdb_arr[i].result;
-                    next_res_statoin[j].check2 = 1;
+                    next_res_station[j].check2 = 1;
                 end
             end 
         end
