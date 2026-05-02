@@ -13,27 +13,13 @@ module res_station_imm(clk, instr_a, instr_b, cdb_arr,
 
     logic [0:4] filled_stations;
 
-    imm_rs_entry instr_a_reg, instr_b_reg;
+    imm_rs_entry instr_a_reg = '0, instr_b_reg = '0;
 
-    imm_rs_entry res_station [0:15];
+    imm_rs_entry res_station [0:15] = '{default: '0};
     imm_rs_entry next_res_station [0:15];
 
     logic done_a, done_b, done_c, done_d;
     assign almost_full = (filled_stations >= 14);
-
-    initial begin
-        output_a = 0;
-        output_b = 0;
-
-        done_a = 0;
-        done_b = 0;
-        done_c = 0;
-        done_d = 0;
-
-        for(int i = 0; i < 16; i++) begin
-            res_station[i] = 0;
-        end  
-    end
 
     always_ff @ (posedge clk) begin
         instr_a_reg <= instr_a;
@@ -86,7 +72,9 @@ module res_station_imm(clk, instr_a, instr_b, cdb_arr,
             for(int j = 0; j < 16; j++) begin
                 if (next_res_station[j] == 0) continue;
 
+                $display("nrs_phys: %d  -- cdb_prf: %d", next_res_station[j].reg_s, cdb_arr[i].prf);
                 if(next_res_station[j].reg_s == cdb_arr[i].prf) begin
+                    $display("Updating nrs[%d] value of %d to %d", j, next_res_station[j].value, cdb_arr[i].result);
                     next_res_station[j].value = cdb_arr[i].result;
                     next_res_station[j].check = 1;
                 end

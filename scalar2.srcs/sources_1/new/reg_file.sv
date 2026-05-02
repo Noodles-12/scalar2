@@ -3,11 +3,12 @@
 import config_pkg::*;
 
 // Decode already happens b/c of the struct type fields, so renaming happens in here
-module reg_file(clk, rst, og_instr_a, og_instr_b,
+module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr,
                     rename_a, rename_b, rob_a, rob_b);
 
     input logic clk, rst;
     input instruction og_instr_a, og_instr_b;
+    input cdb_entry cdb_arr [0:3];
     
     output rs_entry rename_a, rename_b;
     output rob_entry rob_a, rob_b;
@@ -73,7 +74,6 @@ module reg_file(clk, rst, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(phys_file[i].free == 1) begin
-                        $display("Instr A | Free phys reg %d being assigned to arch reg %d", i, instr_a_reg.reg_d);
                         rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
                         rob_a.new_prf = i;
                         rob_a.arch = instr_a_reg.reg_d;
@@ -124,7 +124,6 @@ module reg_file(clk, rst, og_instr_a, og_instr_b,
 
                 for(int i = 0; i < 32; i++) begin
                     if(next_phys_file[i].free == 1) begin
-                        $display("Instr B | Free phys reg %d being assigned to arch reg %d", i, instr_a_reg.reg_d);
                         rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
                         rob_b.new_prf = i;
                         rob_b.arch = instr_b_reg.reg_d;
@@ -160,5 +159,11 @@ module reg_file(clk, rst, og_instr_a, og_instr_b,
                 end
             end
         endcase
+
+        for(int i = 0; i < 4; i++) begin
+            if(cdb_arr[i] == 0) continue;
+            next_phys_file[cdb_arr[i].prf].valid = 1;
+            next_phys_file[cdb_arr[i].prf].data = cdb_arr[i].result;
+        end
     end
 endmodule

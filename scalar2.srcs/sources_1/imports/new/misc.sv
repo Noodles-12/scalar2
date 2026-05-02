@@ -9,7 +9,6 @@ module dispatch_demux_1x4(data, code, op);
     output rs_entry op [0:3];
     
     always_comb begin
-        $display("Code: %d", code);
         for(int i = 0; i < 4; ++i) begin
             op[i] = (i == code) ? data : 0;
         end
