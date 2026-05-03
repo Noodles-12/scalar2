@@ -1,12 +1,15 @@
 Vivado Simulator v2025.2
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
-Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L uvm -L unisims_ver -L unimacro_ver -L secureip --snapshot rename_rs_rob_tb_behav xil_defaultlib.rename_rs_rob_tb xil_defaultlib.glbl -log elaborate.log 
+Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L uvm -L unisims_ver -L unimacro_ver -L secureip --snapshot mem_instr_tb_behav xil_defaultlib.mem_instr_tb xil_defaultlib.glbl -log elaborate.log 
 Using 2 slave threads.
 Starting static elaboration
 Pass Through NonSizing Optimizer
-WARNING: [VRFC 10-3091] actual bit length 32 differs from formal bit length 6 for port 'opcode' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/func_unit_imm.sv:17]
-WARNING: [VRFC 10-3091] actual bit length 32 differs from formal bit length 6 for port 'opcode' [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/func_unit_imm.sv:22]
+WARNING: [VRFC 10-5021] port 'cdb_arr' is not connected on this instance [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sim_1/new/mem_instr_tb.sv:25]
+WARNING: [VRFC 10-3818] variable 'phys_file' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:23]
+WARNING: [VRFC 10-2921] 'phys_file' driven by this always_ff block should not be driven by any other process [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/reg_file.sv:36]
+WARNING: [VRFC 10-3818] variable 'load_buffer' is driven by invalid combination of procedural drivers [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/res_station_mem.sv:22]
+WARNING: [VRFC 10-2921] 'load_buffer' driven by this always_ff block should not be driven by any other process [C:/Users/mahiy/Documents/Projects/scalar2/scalar2.srcs/sources_1/new/res_station_mem.sv:37]
 Completed static elaboration
 Starting simulation data flow analysis
 Completed simulation data flow analysis
@@ -15,13 +18,8 @@ Compiling package xil_defaultlib.config_pkg
 Compiling module xil_defaultlib.reg_file
 Compiling module xil_defaultlib.dispatch_demux_1x4
 Compiling module xil_defaultlib.rename_dispatch_pl
-Compiling module xil_defaultlib.reorder_buffer
-Compiling module xil_defaultlib.res_station_int
-Compiling module xil_defaultlib.alu
-Compiling module xil_defaultlib.func_unit_int
-Compiling module xil_defaultlib.res_station_imm
-Compiling module xil_defaultlib.func_unit_imm
-Compiling module xil_defaultlib.common_data_bus
-Compiling module xil_defaultlib.rename_rs_rob_tb
+Compiling module xil_defaultlib.res_station_mem
+Compiling module xil_defaultlib.func_unit_str
+Compiling module xil_defaultlib.mem_instr_tb
 Compiling module xil_defaultlib.glbl
-Built simulation snapshot rename_rs_rob_tb_behav
+Built simulation snapshot mem_instr_tb_behav

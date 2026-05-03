@@ -26,8 +26,10 @@ package config_pkg;
     localparam NUM_REGS         = (1 << NUM_REGS_BITS);
     localparam DATABUS_WIDTH    = 36;
     localparam ADDRBUS_SIZE     = 12;
+    localparam DATA_MEM_SIZE    = 4096;
     
     // --- Types ---
+    // opcode, reg_d, reg_s, reg_t, imm
     typedef struct packed {
         logic [24:29] opcode;
         logic [20:23] reg_d;
@@ -43,32 +45,61 @@ package config_pkg;
     } phys_reg;
 
     typedef struct packed {
-        logic [95:100] id;
-        logic [89:94]  opcode;
-        logic [84:88]  reg1;
-        logic [48:83]  value1;
-        logic [47:47]  check1;
-        logic [42:46]  reg2;
-        logic [6:41]   value2;
-        logic [5:5]    check2;
-        logic [0:4]    dest;
+        logic [102:107] id;
+        logic [96:101]  opcode;
+        logic [91:95]   reg1;
+        logic [55:90]   value1;
+        logic [54:54]   check1;
+        logic [49:53]   reg2;
+        logic [13:48]   value2;
+        logic [12:12]   check2;
+        logic [7:11]    dest;
+        logic [0:6]     padding;
     } int_rs_entry;
 
     typedef struct packed {
-        logic [95:100] id;
-        logic [89:94]  opcode;
-        logic [84:88]  reg_s;
-        logic [48:83]  value;
-        logic [47:47]  check;
-        logic [35:46]  imm;
-        logic [30:34]  dest;
-        logic [0:29]   padding;
+        logic [102:107] id;
+        logic [96:101]  opcode;
+        logic [91:95]   reg_s;
+        logic [55:90]   value;
+        logic [54:54]   check;
+        logic [42:53]   imm;
+        logic [37:41]   dest;
+        logic [0:36]    padding;
     } imm_rs_entry;
 
+    // lw: $dest <= data_mem[($reg) + offset]
+    typedef struct packed {
+        logic [102:107] id;
+        logic [96:101]  opcode;
+        logic [91:95]   reg_s;
+        logic [55:90]   value;
+        logic [54:54]   check;
+        logic [42:53]   offset;
+        logic [37:41]   dest;
+        logic [33:36]   count; // Represents previous stores before this instruction
+        logic [0:32]    padding;
+    } load_rs_entry;
+
+    // sw: data_mem[($reg_d) + offset] <= ($reg_s)
+    typedef struct packed {
+        logic [102:107] id;
+        logic [96:101]  opcode;
+        logic [91:95]   reg_d;
+        logic [55:90]   value1;
+        logic [54:54]   check1;
+        logic [49:53]   reg_s;
+        logic [13:48]   value2;
+        logic [12:12]   check2;
+        logic [0:11]    offset;
+    } store_rs_entry;
+
     typedef union packed {
-        int_rs_entry int_rs;
-        imm_rs_entry imm_rs;
-        logic [0:100] raw;
+        int_rs_entry   int_rs;
+        imm_rs_entry   imm_rs;
+        load_rs_entry  load_rs;
+        store_rs_entry store_rs;
+        logic [0:107]  raw;
     } rs_entry;
 
     typedef struct packed {
@@ -80,6 +111,12 @@ package config_pkg;
         logic [12:15] arch;
         logic [0:11] mem_dest; // store instruction target address
     } rob_entry;
+
+    typedef struct packed {
+        logic [48:53] id;
+        logic [36:47] mem_dest;
+        logic [0:35] value;
+    } str_rob_entry;
 
     typedef struct packed {
         logic [41:46] id;

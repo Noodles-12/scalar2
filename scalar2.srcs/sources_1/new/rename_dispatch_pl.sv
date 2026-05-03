@@ -2,24 +2,25 @@
 
 import config_pkg::*;
 
-module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
+module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b, id_to_free,
                             rs_op_a, rs_op_b, rob_op_a, rob_op_b);
     input clk;
     input rs_entry rename_a, rename_b;
     input rob_entry rob_a, rob_b;
+    input logic [0:5] id_to_free [0:3];
 
     output rs_entry rs_op_a [0:3], rs_op_b [0:3];
     output rob_entry rob_op_a, rob_op_b;
 
     rs_entry rename_a_reg, rename_b_reg;
     rob_entry rob_a_reg, rob_b_reg;
-    rs_entry dispatch_a, dispatch_b;        // Intermediate wires since we can't assign to a register in comb
+    rs_entry dispatch_a, dispatch_b; // Intermediate wires since we can't assign to a register in comb
 
     logic [0:1] code_a, code_b;
 
     // Each entry: 1 = free, 0 = taken
-    logic id_list [0:63] = '{default: 1'b1};
-    logic next_id_list [0:63];
+    logic id_list [1:63] = '{default: 1'b1};
+    logic next_id_list [1:63];
 
     dispatch_demux_1x4 demux_a(.data(dispatch_a),
                                .code(code_a),
@@ -49,7 +50,7 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
         rob_op_b = rob_b_reg;
 
          // id field should be in same bits for any type of instruction
-        for(int i = 0; i < 64; i++) begin
+        for(int i = 1; i < 64; i++) begin
             if(next_id_list[i] == 1 & dispatch_a != 0) begin
                 dispatch_a.int_rs.id = i;
                 rob_op_a.id = i;
@@ -58,7 +59,7 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
             end
         end
 
-        for(int i = 0; i < 64; i++) begin
+        for(int i = 1; i < 64; i++) begin
             if(next_id_list[i] == 1 & dispatch_b != 0) begin
                 dispatch_b.int_rs.id = i;
                 rob_op_b.id = i;
@@ -67,17 +68,25 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b,
             end
         end
 
+        // Freeing any id of commited instructions
+        for(int i = 0; i < 4; i++) begin
+            if(id_to_free[i] == 0) continue;
+            next_id_list[id_to_free[i]] = 1;
+        end
+
         // Dispatch Logic
         // Any type of renamed instruction should have id & opcode in same bit positions
         case(dispatch_a.int_rs.opcode) inside
             [1:15] : code_a = 0;
             [16:27]: code_a = 1;
+            [28:29]: code_a = 2;
             default: code_a = 0;
         endcase
 
         case(dispatch_b.int_rs.opcode) inside
             [1:15] : code_b = 0;
             [16:27]: code_b = 1;
+            [28:29]: code_b = 2;
             default: code_b = 0;
         endcase;
         //$display("A opcode: %d -> %d  B opcode: %d -> %d", rename_a.int_rs.opcode, code_a, rename_b.int_rs.opcode, code_b);

@@ -2,8 +2,8 @@
 
 import config_pkg::*;
 
-module res_station_int(clk, instr_a, instr_b, cdb_arr, almost_full,
-                        output_a, output_b);
+module res_station_int(clk, instr_a, instr_b, cdb_arr,
+                        output_a, output_b, almost_full);
     input logic clk;
     input int_rs_entry instr_a, instr_b;
     input cdb_entry cdb_arr [0:3];
