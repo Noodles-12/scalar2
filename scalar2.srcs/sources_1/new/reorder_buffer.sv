@@ -3,8 +3,7 @@
 import config_pkg::*;
 
 module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
-                        output_arr, id_to_free);
-
+                        output_arr, id_to_free, uncommitted_stores);
     input logic clk;
     input rob_entry input_a, input_b;
     input cdb_entry cdb_arr [0:3];
@@ -12,6 +11,7 @@ module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
 
     output rob_entry output_arr [0:3];
     output logic [0:5] id_to_free [0:3];
+    output logic [0:5] uncommitted_stores; // Store stuff specifically for memory RS
 
     rob_entry buffer [0:63] = '{default: '0};
     rob_entry next_buffer [0:63];
@@ -45,18 +45,27 @@ module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
             next_buffer[next_tail] = input_a;
             next_tail = (next_tail == 63) ? 0 : next_tail + 1;
             next_count++;
+            if(input_a.is_store == 1) begin
+                uncommitted_stores++;
+            end
         end
 
         if(input_b != 0 && !full) begin
             next_buffer[next_tail] = input_b;
             next_tail = (next_tail == 63) ? 0 : next_tail + 1;
             next_count++;
+            if(input_b.is_store == 1) begin
+                uncommitted_stores++;
+            end
         end
 
         // Pushing into commit (removing)
         // Basically does what the commit stage should
         for(int i = 0; i < 4; i++) begin
             if(!done && next_buffer[next_head].done == 1) begin
+                if(next_buffer[next_head].is_store == 1) begin
+                    uncommitted_stores--;
+                end
                 output_arr[i] = next_buffer[next_head];
                 id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = 0;

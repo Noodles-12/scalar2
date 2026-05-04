@@ -34,7 +34,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
     logic [0:4] idx_b1, idx_b2;
 
     always_ff @ (posedge clk) begin
-        if (rst) begin
+        if(rst) begin
             for (int i = 0; i < 32; i++) begin
                 phys_file[i].valid <= 1;
                 phys_file[i].free <= (i < NUM_REGS) ? 1'b0 : 1'b1;
@@ -148,6 +148,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_a.store_rs.check1 = phys_file[idx_a1].valid;
                 rename_a.store_rs.check2 = phys_file[idx_a2].valid;
                 rename_a.store_rs.offset = instr_a_reg.imm;
+                rob_a.is_store = 1;
             end
         endcase
 
@@ -232,9 +233,11 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_b.store_rs.check1 = next_phys_file[idx_b1].valid;
                 rename_b.store_rs.check2 = next_phys_file[idx_b2].valid;
                 rename_b.store_rs.offset = instr_b_reg.imm;
+                rob_b.is_store = 1;
             end
         endcase
 
+        // Validate PRF registers from CDB
         for(int i = 0; i < 4; i++) begin
             if(cdb_arr[i] == 0) continue;
             next_phys_file[cdb_arr[i].prf].valid = 1;

@@ -2,11 +2,12 @@
 
 import config_pkg::*; 
 
-module res_station_mem(clk, instr_a, instr_b, cdb_arr,
+module res_station_mem(clk, instr_a, instr_b, cdb_arr, uncommitted_stores,
                         str_op_a, str_op_b);
     input logic clk;
     input rs_entry instr_a, instr_b;
     input cdb_entry cdb_arr [0:3];
+    input logic [0:5] uncommitted_stores;
 
     output store_rs_entry str_op_a, str_op_b;
 
@@ -78,7 +79,7 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr,
                 for(int i = 0; i < 8; i++) begin
                     if(!done && (load_buffer[i] == 0)) begin
                         next_load_buffer[i] = instr_a_reg;
-                        next_load_buffer[i].count = next_store_count;
+                        next_load_buffer[i].count = uncommitted_stores;
                         next_load_count++;
                         done = 1;
                     end
@@ -103,7 +104,7 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr,
                 for(int i = 0; i < 8; i++) begin
                     if(!done && (next_load_buffer[i] == 0)) begin
                         next_load_buffer[i] = instr_b_reg;
-                        next_load_buffer[i].count = next_store_count;
+                        //next_load_buffer[i].count = next_store_count;
                         next_load_count++;
                         done = 1;
                     end

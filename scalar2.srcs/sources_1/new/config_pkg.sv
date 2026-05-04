@@ -103,6 +103,7 @@ package config_pkg;
     } rs_entry;
 
     typedef struct packed {
+        logic [69:69] is_store;
         logic [63:68] id;
         logic [62:62] done;
         logic [26:61] result;
@@ -123,4 +124,10 @@ package config_pkg;
         logic [36:40] prf;
         logic [0:35] result;
     } cdb_entry;
+
+    typedef struct packed {
+        logic write_data;
+        logic write_addr;
+        logic is_real;
+    } mem_write_entry;
 endpackage

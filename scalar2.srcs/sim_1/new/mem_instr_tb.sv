@@ -12,6 +12,11 @@ module mem_instr_tb();
 
     store_rs_entry str_a, str_b;
 
+    str_rob_entry str_rob [0:1];
+
+    logic [0:5] id_to_free [0:3];
+    logic [0:5] uncommitted_stores;
+
     reg_file rf(.clk(clk),
                 .rst(rst),
                 .og_instr_a(instr_a),
@@ -22,23 +27,29 @@ module mem_instr_tb();
     reorder_buffer rob(.clk(clk),
                        .input_a(rob_a),
                        .input_b(rob_b),
-                       .output_arr(output_rob) );
+                       .str_rob(str_rob),
+                       .output_arr(output_rob),
+                       .id_to_free(id_to_free),
+                       .uncommitted_stores(uncommitted_stores) );
 
     rename_dispatch_pl rd_pl(.clk(clk),
                              .rename_a(rename_a),
                              .rename_b(rename_b),
                              .rs_op_a(rs_entry_a),
-                             .rs_op_b(rs_entry_b) );
+                             .rs_op_b(rs_entry_b),
+                             .id_to_free(id_to_free) );
 
     res_station_mem rs_mem(.clk(clk),
                            .instr_a(rs_entry_a[2]),
                            .instr_b(rs_entry_b[2]),
+                           .uncommitted_stores(uncommitted_stores),
                            .str_op_a(str_a),
                            .str_op_b(str_b) );
 
     func_unit_str str_fu(.clk(clk),
                          .str_a(str_a),
-                         .str_b(str_b) );
+                         .str_b(str_b),
+                         .str_rob(str_rob) );
 
     always #5 clk = ~clk;
 
