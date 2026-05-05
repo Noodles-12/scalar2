@@ -27,8 +27,10 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr, uncommitted_stores,
     logic done_a, done_b;
 
     initial begin
-        for(int i = 0; i < 8; i++)
+        for(int i = 0; i < 8; i++) begin
             load_buffer[i] = '0;
+            store_buffer[i] = '0;
+        end
     end
 
     always_ff @ (posedge clk) begin
@@ -62,9 +64,7 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr, uncommitted_stores,
                     str_op_a = next_store_buffer[i];
                     done_a = 1;
                     next_store_buffer[i] = 0;
-                end 
-                
-                if (done_a && !done_b) begin
+                end else if (!done_b) begin
                     str_op_b = next_store_buffer[i];
                     done_b = 1;
                     next_store_buffer[i] = 0;
@@ -104,7 +104,7 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr, uncommitted_stores,
                 for(int i = 0; i < 8; i++) begin
                     if(!done && (next_load_buffer[i] == 0)) begin
                         next_load_buffer[i] = instr_b_reg;
-                        //next_load_buffer[i].count = next_store_count;
+                        next_load_buffer[i].count = uncommitted_stores;
                         next_load_count++;
                         done = 1;
                     end
@@ -113,7 +113,7 @@ module res_station_mem(clk, instr_a, instr_b, cdb_arr, uncommitted_stores,
             29 : begin
                 done = 0;
                 for(int i = 0; i < 8; i++) begin
-                    if(!done && (store_buffer[i] == 0)) begin
+                    if(!done && (next_store_buffer[i] == 0)) begin
                         next_store_buffer[i] = instr_b_reg;
                         next_store_count++;
                         done = 1;

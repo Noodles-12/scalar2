@@ -246,7 +246,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
 
         // Retirement table setting from 
         for(int i = 0; i < 4; i++) begin
-            if(commit_arr[i] == 0) continue;
+            if(commit_arr[i] == 0 || commit_arr[i].is_store == 1) continue;
             phys_file[commit_arr[i].old_prf].free = 1;
             next_retire_table[commit_arr[i].arch] = commit_arr[i].new_prf;
         end

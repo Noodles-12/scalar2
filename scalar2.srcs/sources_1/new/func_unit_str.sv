@@ -7,7 +7,7 @@ module func_unit_str(clk, str_a, str_b,
     input logic clk;
     input store_rs_entry str_a, str_b;
 
-    // Dedicated pipelines between store_FU & ROB since stores don't write registers
+    // Dedicated pipeline between store_FU & ROB since stores don't write registers
     // But still need memory destination changed
     output str_rob_entry str_rob [0:1];
 
@@ -21,6 +21,9 @@ module func_unit_str(clk, str_a, str_b,
     end
 
     always_comb begin
+        str_rob[0] = 0;
+        str_rob[1] = 0;
+
         if(str_a_reg != 0) begin
             str_rob[0].id = str_a_reg.id;
             str_rob[0].mem_dest = str_a_reg.value2 + str_a_reg.offset;
