@@ -92,6 +92,8 @@ package config_pkg;
         logic [0:35] value2;
         logic check2;
         logic [0:11] offset;
+        logic [0:11] eff_addr;
+        logic valid_addr;
     } store_rs_entry;
 
     typedef union packed {
