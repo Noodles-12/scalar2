@@ -2,9 +2,9 @@
 
 import config_pkg::*;
 
-module func_unit_imm(clk, imm_instr_a, out_a,
+module func_unit_imm(clk, rst, imm_instr_a, out_a,
                      imm_instr_b, out_b);
-    input logic clk;
+    input logic clk, rst;
     input  imm_rs_entry imm_instr_a, imm_instr_b;
     output cdb_entry out_a, out_b;
 
@@ -23,8 +23,13 @@ module func_unit_imm(clk, imm_instr_a, out_a,
               .result(result_b_comb) );
 
     always_ff @ (posedge clk) begin
-        instr_a_reg <= imm_instr_a;
-        instr_b_reg <= imm_instr_b;
+        if (rst) begin
+            instr_a_reg <= '0;
+            instr_b_reg <= '0;
+        end else begin
+            instr_a_reg <= imm_instr_a;
+            instr_b_reg <= imm_instr_b;
+        end
     end
 
     assign out_a.result = result_a_comb;

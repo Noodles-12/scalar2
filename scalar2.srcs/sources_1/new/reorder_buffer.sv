@@ -2,19 +2,15 @@
 
 import config_pkg::*;
 
-module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
-                        output_arr, id_to_free, uncommitted_stores);
-    input logic clk;
+module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
+                        output_arr, id_to_free);
+    input logic clk, rst;
     input rob_entry input_a, input_b;
     input cdb_entry cdb_arr [0:3];
     input str_rob_entry str_rob [0:1];
 
     output rob_entry output_arr [0:3];
     output logic [0:5] id_to_free [0:3];
-    output logic [0:5] uncommitted_stores;
-    logic [0:5] uncommitted_stores_reg = '0, next_uncommitted_stores;
-
-    assign uncommitted_stores = uncommitted_stores_reg;
 
     rob_entry buffer [0:63] = '{default: '0};
     rob_entry next_buffer [0:63];
@@ -28,11 +24,17 @@ module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
     assign full = (head == tail) & (count > 0);
 
     always_ff @ (posedge clk) begin
-        buffer <= next_buffer;
-        head <= next_head;
-        tail <= next_tail;
-        count <= next_count;
-        uncommitted_stores_reg <= next_uncommitted_stores;
+        if (rst) begin
+            buffer <= '{default: '0};
+            head   <= '0;
+            tail   <= '0;
+            count  <= '0;
+        end else begin
+            buffer <= next_buffer;
+            head   <= next_head;
+            tail   <= next_tail;
+            count  <= next_count;
+        end
     end
 
     always_comb begin
@@ -44,34 +46,24 @@ module reorder_buffer(clk, input_a, input_b, cdb_arr, str_rob,
         done = '0;
         output_arr = '{default: '0};
         id_to_free = '{default: '0};
-        next_uncommitted_stores = uncommitted_stores_reg;
 
         // Inserting into buffer
         if(input_a != 0 && !full) begin
             next_buffer[next_tail] = input_a;
             next_tail = (next_tail == 63) ? 0 : next_tail + 1;
             next_count++;
-            if(input_a.is_store == 1) begin
-                next_uncommitted_stores++;
-            end
         end
 
         if(input_b != 0 && !full) begin
             next_buffer[next_tail] = input_b;
             next_tail = (next_tail == 63) ? 0 : next_tail + 1;
             next_count++;
-            if(input_b.is_store == 1) begin
-                next_uncommitted_stores++;
-            end
         end
 
         // Pushing into commit (removing)
         // Basically does what the commit stage should
         for(int i = 0; i < 4; i++) begin
             if(!done && next_buffer[next_head].done == 1) begin
-                if(next_buffer[next_head].is_store == 1) begin
-                    next_uncommitted_stores--;
-                end
                 output_arr[i] = next_buffer[next_head];
                 id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = '0;

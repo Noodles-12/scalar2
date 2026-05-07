@@ -37,8 +37,8 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         if(rst) begin
             for (int i = 0; i < 32; i++) begin
                 phys_file[i].valid <= 1;
-                phys_file[i].free <= (i < NUM_REGS) ? 1'b0 : 1'b1;
-                phys_file[i].data <= 1;
+                phys_file[i].free <= (i < NUM_REGS) ? '0 : '1;
+                phys_file[i].data <= 0;
             end
             for (int i = 0; i < NUM_REGS; i++)
                 alias_table[i] <= i[4:0];

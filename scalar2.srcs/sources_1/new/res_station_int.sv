@@ -2,9 +2,9 @@
 
 import config_pkg::*;
 
-module res_station_int(clk, instr_a, instr_b, cdb_arr,
+module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
                         output_a, output_b, almost_full);
-    input logic clk;
+    input logic clk, rst;
     input int_rs_entry instr_a, instr_b;
     input cdb_entry cdb_arr [0:3];
 
@@ -24,10 +24,16 @@ module res_station_int(clk, instr_a, instr_b, cdb_arr,
     assign almost_full = (filled_stations >= 14);
 
     always_ff @ (posedge clk) begin
-        instr_a_reg <= instr_a;
-        instr_b_reg <= instr_b;
+        if (rst) begin
+            instr_a_reg  <= '0;
+            instr_b_reg  <= '0;
+            res_station  <= '{default: '0};
+        end else begin
+            instr_a_reg <= instr_a;
+            instr_b_reg <= instr_b;
 
-        res_station <= next_res_station;
+            res_station <= next_res_station;
+        end
     end
     
     always_comb begin

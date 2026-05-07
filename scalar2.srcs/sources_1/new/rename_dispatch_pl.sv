@@ -2,9 +2,9 @@
 
 import config_pkg::*;
 
-module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b, id_to_free,
+module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free,
                             rs_op_a, rs_op_b, rob_op_a, rob_op_b);
-    input clk;
+    input clk, rst;
     input rs_entry rename_a, rename_b;
     input rob_entry rob_a, rob_b;
     input logic [0:5] id_to_free [0:3];
@@ -31,13 +31,21 @@ module rename_dispatch_pl(clk, rename_a, rename_b, rob_a, rob_b, id_to_free,
                                .op(rs_op_b) );
 
     always_ff @ (posedge clk) begin
-        rename_a_reg <= rename_a;
-        rename_b_reg <= rename_b;
+        if (rst) begin
+            rename_a_reg <= '0;
+            rename_b_reg <= '0;
+            rob_a_reg <= '0;
+            rob_b_reg <= '0;
+            id_list <= '{default: 1'b1};
+        end else begin
+            rename_a_reg <= rename_a;
+            rename_b_reg <= rename_b;
 
-        rob_a_reg <= rob_a;
-        rob_b_reg <= rob_b;
+            rob_a_reg <= rob_a;
+            rob_b_reg <= rob_b;
 
-        id_list <= next_id_list;
+            id_list <= next_id_list;
+        end
     end
 
     always_comb begin
