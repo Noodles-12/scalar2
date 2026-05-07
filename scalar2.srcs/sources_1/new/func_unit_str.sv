@@ -2,9 +2,9 @@
 
 import config_pkg::*;
 
-module func_unit_str(clk, str_a, str_b,
+module func_unit_str(clk, rst, str_a, str_b,
                         str_rob);
-    input logic clk;
+    input logic clk, rst;
     input store_rs_entry str_a, str_b;
 
     // Dedicated pipeline between store_FU & ROB since stores don't write registers
@@ -16,8 +16,13 @@ module func_unit_str(clk, str_a, str_b,
     logic [0:ADDRBUS_SIZE - 1] mem_dest_a, mem_dest_b;
 
     always_ff @ (posedge clk) begin
-        str_a_reg <= str_a;
-        str_b_reg <= str_b;
+        if(rst) begin
+            str_a_reg <= '0;
+            str_b_reg <= '0;
+        end else begin
+            str_a_reg <= str_a;
+            str_b_reg <= str_b;
+        end
     end
 
     always_comb begin

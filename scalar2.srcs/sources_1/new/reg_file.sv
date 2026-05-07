@@ -119,8 +119,8 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
             [28:28] : begin
                 idx_a1 = alias_table[instr_a_reg.reg_s];
                 rename_a.load_rs.reg_s = idx_a1;
-                rename_a.load_rs.value = phys_file[idx_a1].data;
-                rename_a.load_rs.check = phys_file[idx_a1].valid;
+                rename_a.load_rs.base_val = phys_file[idx_a1].data;
+                rename_a.load_rs.base_ready = phys_file[idx_a1].valid;
                 rename_a.load_rs.offset = instr_a_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
@@ -204,8 +204,8 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
             [28:28] : begin
                 idx_b1 = next_alias_table[instr_b_reg.reg_s];
                 rename_b.load_rs.reg_s = idx_b1;
-                rename_b.load_rs.value = next_phys_file[idx_b1].data;
-                rename_b.load_rs.check = next_phys_file[idx_b1].valid;
+                rename_b.load_rs.base_val = next_phys_file[idx_b1].data;
+                rename_b.load_rs.base_ready = next_phys_file[idx_b1].valid;
                 rename_b.load_rs.offset = instr_b_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
