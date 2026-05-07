@@ -2,13 +2,13 @@
 
 import config_pkg::*; 
 
-module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, fwd_vals,
+module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, str_fwd_vals,
                         str_op_a, str_op_b);
     input logic clk, rst;
     input rs_entry instr_a, instr_b;
     input cdb_entry cdb_arr [0:3];
     input logic [0:5] uncommitted_stores;
-    input str_rob_entry fwd_vals [0:1];
+    input str_rob_entry str_fwd_vals [0:1];
 
     output store_rs_entry str_op_a, str_op_b;
 
@@ -98,10 +98,10 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
 
         // Forward ready store values into entry eff_addr field
         for(int i = 0; i < 8; i++) begin
-            if(next_store_buffer[i].id == fwd_vals[0].id) begin
-                next_store_buffer[i].eff_addr = fwd_vals[0].mem_dest;
-            end else if (next_store_buffer[i].id == fwd_vals[1].id) begin 
-                next_store_buffer[i].eff_addr = fwd_vals[1].mem_dest;
+            if(next_store_buffer[i].id == str_fwd_vals[0].id) begin
+                next_store_buffer[i].eff_addr = str_fwd_vals[0].mem_dest;
+            end else if (next_store_buffer[i].id == str_fwd_vals[1].id) begin 
+                next_store_buffer[i].eff_addr = str_fwd_vals[1].mem_dest;
             end
         end
 
