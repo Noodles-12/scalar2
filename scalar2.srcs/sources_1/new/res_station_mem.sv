@@ -105,6 +105,15 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
             end
         end
 
+        // Get any ready load effective addresses calculated (TESTING)
+        done_a = 0; 
+        done_b = 0;
+        for(int i = 0; i < 8; i++) begin
+            if(next_load_buffer[i].base_ready && !next_load_buffer[i].dispatched && !next_load_buffer[i].valid_addr) begin
+                $display("Load ID %d is ready", next_load_buffer[i].id);
+            end
+        end
+
         // Forward ready store values to lood instructions with same address
         // Loads should only check the most recent store in front of it
         for(int i = 0; i < 8; i++) begin
@@ -122,13 +131,19 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
                 equal_addrs = next_load_buffer[i].eff_addr == next_store_buffer[idx].eff_addr;
 
                 if(count_ok && addrs_valid && store_ready && not_dispatched && equal_addrs) begin
-                    next_load_buffer[i].fwd_val = next_store_buffer[idx].value2;
-                    next_load_buffer[i].fwd_ready = 1;
+                    $display("Match found: Load %d and Store %d at address %d",
+                            next_load_buffer[i].id,
+                            next_store_buffer[idx].id,
+                            next_load_buffer[i].eff_addr);
+                    //next_load_buffer[i].fwd_val = next_store_buffer[idx].value2;
+                    //next_load_buffer[i].fwd_ready = 1;
                 end
             end
         end
 
         // Dispatching ready stores OoO
+        done_a = 0; 
+        done_b = 0;
         for(int i = 0; i < 8; i++) begin
             if(next_store_buffer[i].check1 && next_store_buffer[i].check2) begin
                 if(!done_a) begin

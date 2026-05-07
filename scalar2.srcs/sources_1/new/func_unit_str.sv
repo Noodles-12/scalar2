@@ -9,6 +9,7 @@ module func_unit_str(clk, rst, str_a, str_b,
 
     // Dedicated pipeline between store_FU & ROB since stores don't write registers
     // But still need memory destination changed
+    // Also for forwarding calculated addresses into stores
     output str_rob_entry str_rob [0:1];
 
     store_rs_entry str_a_reg, str_b_reg;
