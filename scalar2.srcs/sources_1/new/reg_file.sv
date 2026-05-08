@@ -69,7 +69,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
 
         // Rename Instruction A
         case(instr_a_reg.opcode) inside
-            [1:15] : begin
+            [1:14] : begin
                 idx_a1 = alias_table[instr_a_reg.reg_s];
                 idx_a2 = alias_table[instr_a_reg.reg_t];
                 rename_a.int_rs.reg1 = idx_a1;
@@ -94,7 +94,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 end
             end
 
-            [16:27] : begin
+            [16:26] : begin
                 idx_a1 = alias_table[instr_a_reg.reg_s];
                 rename_a.imm_rs.reg_s = idx_a1;
                 rename_a.imm_rs.value = phys_file[idx_a1].data;
@@ -154,7 +154,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
 
         // Rename Instruction B (reads next_... stuff to use A's renaming updates)
         case(instr_b_reg.opcode) inside
-            [1:15] : begin
+            [1:14] : begin
                 idx_b1 = next_alias_table[instr_b_reg.reg_s];
                 idx_b2 = next_alias_table[instr_b_reg.reg_t];
                 rename_b.int_rs.reg1 = idx_b1;
@@ -179,7 +179,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 end
             end
 
-            [16:27] : begin
+            [16:26] : begin
                 idx_b1 = next_alias_table[instr_b_reg.reg_s];
                 rename_b.imm_rs.reg_s = idx_b1;
                 rename_b.imm_rs.value = next_phys_file[idx_b1].data;

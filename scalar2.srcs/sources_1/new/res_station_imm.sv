@@ -61,7 +61,7 @@ module res_station_imm(clk, rst, instr_a, instr_b, cdb_arr,
 
         // Fill in available registers
         for(int i = 0; i < 16; i++) begin
-            if (next_res_station[i] == 0) begin
+            if (next_res_station[i].id == 0) begin
                 if (!done_a) begin
                     next_res_station[i] = instr_a_reg;
                     done_a = 1;
@@ -74,13 +74,11 @@ module res_station_imm(clk, rst, instr_a, instr_b, cdb_arr,
 
         // Take in CDB to adjust RS entries
         for(int i = 0; i < 4; i++) begin
-            if (cdb_arr[i] == 0) continue;
+            if (cdb_arr[i].id == 0) continue;
             for(int j = 0; j < 16; j++) begin
-                if (next_res_station[j] == 0) continue;
+                if (next_res_station[j].id == 0) continue;
 
-                $display("nrs_phys: %d  -- cdb_prf: %d", next_res_station[j].reg_s, cdb_arr[i].prf);
                 if(next_res_station[j].reg_s == cdb_arr[i].prf) begin
-                    $display("Updating nrs[%d] value of %d to %d", j, next_res_station[j].value, cdb_arr[i].result);
                     next_res_station[j].value = cdb_arr[i].result;
                     next_res_station[j].check = 1;
                 end
@@ -89,7 +87,7 @@ module res_station_imm(clk, rst, instr_a, instr_b, cdb_arr,
 
         // Get amount of filled
         for(int i = 0; i < 16; i++) begin
-            if(next_res_station[i] != 0) begin
+            if(next_res_station[i].id != 0) begin
                 filled_stations++;
             end
         end

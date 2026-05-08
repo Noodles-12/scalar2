@@ -12,8 +12,11 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
     output rob_entry output_arr [0:3];
     output logic [0:5] id_to_free [0:3];
 
-    rob_entry buffer [0:63] = '{default: '0};
-    rob_entry next_buffer [0:63];
+    rob_entry buffer [0:31] = '{default: '0};
+    rob_entry next_buffer [0:31];
+
+    rob_entry comb_output_arr [0:3];
+    logic [0:5] comb_id_to_free [0:3];
 
     logic [0:5] head = 0, tail = 0, count = 0;
     logic [0:5] next_head, next_tail, next_count;
@@ -26,14 +29,18 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
     always_ff @ (posedge clk) begin
         if (rst) begin
             buffer <= '{default: '0};
-            head   <= '0;
-            tail   <= '0;
-            count  <= '0;
+            head <= '0;
+            tail <= '0;
+            count <= '0;
+            output_arr <= '{default: '0};
+            id_to_free <= '{default: '0};
         end else begin
             buffer <= next_buffer;
-            head   <= next_head;
-            tail   <= next_tail;
-            count  <= next_count;
+            head <= next_head;
+            tail <= next_tail;
+            count <= next_count;
+            output_arr <= comb_output_arr;
+            id_to_free <= comb_id_to_free;
         end
     end
 
@@ -44,34 +51,33 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         next_count = count;
 
         done = '0;
-        output_arr = '{default: '0};
-        id_to_free = '{default: '0};
+        comb_output_arr = '{default: '0};
+        comb_id_to_free = '{default: '0};
 
         // Inserting into buffer
         if(input_a != 0 && !full) begin
             next_buffer[next_tail] = input_a;
-            next_tail = (next_tail == 63) ? 0 : next_tail + 1;
+            next_tail = (next_tail == 31) ? 0 : next_tail + 1;
             next_count++;
         end
 
         if(input_b != 0 && !full) begin
             next_buffer[next_tail] = input_b;
-            next_tail = (next_tail == 63) ? 0 : next_tail + 1;
+            next_tail = (next_tail == 31) ? 0 : next_tail + 1;
             next_count++;
         end
 
         // Pushing into commit (removing)
-        // Basically does what the commit stage should
         for(int i = 0; i < 4; i++) begin
             if(!done && next_buffer[next_head].done == 1) begin
-                output_arr[i] = next_buffer[next_head];
-                id_to_free[i] = next_buffer[next_head].id;
+                comb_output_arr[i] = next_buffer[next_head];
+                comb_id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = '0;
-                next_head = (next_head == 63) ? 0 : next_head + 1;
+                next_head = (next_head == 31) ? 0 : next_head + 1;
                 next_count--;
             end else begin
-                output_arr[i] = '0;
-                id_to_free[i] = '0;
+                comb_output_arr[i] = '0;
+                comb_id_to_free[i] = '0;
                 done = 1;
             end
         end
@@ -80,7 +86,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         for(int i = 0; i < 4; i++) begin
             if(cdb_arr[i] == 0) continue;
 
-            for(int j = 0; j < 63; j++) begin
+            for(int j = 0; j < 32; j++) begin
                 if (next_buffer[j].id == cdb_arr[i].id) begin
                     next_buffer[j].result = cdb_arr[i].result;
                     next_buffer[j].done = 1;
@@ -92,7 +98,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         for(int i = 0; i < 2; i++) begin
             if(str_rob[i] == 0) continue;
 
-            for(int j = 0; j < 63; j++) begin
+            for(int j = 0; j < 32; j++) begin
                 if(next_buffer[j].id == str_rob[i].id) begin
                     next_buffer[j].mem_dest = str_rob[i].mem_dest;
                     next_buffer[j].result = str_rob[i].value;

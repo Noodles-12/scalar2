@@ -6,19 +6,18 @@ package config_pkg;
     localparam ALU_SUB      = 2;
     localparam ALU_LSHIFT   = 3;
     localparam ALU_RSHIFT   = 4;
-    localparam ALU_MOD      = 5;
 
-    localparam ALU_EQ       = 6;
-    localparam ALU_GTE      = 7;
-    localparam ALU_LTE      = 8;
-    localparam ALU_GT       = 9;
-    localparam ALU_LT       = 10;
+    localparam ALU_EQ       = 5;
+    localparam ALU_GTE      = 6;
+    localparam ALU_LTE      = 7;
+    localparam ALU_GT       = 8;
+    localparam ALU_LT       = 9;
 
-    localparam ALU_AND      = 11;
-    localparam ALU_OR       = 12;
-    localparam ALU_NOR      = 13;
-    localparam ALU_NAND     = 14;
-    localparam ALU_XOR      = 15;
+    localparam ALU_AND      = 10;
+    localparam ALU_OR       = 11;
+    localparam ALU_NOR      = 12;
+    localparam ALU_NAND     = 13;
+    localparam ALU_XOR      = 14;
 
     // --- Processor Parameters ---
     localparam INSTR_WIDTH      = 30;

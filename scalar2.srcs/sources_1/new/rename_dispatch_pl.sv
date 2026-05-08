@@ -85,15 +85,15 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
         // Dispatch Logic
         // Any type of renamed instruction should have id & opcode in same bit positions
         case(dispatch_a.int_rs.opcode) inside
-            [1:15] : code_a = 0;
-            [16:27]: code_a = 1;
+            [1:14] : code_a = 0;
+            [16:26]: code_a = 1;
             [28:29]: code_a = 2;
             default: code_a = 0;
         endcase
 
         case(dispatch_b.int_rs.opcode) inside
-            [1:15] : code_b = 0;
-            [16:27]: code_b = 1;
+            [1:14] : code_b = 0;
+            [16:26]: code_b = 1;
             [28:29]: code_b = 2;
             default: code_b = 0;
         endcase;

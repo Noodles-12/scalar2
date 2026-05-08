@@ -2,8 +2,9 @@
 
 import config_pkg::*;
 
-module int_processor(clk, rst);
+module int_processor(clk, rst, prf_out);
     input logic clk, rst;
+    output logic [0:3] prf_out;
 
     // Program Counter
     logic [0:11] pc_next, pc_out;
@@ -124,5 +125,7 @@ module int_processor(clk, rst);
                        .str_rob(str_rob_tie),
                        .output_arr(rob_out_arr),
                        .id_to_free(id_to_free) );
+
+    assign prf_out = cdb_arr[0].result[32:35];
 
 endmodule
