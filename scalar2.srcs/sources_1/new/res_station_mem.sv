@@ -2,15 +2,18 @@
 
 import config_pkg::*; 
 
-module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, str_fwd_vals,
-                        str_op_a, str_op_b);
+module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, 
+                        str_fwd_vals, load_fwd_addrs,
+                        str_op_a, str_op_b, load_to_fu_a, load_to_fu_b);
     input logic clk, rst;
     input rs_entry instr_a, instr_b;
     input cdb_entry cdb_arr [0:3];
-    input logic [0:5] uncommitted_stores;
+
     input str_rob_entry str_fwd_vals [0:1];
+    input load_fwd_addr load_fwd_addrs [0:1];
 
     output store_rs_entry str_op_a, str_op_b;
+    output load_rs_entry load_to_fu_a, load_to_fu_b;
 
     rs_entry instr_a_reg, instr_b_reg;
 
@@ -32,7 +35,7 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
 
     logic done, done_a, done_b;
     logic [0:2] idx, real_count;
-    logic count_ok, addrs_valid, store_ready, not_dispatched, equal_addrs;
+    logic count_ok, addrs_valid, store_ready, not_dispatched, equal_addrs, no_fwd_yet, stall;
 
     always_ff @ (posedge clk) begin
         if(rst) begin
@@ -95,64 +98,88 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
         store_ready = 0;
         not_dispatched = 0;
         equal_addrs = 0;
-
-        // Forward ready store values into entry eff_addr field
-        for(int i = 0; i < 8; i++) begin
-            if(next_store_buffer[i].id == str_fwd_vals[0].id) begin
-                next_store_buffer[i].eff_addr = str_fwd_vals[0].mem_dest;
-            end else if (next_store_buffer[i].id == str_fwd_vals[1].id) begin 
-                next_store_buffer[i].eff_addr = str_fwd_vals[1].mem_dest;
-            end
-        end
-
-        // Get any ready load effective addresses calculated (TESTING)
-        done_a = 0; 
-        done_b = 0;
-        for(int i = 0; i < 8; i++) begin
-            if(next_load_buffer[i].base_ready && !next_load_buffer[i].dispatched && !next_load_buffer[i].valid_addr) begin
-                $display("Load ID %d is ready", next_load_buffer[i].id);
-            end
-        end
-
-        // Forward ready store values to lood instructions with same address
-        // Loads should only check the most recent store in front of it
-        for(int i = 0; i < 8; i++) begin
-            idx = next_s_tail;
-            for(int j = 0; j < 8; j++) begin
-                if(next_store_buffer[idx] != 0) begin
-                    real_count = real_count + 1;
-                    idx = idx - 1;
-                end
-
-                count_ok = (next_load_buffer[i].count >= real_count);
-                addrs_valid = (next_load_buffer[i].valid_addr && next_store_buffer[idx].valid_addr);
-                store_ready = next_store_buffer[idx].check2;
-                not_dispatched = !next_load_buffer[i].dispatched;
-                equal_addrs = next_load_buffer[i].eff_addr == next_store_buffer[idx].eff_addr;
-
-                if(count_ok && addrs_valid && store_ready && not_dispatched && equal_addrs) begin
-                    $display("Match found: Load %d and Store %d at address %d",
-                            next_load_buffer[i].id,
-                            next_store_buffer[idx].id,
-                            next_load_buffer[i].eff_addr);
-                    //next_load_buffer[i].fwd_val = next_store_buffer[idx].value2;
-                    //next_load_buffer[i].fwd_ready = 1;
-                end
-            end
-        end
+        no_fwd_yet = 0;
+        stall = 0;
 
         // Dispatching ready stores OoO
         done_a = 0; 
         done_b = 0;
         for(int i = 0; i < 8; i++) begin
-            if(next_store_buffer[i].check1 && next_store_buffer[i].check2) begin
+            if(next_store_buffer[i].check1 && next_store_buffer[i].check2 & !next_store_buffer[i].dispatched) begin
                 if(!done_a) begin
                     str_op_a = next_store_buffer[i];
+                    next_store_buffer[i].dispatched = 1;
                     done_a = 1;
                 end else if (!done_b) begin
                     str_op_b = next_store_buffer[i];
+                    next_store_buffer[i].dispatched = 1;
                     done_b = 1;
                 end
+            end
+        end
+
+        // Forward ready store values into entry eff_addr field
+        for(int i = 0; i < 8; i++) begin
+            if(next_store_buffer[i].id == str_fwd_vals[0].id) begin
+                next_store_buffer[i].eff_addr = str_fwd_vals[0].mem_dest;
+                next_store_buffer[i].valid_addr = 1;
+            end else if (next_store_buffer[i].id == str_fwd_vals[1].id) begin 
+                next_store_buffer[i].eff_addr = str_fwd_vals[1].mem_dest;
+                next_store_buffer[i].valid_addr = 1;
+            end
+        end
+
+        // Find first two loads ready to have their effective addresses calculated
+        done_a = 0; 
+        done_b = 0;
+        for(int i = 0; i < 8; i++) begin
+            if(!done_a && next_load_buffer[i].base_ready && !next_load_buffer[i].dispatched && !next_load_buffer[i].valid_addr) begin
+                load_to_fu_a = next_load_buffer[i];
+                next_load_buffer[i].eff_addr = next_load_buffer[i].base_val[24:35] + next_load_buffer[i].offset;
+                next_load_buffer[i].valid_addr = 1;
+                done_a = 1;
+            end else if (!done_b && next_load_buffer[i].base_ready && !next_load_buffer[i].dispatched && !next_load_buffer[i].valid_addr) begin
+                load_to_fu_b = next_load_buffer[i];
+                next_load_buffer[i].eff_addr = next_load_buffer[i].base_val[24:35] + next_load_buffer[i].offset;
+                next_load_buffer[i].valid_addr = 1;
+                done_b = 1;
+            end
+        end
+
+        // Forward ready store values to load instructions with same address
+        // Loads should only check the most recent store in front of it
+        for(int i = 0; i < 8; i++) begin // Scanning through each load
+            idx = next_s_tail - 1;
+            real_count = '0;
+            stall = 0;
+            for(int j = 0; j < 8; j++) begin
+                if(next_load_buffer[i].id != 0 && next_load_buffer[i].valid_addr && !next_load_buffer[i].dispatched && !next_load_buffer[i].fwd_ready) begin
+                    if(next_store_buffer[idx].id != 0) begin // Scanning each store for the load
+                        real_count = real_count + 1;
+                    end
+
+                    count_ok = (next_load_buffer[i].count > (next_store_count - real_count));
+                    addrs_valid = next_store_buffer[idx].valid_addr;
+                    store_ready = next_store_buffer[idx].check2;
+                    equal_addrs = next_load_buffer[i].eff_addr == next_store_buffer[idx].eff_addr;
+
+                    // Stall if a real store in front of this load has no valid address yet
+                    if(next_store_buffer[idx].id != 0 && count_ok && !next_store_buffer[idx].valid_addr) begin
+                        stall = 1;
+                    end
+
+                    if(count_ok && addrs_valid && store_ready && not_dispatched && equal_addrs) begin
+                        $display("Match found: Load %d and Store %d at address %d",
+                                next_load_buffer[i].id,
+                                next_store_buffer[idx].id,
+                                next_load_buffer[i].eff_addr);
+                        next_load_buffer[i].fwd_val = next_store_buffer[idx].value2;
+                        next_load_buffer[i].fwd_ready = 1;
+                        stall = 1;
+                    end
+                end
+
+                idx = idx - 1;
             end
         end
 
@@ -176,6 +203,7 @@ module res_station_mem(clk, rst, instr_a, instr_b, cdb_arr, uncommitted_stores, 
             28 : begin
                 next_load_buffer[next_l_tail] = instr_b_reg;
                 next_load_buffer[next_l_head].count = next_store_count;
+                $display("Coutn of inserted B: %d", next_store_count);
                 next_load_count++;
                 next_l_tail = next_l_tail + 1;
             end

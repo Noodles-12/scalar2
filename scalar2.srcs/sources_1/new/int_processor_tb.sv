@@ -10,7 +10,7 @@ module int_processor_tb();
 
     initial begin
         rst = 1; #10; rst = 0;
-        #200;
+        #140;
         $finish;
     end
 endmodule

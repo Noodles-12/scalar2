@@ -30,13 +30,14 @@ module func_unit_str(clk, rst, str_a, str_b,
         str_rob[0] = 0;
         str_rob[1] = 0;
 
-        if(str_a_reg != 0) begin
+        // Could do Id check to reduce wiring unnecessary bits
+        if(str_a_reg.id != 0) begin
             str_rob[0].id = str_a_reg.id;
             str_rob[0].mem_dest = str_a_reg.value2 + str_a_reg.offset;
             str_rob[0].value = str_a_reg.value2;
         end
 
-        if(str_b_reg != 0) begin
+        if(str_b_reg.id != 0) begin
             str_rob[1].id = str_b_reg.id;
             str_rob[1].mem_dest = str_b_reg.value2 + str_b_reg.offset;
             str_rob[1].value = str_b_reg.value2;

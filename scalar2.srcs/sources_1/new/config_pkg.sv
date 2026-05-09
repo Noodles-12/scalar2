@@ -97,7 +97,8 @@ package config_pkg;
         logic [0:11] offset;
         logic [0:11] eff_addr;
         logic valid_addr;
-        logic [0:4] padding;
+        logic dispatched;
+        logic [0:3] padding;
     } store_rs_entry;
 
     typedef union packed {
@@ -136,4 +137,9 @@ package config_pkg;
         logic [0:ADDRBUS_SIZE-1] write_addr;
         logic is_valid;
     } mem_write_entry;
+
+    typedef struct packed {
+        logic [0:5] id;
+        logic [0:DATABUS_WIDTH-1] eff_addr;
+    } load_fwd_addr;
 endpackage
