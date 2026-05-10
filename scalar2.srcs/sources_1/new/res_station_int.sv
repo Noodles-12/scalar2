@@ -6,7 +6,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
                         output_a, output_b, almost_full);
     input logic clk, rst;
     input int_rs_entry instr_a, instr_b;
-    input cdb_entry cdb_arr [0:3];
+    input cdb_entry cdb_arr [0:CDB_SIZE - 1];
 
     output int_rs_entry output_a, output_b;
     output logic almost_full;
@@ -75,7 +75,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
         end
 
         // Take in CDB to adjust RS entries
-        for(int i = 0; i < 4; i++) begin
+        for(int i = 0; i < CDB_SIZE; i++) begin
             if (cdb_arr[i].id == 0) continue;
             for(int j = 0; j < 16; j++) begin
                 if (next_res_station[j].id == 0) continue;

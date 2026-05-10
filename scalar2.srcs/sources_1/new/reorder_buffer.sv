@@ -3,12 +3,13 @@
 import config_pkg::*;
 
 module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
-                        output_arr, id_to_free);
+                        output_arr, id_to_free, amount_executed);
     input logic clk, rst;
     input rob_entry input_a, input_b;
-    input cdb_entry cdb_arr [0:3];
+    input cdb_entry cdb_arr [0:CDB_SIZE - 1];
     input str_rob_entry str_rob [0:1];
 
+    output logic [0:3] amount_executed;
     output rob_entry output_arr [0:3];
     output logic [0:5] id_to_free [0:3];
 
@@ -74,6 +75,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
                 comb_id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = '0;
                 next_head = (next_head == 31) ? 0 : next_head + 1;
+                amount_executed = amount_executed + 1;
                 next_count--;
             end else begin
                 comb_output_arr[i] = '0;
@@ -83,7 +85,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         end
 
         // Changing with CDB info
-        for(int i = 0; i < 4; i++) begin
+        for(int i = 0; i < CDB_SIZE; i++) begin
             if(cdb_arr[i] == 0) continue;
 
             for(int j = 0; j < 32; j++) begin

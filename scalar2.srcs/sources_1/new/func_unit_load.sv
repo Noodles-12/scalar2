@@ -6,16 +6,48 @@ import config_pkg::*;
 // Load mem will first fetch from memory then dispatch to CDB
 // Load imm will immediately dispatch to CDB
 // Only doing one of each to mitigate LUT count (idk how big of a difference it makes)
-module func_unit_load(clk, rstload_fwd_a, load_fwd_b, load_mem, load_imm,
-						fwd_addrs, load_mem_op, load_imm_op);
+module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_rd_data,
+						fwd_addrs, load_mem_op, load_imm_op, mem_rd_addr);
 	input logic clk, rst;
 	input load_rs_entry load_fwd_a, load_fwd_b;
     input load_rs_entry load_mem, load_imm;
+	input logic [0:DATABUS_WIDTH - 1] mem_rd_data;
 
+	output logic [0:ADDRBUS_SIZE - 1] mem_rd_addr;
     output load_fwd_addr fwd_addrs [0:1];
 	output cdb_entry load_mem_op, load_imm_op;
 
+	load_rs_entry fwd_a_reg, fwd_b_reg;
+
 	load_rs_entry load_mem_reg, load_imm_reg;
+	cdb_entry load_mem_cdb, load_imm_cdb;
+
+	always_ff @ (posedge clk) begin
+		if(rst) begin
+			fwd_a_reg <= '0;
+			fwd_b_reg <= '0;
+		end else begin
+			fwd_a_reg <= load_fwd_a;
+			fwd_b_reg <= load_fwd_b;
+		end
+	end
+
+    always_comb begin
+		fwd_addrs = {default: '0};
+
+		// Taking only last 12 bits of each base register value
+		if(fwd_a_reg.id != 0) begin
+			//$display("Load A to calculate ID: %d", fwd_a_reg.id);
+			fwd_addrs[0].id = fwd_a_reg.id;
+        	fwd_addrs[0].eff_addr = fwd_a_reg.base_val[24:35] + fwd_a_reg.offset;
+		end
+
+		if(fwd_b_reg.id != 0) begin
+			//$display("Load B to calculate ID: %d", fwd_b_reg.id);
+        	fwd_addrs[1].id = fwd_b_reg.id;
+        	fwd_addrs[1].eff_addr = fwd_b_reg.base_val[24:35] + fwd_b_reg.offset;
+		end
+    end
 
 	always_ff @ (posedge clk) begin
 		if(rst) begin
@@ -27,20 +59,32 @@ module func_unit_load(clk, rstload_fwd_a, load_fwd_b, load_mem, load_imm,
 		end
 	end
 
-    always_comb begin
-		fwd_addrs = {default: '0};
+	always_comb begin
+		load_mem_cdb = '0;
+		load_imm_cdb = '0;
+		mem_rd_addr = '0;
 
-		// Taking only last 12 bits of each base register value
-		if(load_fwd_a.id != 0) begin
-			//$display("Load A to calculate ID: %d", load_fwd_a.id);
-			fwd_addrs[0].id = load_fwd_a.id;
-        	fwd_addrs[0].eff_addr = load_fwd_a.base_val[24:35] + load_fwd_a.offset;
+		if(load_mem_reg.id != 0) begin
+			mem_rd_addr = load_mem_reg.eff_addr;
+			load_mem_cdb.id = load_mem_reg.id;
+			load_mem_cdb.prf = load_mem_reg.dest;
+			load_mem_cdb.result = mem_rd_data;
 		end
 
-		if(load_fwd_b.id != 0) begin
-			//$display("Load B to calculate ID: %d", load_fwd_b.id);
-        	fwd_addrs[1].id = load_fwd_b.id;
-        	fwd_addrs[1].eff_addr = load_fwd_b.base_val[24:35] + load_fwd_b.offset;
+		if(load_imm_reg.id != 0) begin
+			load_imm_cdb.id = load_imm_reg.id;
+			load_imm_cdb.prf = load_imm_reg.dest;
+			load_imm_cdb.result = load_imm_reg.fwd_val;
 		end
-    end
+	end
+
+	always_ff @ (posedge clk) begin
+		if(rst) begin
+			load_mem_op <= '0;
+			load_imm_op <= '0;
+		end else begin
+			load_mem_op <= load_mem_cdb;
+			load_imm_op <= load_imm_cdb;
+		end
+	end
 endmodule

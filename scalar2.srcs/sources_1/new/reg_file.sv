@@ -8,7 +8,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
 
     input logic clk, rst;
     input instruction og_instr_a, og_instr_b;
-    input cdb_entry cdb_arr [0:3];
+    input cdb_entry cdb_arr [0:CDB_SIZE - 1];
     input rob_entry commit_arr [0:3];
     
     output rs_entry rename_a, rename_b;
@@ -238,8 +238,9 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         endcase
 
         // Validate PRF registers from CDB
-        for(int i = 0; i < 4; i++) begin
+        for(int i = 0; i < CDB_SIZE; i++) begin
             if(cdb_arr[i] == 0) continue;
+            $display("Commit coming in to change P%d to %d", cdb_arr[i].prf, cdb_arr[i].result);
             next_phys_file[cdb_arr[i].prf].valid = 1;
             next_phys_file[cdb_arr[i].prf].data = cdb_arr[i].result;
         end

@@ -33,7 +33,7 @@ module int_processor(clk, rst, prf_out);
     cdb_entry imm_cdb_a, imm_cdb_b;
 
     // CDB broadcast
-    cdb_entry cdb_arr [0:3];
+    cdb_entry cdb_arr [0:CDB_SIZE-1];
 
     // ROB outputs
     rob_entry rob_out_arr [0:3];
@@ -111,11 +111,12 @@ module int_processor(clk, rst, prf_out);
                          .out_a(imm_cdb_a),
                          .out_b(imm_cdb_b) );
 
-    common_data_bus cdb_bus(.int_a(int_cdb_a),
-                            .int_b(int_cdb_b),
-                            .imm_a(imm_cdb_a),
-                            .imm_b(imm_cdb_b),
-                            .cdb_arr(cdb_arr) );
+    assign cdb_arr[0] = int_cdb_a;
+    assign cdb_arr[1] = int_cdb_b;
+    assign cdb_arr[2] = imm_cdb_a;
+    assign cdb_arr[3] = imm_cdb_b;
+    assign cdb_arr[4] = '0;
+    assign cdb_arr[5] = '0;
 
     reorder_buffer rob(.clk(clk),
                        .rst(rst),
