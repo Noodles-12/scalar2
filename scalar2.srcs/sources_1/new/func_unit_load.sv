@@ -20,6 +20,7 @@ module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_
 	load_rs_entry fwd_a_reg, fwd_b_reg;
 
 	load_rs_entry load_mem_reg, load_imm_reg;
+	load_rs_entry load_mem_reg2, load_imm_reg2;
 	cdb_entry load_mem_cdb, load_imm_cdb;
 
 	always_ff @ (posedge clk) begin
@@ -33,22 +34,23 @@ module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_
 	end
 
     always_comb begin
-		fwd_addrs = {default: '0};
+		fwd_addrs = '{default: '0};
 
 		// Taking only last 12 bits of each base register value
 		if(fwd_a_reg.id != 0) begin
-			//$display("Load A to calculate ID: %d", fwd_a_reg.id);
+			$display("Load A to calculate ID: %d | %t", fwd_a_reg.id, $time);
 			fwd_addrs[0].id = fwd_a_reg.id;
         	fwd_addrs[0].eff_addr = fwd_a_reg.base_val[24:35] + fwd_a_reg.offset;
 		end
 
 		if(fwd_b_reg.id != 0) begin
-			//$display("Load B to calculate ID: %d", fwd_b_reg.id);
+			$display("Load B to calculate ID: %d | %t", fwd_b_reg.id, $time);
         	fwd_addrs[1].id = fwd_b_reg.id;
         	fwd_addrs[1].eff_addr = fwd_b_reg.base_val[24:35] + fwd_b_reg.offset;
 		end
     end
 
+	// Stage 1: register inputs
 	always_ff @ (posedge clk) begin
 		if(rst) begin
 			load_mem_reg <= '0;
@@ -59,22 +61,37 @@ module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_
 		end
 	end
 
+	// Stage 2: hold metadata while BRAM produces read data
+	always_ff @ (posedge clk) begin
+		if(rst) begin
+			load_mem_reg2 <= '0;
+			load_imm_reg2 <= '0;
+		end else begin
+			load_mem_reg2 <= load_mem_reg;
+			load_imm_reg2 <= load_imm_reg;
+		end
+	end
+
 	always_comb begin
 		load_mem_cdb = '0;
 		load_imm_cdb = '0;
 		mem_rd_addr = '0;
 
-		if(load_mem_reg.id != 0) begin
+		// Present address from stage 1 so BRAM data is ready in stage 2
+		if(load_mem_reg.id != 0)
 			mem_rd_addr = load_mem_reg.eff_addr;
-			load_mem_cdb.id = load_mem_reg.id;
-			load_mem_cdb.prf = load_mem_reg.dest;
+
+		// Pair stage-2 metadata with the BRAM data now available
+		if(load_mem_reg2.id != 0) begin
+			load_mem_cdb.id = load_mem_reg2.id;
+			load_mem_cdb.prf = load_mem_reg2.dest;
 			load_mem_cdb.result = mem_rd_data;
 		end
 
-		if(load_imm_reg.id != 0) begin
-			load_imm_cdb.id = load_imm_reg.id;
-			load_imm_cdb.prf = load_imm_reg.dest;
-			load_imm_cdb.result = load_imm_reg.fwd_val;
+		if(load_imm_reg2.id != 0) begin
+			load_imm_cdb.id = load_imm_reg2.id;
+			load_imm_cdb.prf = load_imm_reg2.dest;
+			load_imm_cdb.result = load_imm_reg2.fwd_val;
 		end
 	end
 

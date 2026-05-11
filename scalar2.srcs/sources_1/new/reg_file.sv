@@ -9,7 +9,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
     input logic clk, rst;
     input instruction og_instr_a, og_instr_b;
     input cdb_entry cdb_arr [0:CDB_SIZE - 1];
-    input rob_entry commit_arr [0:3];
+    input rob_entry commit_arr [0:1];
     
     output rs_entry rename_a, rename_b;
     output rob_entry rob_a, rob_b;
@@ -240,13 +240,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         // Validate PRF registers from CDB
         for(int i = 0; i < CDB_SIZE; i++) begin
             if(cdb_arr[i] == 0) continue;
-            $display("Commit coming in to change P%d to %d", cdb_arr[i].prf, cdb_arr[i].result);
+            $display("CDB change coming in to change P%d to %d | %t", cdb_arr[i].prf, cdb_arr[i].result, $time);
             next_phys_file[cdb_arr[i].prf].valid = 1;
             next_phys_file[cdb_arr[i].prf].data = cdb_arr[i].result;
         end
 
-        // Retirement table setting from 
-        for(int i = 0; i < 4; i++) begin
+        // Retirement table setting from commit buffer
+        // Might need to add intermediary registers for critical path
+        for(int i = 0; i < 2; i++) begin
             if(commit_arr[i] == 0 || commit_arr[i].is_store == 1) continue;
             next_phys_file[commit_arr[i].old_prf].free = 1;
             next_retire_table[commit_arr[i].arch] = commit_arr[i].new_prf;

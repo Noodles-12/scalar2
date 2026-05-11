@@ -32,5 +32,5 @@ module instruction_memory(clk, rst, ip_addr, instr_a, instr_b);
         end
     end
     
-    initial $readmemh("instr_mem.mem", memory);
+    initial $readmemb("instr_mem.mem", memory);
 endmodule

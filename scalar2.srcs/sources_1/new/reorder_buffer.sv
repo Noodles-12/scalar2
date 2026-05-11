@@ -10,8 +10,8 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
     input str_rob_entry str_rob [0:1];
 
     output logic [0:3] amount_executed;
-    output rob_entry output_arr [0:3];
-    output logic [0:5] id_to_free [0:3];
+    output rob_entry output_arr [0:1];
+    output logic [0:5] id_to_free [0:1];
 
     rob_entry buffer [0:31] = '{default: '0};
     rob_entry next_buffer [0:31];
@@ -69,8 +69,8 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         end
 
         // Pushing into commit (removing)
-        for(int i = 0; i < 4; i++) begin
-            if(!done && next_buffer[next_head].done == 1) begin
+        for(int i = 0; i < 2; i++) begin
+            if(!done && next_buffer[next_head].done == 1 && !next_buffer[next_head].is_store) begin
                 comb_output_arr[i] = next_buffer[next_head];
                 comb_id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = '0;

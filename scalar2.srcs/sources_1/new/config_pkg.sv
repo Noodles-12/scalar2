@@ -56,7 +56,7 @@ package config_pkg;
         logic [0:35] value2;
         logic check2;
         logic [0:4] dest;
-        logic [0:24] padding;
+        logic [0:25] padding;
     } int_rs_entry;
 
     typedef struct packed {
@@ -67,7 +67,7 @@ package config_pkg;
         logic check;
         logic [0:11] imm;
         logic [0:4] dest;
-        logic [0:54] padding;
+        logic [0:55] padding;
     } imm_rs_entry;
 
     // lw: $dest <= data_mem[($reg_s) + offset]
@@ -80,6 +80,7 @@ package config_pkg;
         logic [0:11] offset;
         logic [0:11] eff_addr;
         logic valid_addr;
+        logic pending_addr;
         logic [0:4] dest;
         logic [0:3] count; // Represents previous stores before this instruction
         logic dispatched;
@@ -101,7 +102,7 @@ package config_pkg;
         logic [0:11] eff_addr;
         logic valid_addr;
         logic dispatched;
-        logic [0:3] padding;
+        logic [0:4] padding;
     } store_rs_entry;
 
     typedef union packed {
@@ -109,7 +110,7 @@ package config_pkg;
         imm_rs_entry imm_rs;
         load_rs_entry load_rs;
         store_rs_entry store_rs;
-        logic [0:125] raw;
+        logic [0:126] raw;
     } rs_entry;
 
     typedef struct packed {

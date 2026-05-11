@@ -19,8 +19,8 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
     logic [0:1] code_a, code_b;
 
     // Each entry: 1 = free, 0 = taken
-    logic id_list [1:63] = '{default: 1'b1};
-    logic next_id_list [1:63];
+    logic id_list [1:31] = '{default: 1'b1};
+    logic next_id_list [1:31];
 
     dispatch_demux_1x4 demux_a(.data(dispatch_a),
                                .code(code_a),
@@ -58,7 +58,7 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
         rob_op_b = rob_b_reg;
 
          // id field should be in same bits for any type of instruction
-        for(int i = 1; i < 64; i++) begin
+        for(int i = 1; i < 32; i++) begin
             if(next_id_list[i] == 1 & dispatch_a != 0) begin
                 dispatch_a.int_rs.id = i;
                 rob_op_a.id = i;
@@ -67,7 +67,7 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
             end
         end
 
-        for(int i = 1; i < 64; i++) begin
+        for(int i = 1; i < 32; i++) begin
             if(next_id_list[i] == 1 & dispatch_b != 0) begin
                 dispatch_b.int_rs.id = i;
                 rob_op_b.id = i;
