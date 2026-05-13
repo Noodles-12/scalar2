@@ -38,13 +38,11 @@ module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_
 
 		// Taking only last 12 bits of each base register value
 		if(fwd_a_reg.id != 0) begin
-			$display("Load A to calculate ID: %d | %t", fwd_a_reg.id, $time);
 			fwd_addrs[0].id = fwd_a_reg.id;
         	fwd_addrs[0].eff_addr = fwd_a_reg.base_val[24:35] + fwd_a_reg.offset;
 		end
 
 		if(fwd_b_reg.id != 0) begin
-			$display("Load B to calculate ID: %d | %t", fwd_b_reg.id, $time);
         	fwd_addrs[1].id = fwd_b_reg.id;
         	fwd_addrs[1].eff_addr = fwd_b_reg.base_val[24:35] + fwd_b_reg.offset;
 		end
@@ -56,6 +54,7 @@ module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_
 			load_mem_reg <= '0;
 			load_imm_reg <= '0;
 		end else begin
+
 			load_mem_reg <= load_mem;
 			load_imm_reg <= load_imm;
 		end

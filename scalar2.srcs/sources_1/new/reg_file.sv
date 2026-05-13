@@ -16,16 +16,15 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
 
     // Register Alias Table (RAT) - 16 Registers
     // Each register holds the index of a physical register in PRF (0-31)
-    logic [0:4] alias_table [0:NUM_REGS - 1];
-    logic [0:4] next_alias_table [0:NUM_REGS - 1];
+    logic [0:4] alias_table [0:NUM_REGS - 1], next_alias_table [0:NUM_REGS - 1];
 
     // Physical Register File (PRF) - 32 Registers
-    phys_reg phys_file [0:31];
-    phys_reg next_phys_file [0:31];
+    phys_reg phys_file [0:31], next_phys_file [0:31];
+
+    logic free_list [0:31], next_free_list [0:31];
 
     // Register Retirement Table (RRT) - Structurally same as RAT
-    logic [0:4] retire_table [0:NUM_REGS - 1];
-    logic [0:4] next_retire_table [0:NUM_REGS - 1];
+    logic [0:4] retire_table [0:NUM_REGS - 1], next_retire_table [0:NUM_REGS - 1];
 
     instruction instr_a_reg, instr_b_reg;
 
@@ -37,7 +36,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         if(rst) begin
             for (int i = 0; i < 32; i++) begin
                 phys_file[i].valid <= 1;
-                phys_file[i].free <= (i < NUM_REGS) ? '0 : '1;
+                free_list[i] <= (i < NUM_REGS) ? '0 : '1;
                 phys_file[i].data <= 0;
             end
             for (int i = 0; i < NUM_REGS; i++)
@@ -50,6 +49,12 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
             phys_file <= next_phys_file;
             alias_table <= next_alias_table;
             retire_table <= next_retire_table;
+            free_list <= next_free_list;
+        end
+
+        for(int i = 0; i < CDB_SIZE; i++) begin
+            if(cdb_arr[i] != 0)
+                $display("CDB change coming in to change P%d to %d | %t", cdb_arr[i].prf, cdb_arr[i].result, $time);
         end
     end
 
@@ -80,14 +85,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_a.int_rs.check2 = phys_file[idx_a2].valid;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(phys_file[i].free == 1) begin
+                    if(free_list[i] == 1) begin
                         rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
                         rob_a.new_prf = i;
                         rob_a.arch = instr_a_reg.reg_d;
 
                         next_alias_table[instr_a_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_a.int_rs.dest = i;
                         break;
                     end
@@ -102,14 +107,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_a.imm_rs.imm = instr_a_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(phys_file[i].free == 1) begin
+                    if(free_list[i] == 1) begin
                         rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
                         rob_a.new_prf = i;
                         rob_a.arch = instr_a_reg.reg_d;
 
                         next_alias_table[instr_a_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_a.imm_rs.dest = i;
                         break;
                     end
@@ -124,14 +129,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_a.load_rs.offset = instr_a_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(phys_file[i].free == 1) begin
+                    if(free_list[i] == 1) begin
                         rob_a.old_prf = next_alias_table[instr_a_reg.reg_d];
                         rob_a.new_prf = i;
                         rob_a.arch = instr_a_reg.reg_d;
 
                         next_alias_table[instr_a_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_a_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_a.load_rs.dest = i;
                         break;
                     end
@@ -165,14 +170,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_b.int_rs.check2 = next_phys_file[idx_b2].valid;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(next_phys_file[i].free == 1) begin
+                    if(next_free_list[i] == 1) begin
                         rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
                         rob_b.new_prf = i;
                         rob_b.arch = instr_b_reg.reg_d;
 
                         next_alias_table[instr_b_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_b.int_rs.dest = i;
                         break;
                     end
@@ -187,14 +192,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_b.imm_rs.imm = instr_b_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(next_phys_file[i].free == 1) begin
+                    if(next_free_list[i] == 1) begin
                         rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
                         rob_b.new_prf = i;
                         rob_b.arch = instr_b_reg.reg_d;
 
                         next_alias_table[instr_b_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_b.imm_rs.dest = i;
                         break;
                     end
@@ -209,14 +214,14 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
                 rename_b.load_rs.offset = instr_b_reg.imm;
 
                 for(int i = 0; i < 32; i++) begin
-                    if(next_phys_file[i].free == 1) begin
+                    if(next_free_list[i] == 1) begin
                         rob_b.old_prf = next_alias_table[instr_b_reg.reg_d];
                         rob_b.new_prf = i;
                         rob_b.arch = instr_b_reg.reg_d;
 
                         next_alias_table[instr_b_reg.reg_d] = i;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].free = 0;
-                        next_phys_file[next_alias_table[instr_b_reg.reg_d]].valid = 0;
+                        next_free_list[i] = 0;
+                        next_phys_file[i].valid = 0;
                         rename_b.load_rs.dest = i;
                         break;
                     end
@@ -240,7 +245,6 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         // Validate PRF registers from CDB
         for(int i = 0; i < CDB_SIZE; i++) begin
             if(cdb_arr[i] == 0) continue;
-            $display("CDB change coming in to change P%d to %d | %t", cdb_arr[i].prf, cdb_arr[i].result, $time);
             next_phys_file[cdb_arr[i].prf].valid = 1;
             next_phys_file[cdb_arr[i].prf].data = cdb_arr[i].result;
         end
@@ -249,7 +253,7 @@ module reg_file(clk, rst, og_instr_a, og_instr_b, cdb_arr, commit_arr,
         // Might need to add intermediary registers for critical path
         for(int i = 0; i < 2; i++) begin
             if(commit_arr[i] == 0 || commit_arr[i].is_store == 1) continue;
-            next_phys_file[commit_arr[i].old_prf].free = 1;
+            next_free_list[commit_arr[i].old_prf] = 1;
             next_retire_table[commit_arr[i].arch] = commit_arr[i].new_prf;
         end
     end

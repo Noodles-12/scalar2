@@ -35,6 +35,7 @@ module int_mem_processor(clk, rst, amount_executed);
 
     logic [0:DATABUS_WIDTH - 1] mem_rd_data;
 	logic [0:ADDRBUS_SIZE - 1] mem_rd_addr;
+    logic [0:5] mem_str_to_free;
 
     // Functional unit outputs
     cdb_entry int_cdb_a, int_cdb_b;
@@ -45,8 +46,8 @@ module int_mem_processor(clk, rst, amount_executed);
     cdb_entry cdb_arr [0:CDB_SIZE - 1];
 
     // ROB outputs
-    rob_entry rob_out_arr [0:3];
-    logic [0:5] id_to_free [0:3];
+    rob_entry rob_out_arr [0:1];
+    logic [0:5] id_to_free [0:1];
 
     program_counter pc(.clk(clk),
                        .write_enable(~rst),

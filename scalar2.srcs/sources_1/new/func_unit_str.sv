@@ -14,8 +14,6 @@ module func_unit_str(clk, rst, str_a, str_b,
 
     store_rs_entry str_a_reg, str_b_reg;
 
-    logic [0:ADDRBUS_SIZE - 1] mem_dest_a, mem_dest_b;
-
     always_ff @ (posedge clk) begin
         if(rst) begin
             str_a_reg <= '0;
@@ -27,20 +25,21 @@ module func_unit_str(clk, rst, str_a, str_b,
     end
 
     always_comb begin
-        str_rob[0] = 0;
-        str_rob[1] = 0;
+        str_rob[0] = '0;
+        str_rob[1] = '0;
 
         if(str_a_reg.id != 0) begin
             str_rob[0].id = str_a_reg.id;
             str_rob[0].mem_dest = str_a_reg.value1 + str_a_reg.offset;
             str_rob[0].value = str_a_reg.value2;
-            $display("Store id: %d storing %d at %d", str_rob[0].id, str_rob[0].value, str_rob[0].mem_dest);
+            $display("Store id: %d storing %d at %d | %t", str_rob[0].id, str_rob[0].value, str_rob[0].mem_dest, $time);
         end
 
         if(str_b_reg.id != 0) begin
             str_rob[1].id = str_b_reg.id;
             str_rob[1].mem_dest = str_b_reg.value1 + str_b_reg.offset;
             str_rob[1].value = str_b_reg.value2;
+            $display("Store id: %d storing %d at %d | %t", str_rob[1].id, str_rob[1].value, str_rob[1].mem_dest, $time);
         end
     end
 endmodule

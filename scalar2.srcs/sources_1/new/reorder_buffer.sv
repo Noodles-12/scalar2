@@ -16,8 +16,9 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
     rob_entry buffer [0:31] = '{default: '0};
     rob_entry next_buffer [0:31];
 
-    rob_entry comb_output_arr [0:3];
-    logic [0:5] comb_id_to_free [0:3];
+    rob_entry comb_output_arr [0:1];
+    logic [0:5] comb_id_to_free [0:1];
+    logic [0:3] next_amount_executed;
 
     logic [0:5] head = 0, tail = 0, count = 0;
     logic [0:5] next_head, next_tail, next_count;
@@ -35,6 +36,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
             count <= '0;
             output_arr <= '{default: '0};
             id_to_free <= '{default: '0};
+            amount_executed <= '0;
         end else begin
             buffer <= next_buffer;
             head <= next_head;
@@ -42,6 +44,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
             count <= next_count;
             output_arr <= comb_output_arr;
             id_to_free <= comb_id_to_free;
+            amount_executed <= next_amount_executed;
         end
     end
 
@@ -54,6 +57,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         done = '0;
         comb_output_arr = '{default: '0};
         comb_id_to_free = '{default: '0};
+        next_amount_executed = amount_executed;
 
         // Inserting into buffer
         if(input_a != 0 && !full) begin
@@ -70,13 +74,17 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
 
         // Pushing into commit (removing)
         for(int i = 0; i < 2; i++) begin
-            if(!done && next_buffer[next_head].done == 1 && !next_buffer[next_head].is_store) begin
+            if(!done && next_buffer[next_head].done == 1) begin             
                 comb_output_arr[i] = next_buffer[next_head];
                 comb_id_to_free[i] = next_buffer[next_head].id;
                 next_buffer[next_head] = '0;
                 next_head = (next_head == 31) ? 0 : next_head + 1;
-                amount_executed = amount_executed + 1;
+                next_amount_executed = next_amount_executed + 1;
                 next_count--;
+
+                // Stop committing if we just committed a store
+                if(comb_output_arr[i].is_store)
+                    done = 1;
             end else begin
                 comb_output_arr[i] = '0;
                 comb_id_to_free[i] = '0;

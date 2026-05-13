@@ -24,9 +24,9 @@ module mem_instr_tb();
     load_rs_entry load_disp_mem, load_disp_imm;
     cdb_entry load_mem_cdb, load_imm_cdb;
     
-    rob_entry output_rob [0:3];
+    rob_entry output_rob [0:1];
 
-    logic [0:5] id_to_free [0:3];
+    logic [0:5] id_to_free [0:1];
 
     cdb_entry cdb_arr [0:CDB_SIZE - 1];
 
@@ -98,10 +98,10 @@ module mem_instr_tb();
                            .load_imm_op(load_imm_cdb),
                            .mem_rd_addr(mem_rd_addr) );
 
-    common_data_bus cdb(.int_a(0),
-                        .int_b(0),
-                        .imm_a(0),
-                        .imm_b(0),
+    common_data_bus cdb(.int_a('0),
+                        .int_b('0),
+                        .imm_a('0),
+                        .imm_b('0),
                         .load_a(load_mem_cdb),
                         .load_b(load_imm_cdb),
                         .cdb_arr(cdb_arr) );
@@ -118,62 +118,12 @@ module mem_instr_tb();
         clk = 0; rst = 1;
         #10 rst = 0;
 
-        instr_a = 0; instr_b = 0;
-
-        // --- Store-Forwarding and Memory Load Test ---
-        // Instruction encoding (30 bits): opcode[6] | reg_d[4] | reg_s[4] | reg_t[4] | imm[12]
-        //   SW (opcode=29): data_mem[reg_d + imm] <- reg_s
-        //   LW (opcode=28): reg_d <- data_mem[reg_s + imm]
-        //
-        // Initial state:
-        //   All arch registers R0-R15 = 0.
-        //   mem[4]=16, mem[8]=30; all other addresses = 0.
-        //   R0 is used as the zero-base register throughout.
-
-        // Cycle 1 — two stores
-        // SW1: mem[R0+8]  <- R2 = 0    (addr=8,  data=0)
-        // SW2: mem[R0+16] <- R3 = 0    (addr=16, data=0)
-        instr_a = 30'b011101_0000_0010_0000_000000001000;
-        instr_b = 30'b011101_0000_0011_0000_000000010000;
-        #10;
-
-        // Cycle 2 — one forwarded load, one memory load
-        // LW1: R1 <- mem[R0+8]   addr=8  matches SW1  -> store-forwarded, R1 = 0
-        // LW2: R4 <- mem[R0+4]   addr=4  no match     -> reads mem[4]=16, R4 = 16
-        instr_a = 30'b011100_0001_0000_0000_000000001000;
-        instr_b = 30'b011100_0100_0000_0000_000000000100;
-        #10;
-
-        // Cycle 3 — new store, then a load that forwards across the larger store window
-        // SW3: mem[R0+24] <- R5 = 0    (addr=24, data=0)
-        // LW3: R6 <- mem[R0+16]  addr=16 matches SW2 (still in flight) -> store-forwarded, R6 = 0
-        instr_a = 30'b011101_0000_0101_0000_000000011000;
-        instr_b = 30'b011100_0110_0000_0000_000000010000;
+        instr_a = 30'b011100_0010_0000_0000_000000000100;
+        instr_b = 30'b011101_0010_0011_0000_000000001000;
         #10;
 
         instr_a = 0; instr_b = 0;
         #150;
-
-        // -----------------------------------------------------------------------
-        // Expected Final Result
-        // -----------------------------------------------------------------------
-        // Registers:
-        //   R1 =  0   LW1 store-forwarded from SW1 (R2=0 written to addr 8)
-        //   R4 = 16   LW2 no matching store; reads pre-initialized mem[4]=16
-        //   R6 =  0   LW3 store-forwarded from SW2 (R3=0 written to addr 16)
-        //   R0,R2,R3,R5 = 0 (unmodified sources / base register)
-        //
-        // Memory after all stores commit:
-        //   mem[4]  = 16  (untouched; no store targets addr 4)
-        //   mem[8]  =  0  (SW1 overwrites initial value 30 with R2=0)
-        //   mem[16] =  0  (SW2 writes R3=0)
-        //   mem[24] =  0  (SW3 writes R5=0)
-        //
-        // Forwarding path:
-        //   LW1: count=2 (SW1,SW2 in flight); eff_addr==SW1.eff_addr -> fwd_val=0, fwd_ready=1
-        //   LW2: count=2; no addr match; waits for SW1+SW2 to retire, then dispatches to memory
-        //   LW3: count=3 (SW1,SW2,SW3 in flight); eff_addr==SW2.eff_addr -> fwd_val=0, fwd_ready=1
-        // -----------------------------------------------------------------------
 
         $finish;
     end

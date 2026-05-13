@@ -11,17 +11,17 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
     output int_rs_entry output_a, output_b;
     output logic almost_full;
 
-    logic [0:4] filled_stations;
+    logic [0:3] filled_stations;
 
     int_rs_entry instr_a_reg, instr_b_reg;
 
-    int_rs_entry res_station [0:15] = '{default: '0};
-    int_rs_entry next_res_station [0:15];
+    int_rs_entry res_station [0:RS_SIZE - 1] = '{default: '0};
+    int_rs_entry next_res_station [0:RS_SIZE - 1];
 
     // a & b used for finding available entries; c & d used for pushing first two finished instructions
     logic done_a, done_b, done_c, done_d;
 
-    assign almost_full = (filled_stations >= 14);
+    assign almost_full = (filled_stations >= 7);
 
     always_ff @ (posedge clk) begin
         if (rst) begin
@@ -47,7 +47,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
         output_b = 0;
 
         // Dispatch finished instructions to FU
-        for(int i = 0; i < 16; i++) begin
+        for(int i = 0; i < RS_SIZE; i++) begin
             if(res_station[i].check1 == 1 && res_station[i].check2 == 1) begin
                 if(!done_c) begin
                     output_a = res_station[i];
@@ -62,7 +62,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
         end
 
         // Fill in available registers
-        for(int i = 0; i < 16; i++) begin
+        for(int i = 0; i < RS_SIZE; i++) begin
             if (next_res_station[i].id == 0) begin
                 if (!done_a) begin
                     next_res_station[i] = instr_a_reg;
@@ -77,7 +77,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
         // Take in CDB to adjust RS entries
         for(int i = 0; i < CDB_SIZE; i++) begin
             if (cdb_arr[i].id == 0) continue;
-            for(int j = 0; j < 16; j++) begin
+            for(int j = 0; j < RS_SIZE; j++) begin
                 if (next_res_station[j].id == 0) continue;
 
                 if (next_res_station[j].reg1 == cdb_arr[i].prf) begin
@@ -92,7 +92,7 @@ module res_station_int(clk, rst, instr_a, instr_b, cdb_arr,
         end
 
         // Get amount of filled
-        for(int i = 0; i < 16; i++) begin
+        for(int i = 0; i < RS_SIZE; i++) begin
             if(next_res_station[i].id != 0) begin
                 filled_stations++;
             end

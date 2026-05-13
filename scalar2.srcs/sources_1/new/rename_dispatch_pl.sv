@@ -7,7 +7,7 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
     input clk, rst;
     input rs_entry rename_a, rename_b;
     input rob_entry rob_a, rob_b;
-    input logic [0:5] id_to_free [0:3];
+    input logic [0:5] id_to_free [0:1];
 
     output rs_entry rs_op_a [0:3], rs_op_b [0:3];
     output rob_entry rob_op_a, rob_op_b;
@@ -77,7 +77,7 @@ module rename_dispatch_pl(clk, rst, rename_a, rename_b, rob_a, rob_b, id_to_free
         end
 
         // Freeing any id of commited instructions
-        for(int i = 0; i < 4; i++) begin
+        for(int i = 0; i < 2; i++) begin
             if(id_to_free[i] == 0) continue;
             next_id_list[id_to_free[i]] = 1;
         end

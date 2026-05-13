@@ -29,6 +29,7 @@ package config_pkg;
     localparam CDB_SIZE         = 6;
     localparam ALU_RS_SIZE      = 16;
     localparam MEM_RS_SIZE      = 8;
+    localparam RS_SIZE          = 8;
 
     // --- Types ---
     // opcode, reg_d, reg_s, reg_t, imm
@@ -42,7 +43,6 @@ package config_pkg;
 
     typedef struct packed {
         logic valid;
-        logic free;
         logic [0:DATABUS_WIDTH-1] data;
     } phys_reg;
 
