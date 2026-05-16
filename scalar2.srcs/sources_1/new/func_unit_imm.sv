@@ -12,15 +12,15 @@ module func_unit_imm(clk, rst, imm_instr_a, out_a,
 
     logic [0:35] result_a_comb, result_b_comb;
 
-    alu alu_a(.input1(instr_a_reg.value),
-              .input2({24'b0, instr_a_reg.imm}),
-              .opcode(instr_a_reg.opcode - 15),
-              .result(result_a_comb) );
+    alu_imm alu_a(.input1(instr_a_reg.value),
+                  .imm(instr_a_reg.imm),
+                  .opcode(instr_a_reg.opcode),
+                  .result(result_a_comb) );
 
-    alu alu_b(.input1(instr_b_reg.value),
-              .input2({24'b0, instr_b_reg.imm}),
-              .opcode(instr_b_reg.opcode - 15),
-              .result(result_b_comb) );
+    alu_imm alu_b(.input1(instr_b_reg.value),
+                  .imm(instr_b_reg.imm),
+                  .opcode(instr_b_reg.opcode),
+                  .result(result_b_comb) );
 
     always_ff @ (posedge clk) begin
         if (rst) begin
@@ -33,10 +33,10 @@ module func_unit_imm(clk, rst, imm_instr_a, out_a,
     end
 
     assign out_a.result = result_a_comb;
-    assign out_a.id     = instr_a_reg.id;
-    assign out_a.prf    = instr_a_reg.dest;
+    assign out_a.id = instr_a_reg.id;
+    assign out_a.prf = instr_a_reg.dest;
 
     assign out_b.result = result_b_comb;
-    assign out_b.id     = instr_b_reg.id;
-    assign out_b.prf    = instr_b_reg.dest;
+    assign out_b.id = instr_b_reg.id;
+    assign out_b.prf = instr_b_reg.dest;
 endmodule
