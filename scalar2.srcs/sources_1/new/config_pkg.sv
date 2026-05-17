@@ -22,7 +22,7 @@ package config_pkg;
     // --- Processor Parameters ---
     localparam INSTR_WIDTH      = 32;
     localparam ARCH_REGS_BITS   = 4;
-    localparam NUM_ARCH_REGS    = (1 << ARCH_REG_BITS);
+    localparam NUM_ARCH_REGS    = (1 << ARCH_REGS_BITS);
     localparam PHYS_REGS_BITS   = 5;
     localparam NUM_PHYS_REGS    = (1 << PHYS_REGS_BITS);
     localparam DATABUS_WIDTH    = 36;

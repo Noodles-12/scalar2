@@ -2,15 +2,14 @@
 
 import config_pkg::*;
 
-module test_processor(clk, rst, led);
-    input logic clk, rst;
-    output logic [0:4] led;
+module test_processor(
+    input logic clk, 
+    input logic rst
+);
 
     // Program Counter
-    logic [0:11] pc_next, pc_out;
-    assign pc_next = pc_out + 12'd2;
-
-    logic halted, started;
+    logic [ADDRBUS_SIZE-1:0] pc_next, pc_out;
+    assign pc_next = pc_out + ADDRBUS_SIZE'(2);
 
     // Fetch
     instruction instr_a, instr_b;
@@ -30,7 +29,7 @@ module test_processor(clk, rst, led);
                                  .instr_a(instr_a),
                                  .instr_b(instr_b) );
 
-    reg_file rf(.clk(clk),
+     reg_file rf(.clk(clk),
                 .rst(rst),
                 .og_instr_a(instr_a),
                 .og_instr_b(instr_b),
@@ -40,26 +39,4 @@ module test_processor(clk, rst, led);
                 .rename_b(rename_b),
                 .rob_a(rob_a),
                 .rob_b(rob_b) );
-
-    always_ff @(posedge clk) begin
-        if (rst) begin
-            led     <= 5'b00001;  // bit[4] on during reset
-            halted  <= 0;
-            started <= 0;
-        end else begin
-            led[4] <= 0;
-            if (!halted) begin
-                if (instr_a != '0 || instr_b != '0) begin
-                    started  <= 1;
-                    led[0:3] <= led[0:3]
-                        + (instr_a != '0 ? 4'd1 : 4'd0)
-                        + (instr_b != '0 ? 4'd1 : 4'd0);
-                end else if (started) begin
-                    halted <= 1;
-                end
-            end
-        end
-        $display("Count: %d", led[0:3]);
-    end
-
 endmodule

@@ -14,6 +14,7 @@ module instruction_memory(
     logic [INSTR_WIDTH-1:0] mem [0:4095];
 
     initial begin
+        mem = '{default: '0};
         $readmemb("instr_mem.mem", mem);
     end
 
