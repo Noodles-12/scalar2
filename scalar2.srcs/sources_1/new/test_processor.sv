@@ -18,6 +18,23 @@ module test_processor(
     rs_entry rename_a, rename_b;
     rob_entry rob_a, rob_b;
 
+    // Dispatch
+    rs_entry rs_dp_a [0:3], rs_dp_b [0:3];
+    rob_entry rob_dp_a, rob_dp_b;
+    assign rs_dp_a[3] = '0;
+    assign rs_dp_b[3] = '0;
+
+    // Reservation station outputs
+    int_rs_entry int_rs_out_a, int_rs_out_b;
+    imm_rs_entry imm_rs_out_a, imm_rs_out_b;
+
+    // Functional unit outputs
+    cdb_entry int_cdb_a, int_cdb_b;
+    cdb_entry imm_cdb_a, imm_cdb_b;
+
+    // CDB output
+    cdb_entry cdb_arr [0:CDB_SIZE - 1];
+
     program_counter pc(.clk(clk),
                        .write_enable(~rst),
                        .ip_addr(pc_next),
@@ -31,12 +48,64 @@ module test_processor(
 
      reg_file rf(.clk(clk),
                 .rst(rst),
-                .og_instr_a(instr_a),
-                .og_instr_b(instr_b),
+                .instr_a(instr_a),
+                .instr_b(instr_b),
                 .cdb_arr(),
                 .commit_arr(),
                 .rename_a(rename_a),
                 .rename_b(rename_b),
                 .rob_a(rob_a),
                 .rob_b(rob_b) );
+
+    rename_dispatch_pl rd_pl(.clk(clk),
+                             .rst(rst),
+                             .rename_a(rename_a),
+                             .rename_b(rename_b),
+                             .rob_a(rob_a),
+                             .rob_b(rob_b),
+                             .id_to_free(),
+                             .rs_op_a(rs_dp_a),
+                             .rs_op_b(rs_dp_b),
+                             .rob_op_a(rob_dp_a),
+                             .rob_op_b(rob_dp_b) );
+
+    res_station_int rs_int(.clk(clk),
+                           .rst(rst),
+                           .instr_a(rs_dp_a[0]),
+                           .instr_b(rs_dp_b[0]),
+                           .cdb_arr(cdb_arr),
+                           .output_a_reg(int_rs_out_a),
+                           .output_b_reg(int_rs_out_b),
+                           .almost_full() );
+
+    res_station_imm rs_imm(.clk(clk),
+                           .rst(rst),
+                           .instr_a(rs_dp_a[1]),
+                           .instr_b(rs_dp_b[1]),
+                           .cdb_arr(cdb_arr),
+                           .output_a_reg(imm_rs_out_a),
+                           .output_b_reg(imm_rs_out_b),
+                           .almost_full() );
+
+    func_unit_int fu_int(.clk(clk),
+                         .rst(rst),
+                         .int_instr_a(int_rs_out_a),
+                         .int_instr_b(int_rs_out_b),
+                         .out_a(int_cdb_a),
+                         .out_b(int_cdb_b) );
+
+    func_unit_imm fu_imm(.clk(clk),
+                         .rst(rst),
+                         .imm_instr_a(imm_rs_out_a),
+                         .imm_instr_b(imm_rs_out_b),
+                         .out_a(imm_cdb_a),
+                         .out_b(imm_cdb_b) );
+
+    common_data_bus cdb(.int_a(int_cdb_a),
+                        .int_b(int_cdb_b),
+                        .imm_a(imm_cdb_a),
+                        .imm_b(imm_cdb_b),
+                        .load_a(),
+                        .load_b(),
+                        .cdb_arr(cdb_arr) );
 endmodule

@@ -1,6 +1,19 @@
 `timescale 1ns / 1ps
 
 package config_pkg;
+    // --- Immediate ALU Opcodes ---
+    localparam IALU_ADD     = 15;
+    localparam IALU_SUB     = 16;
+    localparam IALU_RSHI    = 17;
+    localparam IALU_LSHI    = 18;
+    localparam IALU_AND     = 19;
+    localparam IALU_OR      = 20;
+    localparam IALU_EQ      = 21;
+    localparam IALU_GTE     = 22;
+    localparam IALU_LTE     = 23;
+    localparam IALU_GT      = 24;
+    localparam IALU_LT      = 25;
+
     // --- ALU Parameters ---
     localparam ALU_ADD      = 1;
     localparam ALU_SUB      = 2;
@@ -60,54 +73,49 @@ package config_pkg;
         logic [31:0] value_t;
         logic check_t;
         logic [4:0] dest;
-        logic [33:0] padding;
+        logic [7:0] padding;
     } int_rs_entry;
 
     typedef struct packed {
-        logic [0:4] id;
-        logic [0:5] opcode;
-        logic [0:4] reg_s;
-        logic [0:35] value;
-        logic check;
-        logic [0:11] imm;
-        logic [0:4] dest;
-        logic [0:56] padding;
+        logic valid;
+        logic [4:0] id;
+        logic [5:0] opcode;
+        logic [4:0] reg_s;
+        logic [31:0] value_s;
+        logic check_s;
+        logic [11:0] imm;
+        logic [4:0] dest;
+        logic [33:0] padding;
     } imm_rs_entry;
 
     // lw: $dest <= data_mem[($reg_s) + offset]
     typedef struct packed {
-        logic [0:4] id;
-        logic [0:5] opcode;
-        logic [0:4] reg_s;
-        logic [0:35] base_val;   // value of reg_s for address computation
-        logic base_ready;         // base_val is valid
-        logic [0:11] offset;
-        logic [0:11] eff_addr;
-        logic valid_addr;
-        logic pending_addr;
-        logic [0:4] dest;
-        logic [0:3] count; // Represents previous stores before this instruction
+        logic valid;
+        logic [4:0] id;
+        logic [5:0] opcode;
+        logic [4:0] reg_s;      // This is the base register 
+        logic [31:0] value_s;   // base value to combine with offset for address
+        logic check_s;
+        logic [11:0] offset;
+        logic [4:0] dest;
+        logic [3:0] count; // Represents previous stores before this instruction
         logic dispatched;
-        logic [0:35] fwd_val;    // store-forwarded data value
-        logic fwd_ready;          // fwd_val is valid; skip memory access
-        logic padding;
+        logic [28:0] padding;
     } load_rs_entry;
 
     // sw: data_mem[($reg_d) + offset] <= ($reg_s)
     typedef struct packed {
-        logic [0:4] id;
-        logic [0:5] opcode;
-        logic [0:4] reg_d;
-        logic [0:35] value1;
-        logic check1;
-        logic [0:4] reg_s;
-        logic [0:35] value2;
-        logic check2;
-        logic [0:11] offset;
-        logic [0:11] eff_addr;
-        logic valid_addr;
+        logic valid;
+        logic [4:0] id;
+        logic [5:0] opcode;
+        logic [4:0] reg_s;
+        logic [31:0] value_s;
+        logic check_s;
+        logic [4:0] reg_d;
+        logic [31:0] value_d;
+        logic check_d;
+        logic [11:0] offset;
         logic dispatched;
-        logic [0:5] padding;
     } store_rs_entry;
 
     typedef union packed {
@@ -115,7 +123,7 @@ package config_pkg;
         imm_rs_entry imm_rs;
         load_rs_entry load_rs;
         store_rs_entry store_rs;
-        logic [126:0] raw;
+        logic [100:0] raw;
     } rs_entry;
 
     typedef struct packed {
@@ -123,9 +131,9 @@ package config_pkg;
         logic [4:0] id;
         logic done;
         logic [31:0] result;
-        logic [4:0] new_prf;
-        logic [4:0] old_prf;
-        logic [3:0] arch;
+        logic [4:0] new_prf; // Phys reg to write result into
+        logic [4:0] old_prf; // Phys reg to free
+        logic [3:0] arch; // Do something with RRT
         logic [11:0] mem_dest; // store instruction target address
         logic is_store;
     } rob_entry;
@@ -137,9 +145,10 @@ package config_pkg;
     } str_rob_entry;
 
     typedef struct packed {
-        logic [0:4] id;
-        logic [0:4] prf;
-        logic [0:35] result;
+        logic valid;
+        logic [4:0] id;
+        logic [4:0] prf;
+        logic [31:0] result;
     } cdb_entry;
 
     typedef struct packed {
