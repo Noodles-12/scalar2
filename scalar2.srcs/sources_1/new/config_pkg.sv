@@ -100,7 +100,8 @@ package config_pkg;
         logic [4:0] dest;
         logic [3:0] count; // Represents previous stores before this instruction
         logic dispatched;
-        logic [28:0] padding;
+        logic pending_addr;
+        logic [27:0] padding;
     } load_rs_entry;
 
     // sw: data_mem[($reg_d) + offset] <= ($reg_s)
@@ -158,7 +159,10 @@ package config_pkg;
     } mem_write_entry;
 
     typedef struct packed {
-        logic [0:5] id;
-        logic [0:DATABUS_WIDTH-1] eff_addr;
+        logic valid;
+        logic [2:0] idx;
+        logic [11:0] offset;
+        logic [11:0] base_val;
+        logic [11:0] eff_addr;
     } load_fwd_addr;
 endpackage

@@ -6,16 +6,21 @@ import config_pkg::*;
 // Load mem will first fetch from memory then dispatch to CDB
 // Load imm will immediately dispatch to CDB
 // Only doing one of each to mitigate LUT count (idk how big of a difference it makes)
-module func_unit_load(clk, rst, load_fwd_a, load_fwd_b, load_mem, load_imm, mem_rd_data,
-						fwd_addrs, load_mem_op, load_imm_op, mem_rd_addr);
-	input logic clk, rst;
-	input load_rs_entry load_fwd_a, load_fwd_b;
-    input load_rs_entry load_mem, load_imm;
-	input logic [0:DATABUS_WIDTH - 1] mem_rd_data;
+module func_unit_load(
+	input logic clk,
+	input logic rst,
+	input load_rs_entry load_fwd_a,
+	input load_rs_entry load_fwd_b,
+	input load_rs_entry load_mem,
+	input load_rs_entry load_imm,
 
-	output logic [0:ADDRBUS_SIZE - 1] mem_rd_addr;
-    output load_fwd_addr fwd_addrs [0:1];
-	output cdb_entry load_mem_op, load_imm_op;
+	input logic [0:DATABUS_WIDTH - 1] mem_rd_data,
+	output logic [0:ADDRBUS_SIZE - 1] mem_rd_addr,
+	
+	output load_fwd_addr fwd_addrs [0:1],
+	output cdb_entry load_mem_op,
+	output cdb_entry load_imm_op
+);
 
 	load_rs_entry fwd_a_reg, fwd_b_reg;
 

@@ -87,6 +87,21 @@ module test_processor(
                            .output_b_reg(imm_rs_out_b),
                            .almost_full() );
 
+    res_station_mem rs_mem(.clk(clk),
+                           .rst(rst),
+                           .instr_a(rs_dp_a[2]),
+                           .instr_b(rs_dp_b[2]),
+                           .cdb_arr(),
+                           .id_to_free(),
+                           .str_fwd_vals(),
+                           .load_fwd_addrs(),
+                           .str_op_a(),
+                           .str_op_b(),
+                           .load_fwd_a_reg(),
+                           .load_fwd_b_reg(),
+                           .load_disp_mem(),
+                           .load_disp_imm() );
+
     func_unit_int fu_int(.clk(clk),
                          .rst(rst),
                          .int_instr_a(int_rs_out_a),
