@@ -12,9 +12,8 @@ module res_station_mem(
     input str_rob_entry str_fwd_vals [0:1],
     input load_fwd_addr load_fwd_addrs [0:1],
     
-    output store_rs_entry str_op_a,
-    output store_rs_entry str_op_b,
-
+    output str_disp_entry str_disp_a_reg,
+    output str_disp_entry str_disp_b_reg,
 
     output load_fwd_addr load_fwd_a_reg,
     output load_fwd_addr load_fwd_b_reg,
@@ -37,23 +36,21 @@ module res_station_mem(
     load_rs_entry s1_load_buffer [0:7];
     logic [3:0] s1_store_count, s1_load_count;
     logic [2:0] s1_s_head, s1_s_tail, s1_l_head, s1_l_tail;
-    logic s1_valid;
-
-    // Latch 1
-    store_rs_entry ff1_store_buffer [0:7];
-    load_rs_entry ff1_load_buffer [0:7];
-    logic [3:0] ff1_store_count, ff1_load_count;
-    logic [2:0] ff1_s_head, ff1_s_tail, ff1_l_head, ff1_l_tail;
-
     // Stage 2 Dispatch loads with
     store_rs_entry s2_store_buffer [0:7];
     load_rs_entry s2_load_buffer [0:7];
 
     logic [2:0] load_fwd_idx_a, load_fwd_idx_b;
     logic load_fwd_found_a, load_fwd_found_b;
-
     load_fwd_addr load_fwd_a, load_fwd_b;
-    logic s2_valid;
+
+    // Stage 3
+    store_rs_entry s3_store_buffer [0:7];
+    load_rs_entry s3_load_buffer [0:7];
+
+    logic [2:0] str_disp_idx_a, str_disp_idx_b;
+    logic str_disp_found_a, str_disp_found_b;
+    str_disp_entry str_disp_a, str_disp_b; 
 
     // Stage 0 - Get inputs
     always_ff @ (posedge clk) begin
@@ -72,23 +69,27 @@ module res_station_mem(
 
             load_fwd_a_reg <= '0;
             load_fwd_b_reg <= '0;
+
+            str_disp_a_reg <= '0;
+            str_disp_b_reg <= '0;
         end else begin
-            if(s2_valid) begin
-                store_buffer <= s2_store_buffer;
-                load_buffer <= s2_load_buffer;
+            store_buffer <= s3_store_buffer;
+            load_buffer <= s3_load_buffer;
 
-                store_count <= ff1_store_count;
-                load_count <= ff1_load_count;
+            store_count <= s1_store_count;
+            load_count <= s1_load_count;
 
-                s_head <= ff1_s_head;
-                s_tail <= ff1_s_tail;
+            s_head <= s1_s_head;
+            s_tail <= s1_s_tail;
 
-                l_head <= ff1_l_head;
-                l_tail <= ff1_l_tail;
-            end
+            l_head <= s1_l_head;
+            l_tail <= s1_l_tail;
 
             load_fwd_a_reg <= load_fwd_a;
             load_fwd_b_reg <= load_fwd_b;
+
+            str_disp_a_reg <= str_disp_a;
+            str_disp_b_reg <= str_disp_b;
         end
     end
 
@@ -101,8 +102,6 @@ module res_station_mem(
 
         s1_s_head = s_head; s1_s_tail = s_tail;
         s1_l_head = l_head; s1_l_tail = l_tail;
-
-        s1_valid = instr_a.load_rs.valid | instr_b.load_rs.valid;
 
         case(instr_a.load_rs.opcode) 
             26 : begin
@@ -133,39 +132,11 @@ module res_station_mem(
         endcase
     end
 
-    always_ff @ (posedge clk) begin
-        if(rst) begin
-            ff1_store_buffer <= '{default: '0};
-            ff1_load_buffer <= '{default: '0};
-
-            ff1_store_count <= '0;
-            ff1_load_count <= '0;
-
-            ff1_s_head <= '0;
-            ff1_s_tail <= '0;
-            ff1_l_head <= '0;
-            ff1_l_tail <= '0;
-        end else begin
-            if(s1_valid) begin
-                ff1_store_buffer <= s1_store_buffer;
-                ff1_load_buffer <= s1_load_buffer;
-
-                ff1_store_count <= s1_store_count;
-                ff1_load_count <= s1_load_count;
-
-                ff1_s_head <= s1_s_head;
-                ff1_s_tail <= s1_s_tail;
-                ff1_l_head <= s1_l_head;
-                ff1_l_tail <= s1_l_tail;
-            end
-        end
-    end
-
     // Stage 2
     // Dispatching Loads
     always_comb begin
-        s2_store_buffer = ff1_store_buffer;
-        s2_load_buffer  = ff1_load_buffer;
+        s2_store_buffer = s1_store_buffer;
+        s2_load_buffer  = s1_load_buffer;
 
         load_fwd_found_a = 0; load_fwd_idx_a = '0;
         load_fwd_found_b = 0; load_fwd_idx_b = '0;
@@ -199,7 +170,13 @@ module res_station_mem(
             load_fwd_b.base_val = s2_load_buffer[load_fwd_idx_b].value_s[11:0];
             s2_load_buffer[load_fwd_idx_b].pending_addr = 1;
         end
+    end
 
-        s2_valid = load_fwd_found_a | load_fwd_found_b;
+    // Stage 3
+    always_comb begin
+        s3_store_buffer = s2_store_buffer;
+        s3_load_buffer = s2_load_buffer;
+
+
     end
 endmodule

@@ -140,10 +140,12 @@ package config_pkg;
     } rob_entry;
 
     typedef struct packed {
-        logic [0:4] id;
-        logic [0:11] mem_dest;
-        logic [0:35] value;
-    } str_rob_entry;
+        logic valid;
+        logic [4:0] id;
+        logic [2:0] idx;
+        logic [11:0] mem_dest;
+        logic [31:0] value;
+    } str_disp_entry;
 
     typedef struct packed {
         logic valid;
