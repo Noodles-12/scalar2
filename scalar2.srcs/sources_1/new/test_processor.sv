@@ -21,16 +21,18 @@ module test_processor(
     // Dispatch
     rs_entry rs_dp_a [0:3], rs_dp_b [0:3];
     rob_entry rob_dp_a, rob_dp_b;
-    assign rs_dp_a[3] = '0;
-    assign rs_dp_b[3] = '0;
 
     // Reservation station outputs
     int_rs_entry int_rs_out_a, int_rs_out_b;
     imm_rs_entry imm_rs_out_a, imm_rs_out_b;
 
+    str_disp_entry str_disp_a, str_disp_b;
+    load_fwd_addr load_fwd_a, load_fwd_b;
+
     // Functional unit outputs
     cdb_entry int_cdb_a, int_cdb_b;
     cdb_entry imm_cdb_a, imm_cdb_b;
+    str_disp_entry str_rob [0:1];
 
     // CDB output
     cdb_entry cdb_arr [0:CDB_SIZE - 1];
@@ -93,12 +95,12 @@ module test_processor(
                            .instr_b(rs_dp_b[2]),
                            .cdb_arr(),
                            .id_to_free(),
-                           .str_fwd_vals(),
+                           .str_fwd_vals(str_rob),
                            .load_fwd_addrs(),
-                           .str_disp_a_reg(),
-                           .str_disp_b_reg(),
-                           .load_fwd_a_reg(),
-                           .load_fwd_b_reg(),
+                           .str_disp_a_reg(str_disp_a),
+                           .str_disp_b_reg(str_disp_b),
+                           .load_fwd_a_reg(load_fwd_a),
+                           .load_fwd_b_reg(load_fwd_b),
                            .load_disp_mem(),
                            .load_disp_imm() );
 
@@ -115,6 +117,12 @@ module test_processor(
                          .imm_instr_b(imm_rs_out_b),
                          .out_a(imm_cdb_a),
                          .out_b(imm_cdb_b) );
+
+    func_unit_str fu_str(.clk(clk),
+                         .rst(rst),
+                         .str_a(str_disp_a),
+                         .str_b(str_disp_b),
+                         .str_rob(str_rob) );
 
     common_data_bus cdb(.int_a(int_cdb_a),
                         .int_b(int_cdb_b),
