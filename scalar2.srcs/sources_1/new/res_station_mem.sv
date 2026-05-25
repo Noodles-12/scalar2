@@ -9,7 +9,7 @@ module res_station_mem(
     input rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input logic [5:0] id_to_free [0:1],
-    input str_rob_entry str_fwd_vals [0:1],
+    input str_disp_entry str_fwd_vals [0:1],
     input load_fwd_addr load_fwd_addrs [0:1],
     
     output str_disp_entry str_disp_a_reg,
@@ -177,6 +177,42 @@ module res_station_mem(
         s3_store_buffer = s2_store_buffer;
         s3_load_buffer = s2_load_buffer;
 
+        str_disp_idx_a = '0; str_disp_found_a = 0;
+        str_disp_idx_b = '0; str_disp_found_b = 0;
+        str_disp_a = '0; str_disp_b = '0;
 
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(!s3_store_buffer[i].valid) continue;
+
+            // Maybe need a valid check
+            if(s3_store_buffer[i].check_s && s3_store_buffer[i].check_d 
+            && !s3_store_buffer[i].dispatched) begin
+                if(!str_disp_found_a) begin
+                    str_disp_idx_a = i;
+                    str_disp_found_a = 1;
+                end else if (!str_disp_found_b) begin
+                    str_disp_idx_b = i;
+                    str_disp_found_b = 1;
+                end
+            end
+        end
+
+        if(str_disp_found_a) begin
+            str_disp_a.valid = 1;
+            str_disp_a.id = s3_store_buffer[str_disp_idx_a].id;
+            str_disp_a.idx = str_disp_idx_a;
+            str_disp_a.base_val = s3_store_buffer[str_disp_idx_a].base_val;
+            str_disp_a.offset = s3_store_buffer[str_disp_idx_a].offset;
+            str_disp_a.value = s3_store_buffer[str_disp_idx_a].value_s;
+        end
+
+        if(str_disp_found_b) begin
+            str_disp_b.valid = 1;
+            str_disp_b.id = s3_store_buffer[str_disp_idx_b].id;
+            str_disp_b.idx = str_disp_idx_b;
+            str_disp_b.base_val = s3_store_buffer[str_disp_idx_b].base_val;
+            str_disp_b.offset = s3_store_buffer[str_disp_idx_b].offset;
+            str_disp_b.value = s3_store_buffer[str_disp_idx_b].value_s;
+        end
     end
 endmodule

@@ -139,10 +139,14 @@ package config_pkg;
         logic is_store;
     } rob_entry;
 
+    // base_val, offset, & idx used for forwarding mem_dest back into entry
+    // mem_dest, id, & value used for ROB
     typedef struct packed {
         logic valid;
         logic [4:0] id;
         logic [2:0] idx;
+        logic [11:0] base_val;
+        logic [11:0] offset;
         logic [11:0] mem_dest;
         logic [31:0] value;
     } str_disp_entry;

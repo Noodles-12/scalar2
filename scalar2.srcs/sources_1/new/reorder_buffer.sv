@@ -7,7 +7,7 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
     input logic clk, rst;
     input rob_entry input_a, input_b;
     input cdb_entry cdb_arr [0:CDB_SIZE - 1];
-    input str_rob_entry str_rob [0:1];
+    input str_disp_entry str_rob [0:1];
 
     output logic [0:3] amount_executed;
     output rob_entry output_arr [0:1];
