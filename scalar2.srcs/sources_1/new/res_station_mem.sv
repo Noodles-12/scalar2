@@ -9,6 +9,7 @@ module res_station_mem(
     input rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input logic [5:0] id_to_free [0:1],
+
     input str_disp_entry str_fwd_vals [0:1],
     input load_fwd_addr load_fwd_addrs [0:1],
     
@@ -32,6 +33,9 @@ module res_station_mem(
 
     logic [11:0] store_eff_addr [0:7];
     logic store_valid_addr [0:7];
+
+    logic [11:0] load_eff_addr [0:7];
+    logic load_valid_addr [0:7];
 
     // Stage 1 Insert input instructions in RS
     store_rs_entry s1_store_buffer [0:7];
@@ -58,6 +62,9 @@ module res_station_mem(
     // Stage 4 Get forwarded store & load eddresses
     logic [11:0] s4_store_eff_addr [0:7];
     logic s4_store_valid_addr [0:7];
+
+    logic [11:0] s4_load_eff_addr [0:7];
+    logic s4_load_valid_addr [0:7];
 
     // Stage 0 - Get inputs
     always_ff @ (posedge clk) begin
@@ -237,6 +244,9 @@ module res_station_mem(
         s4_store_eff_addr = store_eff_addr;
         s4_store_valid_addr = store_valid_addr;
 
+        s4_load_eff_addr = load_eff_addr;
+        s4_load_valid_addr = load_valid_addr;
+
         if(str_fwd_vals[0].valid) begin
             s4_store_eff_addr[str_fwd_vals[0].idx] = str_fwd_vals[0].mem_dest;
             s4_store_valid_addr[str_fwd_vals[0].idx] = 1;
@@ -245,6 +255,16 @@ module res_station_mem(
         if(str_fwd_vals[1].valid) begin
             s4_store_eff_addr[str_fwd_vals[1].idx] = str_fwd_vals[1].mem_dest;
             s4_store_valid_addr[str_fwd_vals[1].idx] = 1;
+        end
+
+        if(load_fwd_addrs[0].valid) begin
+            s4_load_eff_addr[load_fwd_addrs[0].idx] = load_fwd_addrs[0].eff_addr;
+            s4_load_valid_addr[load_fwd_addrs[0].idx] = 1;
+        end
+
+        if(load_fwd_addrs[1].valid) begin
+            s4_load_eff_addr[load_fwd_addrs[1].idx] = load_fwd_addrs[1].eff_addr;
+            s4_load_valid_addr[load_fwd_addrs[1].idx] = 1;
         end
     end
 endmodule

@@ -2,26 +2,30 @@
 
 import config_pkg::*;
 
-module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
-                        output_arr, id_to_free, amount_executed);
-    input logic clk, rst;
-    input rob_entry input_a, input_b;
-    input cdb_entry cdb_arr [0:CDB_SIZE - 1];
-    input str_disp_entry str_rob [0:1];
+module reorder_buffer(
+    input logic clk,
+    input logic rst,
+    input rob_entry input_a,
+    input rob_entry input_b,
+    input cdb_entry cdb_arr [0:CDB_SIZE - 1],
+    input str_disp_entry str_rob [0:1],
+    
+    output logic [3:0] amount_executed,
+    output rob_entry output_arr [0:1],
+    output logic [5:0] id_to_free [0:1]
+);
 
-    output logic [0:3] amount_executed;
-    output rob_entry output_arr [0:1];
-    output logic [0:5] id_to_free [0:1];
+    rob_entry buffer [0:31], next_buffer [0:31];
 
-    rob_entry buffer [0:31] = '{default: '0};
-    rob_entry next_buffer [0:31];
+    logic [4:0] lut [0:31], next_lut [0:31];
+    logic lut_valid [0:31], next_lut_valid[0:31];
 
     rob_entry comb_output_arr [0:1];
-    logic [0:5] comb_id_to_free [0:1];
-    logic [0:3] next_amount_executed;
+    logic [4:0] comb_id_to_free [0:1];
+    logic [3:0] next_amount_executed;
 
-    logic [0:5] head = 0, tail = 0, count = 0;
-    logic [0:5] next_head, next_tail, next_count;
+    logic [4:0] head = 0, tail = 0, count = 0;
+    logic [4:0] next_head, next_tail, next_count;
 
     logic empty, full, done;
 
@@ -34,6 +38,8 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
             head <= '0;
             tail <= '0;
             count <= '0;
+
+
             output_arr <= '{default: '0};
             id_to_free <= '{default: '0};
             amount_executed <= '0;
@@ -42,6 +48,8 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
             head <= next_head;
             tail <= next_tail;
             count <= next_count;
+
+
             output_arr <= comb_output_arr;
             id_to_free <= comb_id_to_free;
             amount_executed <= next_amount_executed;
@@ -54,20 +62,24 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
         next_tail = tail;
         next_count = count;
 
-        done = '0;
+        done = 0;
         comb_output_arr = '{default: '0};
         comb_id_to_free = '{default: '0};
         next_amount_executed = amount_executed;
 
         // Inserting into buffer
-        if(input_a != 0 && !full) begin
+        if(input_a.valid && !full) begin
             next_buffer[next_tail] = input_a;
+            next_lut[input_a.id] = next_tail;
+            next_lut_valid[input_a.id] = 1;
             next_tail = (next_tail == 31) ? 0 : next_tail + 1;
             next_count++;
         end
 
-        if(input_b != 0 && !full) begin
+        if(input_b.valid && !full) begin
             next_buffer[next_tail] = input_b;
+            next_lut[input_b.id] = next_tail;
+            next_lut_valid[input_b.id] = 1;
             next_tail = (next_tail == 31) ? 0 : next_tail + 1;
             next_count++;
         end
@@ -94,27 +106,19 @@ module reorder_buffer(clk, rst, input_a, input_b, cdb_arr, str_rob,
 
         // Changing with CDB info
         for(int i = 0; i < CDB_SIZE; i++) begin
-            if(cdb_arr[i] == 0) continue;
+            if(cdb_arr[i].valid == 0) continue;
 
-            for(int j = 0; j < 32; j++) begin
-                if (next_buffer[j].id == cdb_arr[i].id) begin
-                    next_buffer[j].result = cdb_arr[i].result;
-                    next_buffer[j].done = 1;
-                end
-            end
+            next_buffer[next_lut[cdb_arr[i].id]].result = cdb_arr[i].result;
+            next_buffer[next_lut[cdb_arr[i].id]].done = 1;
         end
 
         // Changing with str_rob info
         for(int i = 0; i < 2; i++) begin
-            if(str_rob[i] == 0) continue;
+            if(str_rob[i].valid == 0) continue;
 
-            for(int j = 0; j < 32; j++) begin
-                if(next_buffer[j].id == str_rob[i].id) begin
-                    next_buffer[j].mem_dest = str_rob[i].mem_dest;
-                    next_buffer[j].result = str_rob[i].value;
-                    next_buffer[j].done = 1;
-                end
-            end 
+            next_buffer[next_lut[str_rob[i].id]].mem_dest = str_rob[i].mem_dest;
+            next_buffer[next_lut[str_rob[i].id]].result = str_rob[i].mem_dest;
+            next_buffer[next_lut[str_rob[i].id]].done = 1;
         end
     end
 endmodule

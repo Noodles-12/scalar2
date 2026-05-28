@@ -34,9 +34,28 @@ module test_processor_tb();
         end
     endtask
 
+    task automatic display_load_fwd(
+        input string label,
+        input load_fwd_addr load_fwd_addr
+    );
+        if(load_fwd_addr.valid) begin
+            $display("%s: valid=%0b idx=%0d offset=%0d base_val=%0d eff_addr=%0d [%0t]",
+                label,
+                load_fwd_addr.valid,
+                load_fwd_addr.idx,
+                load_fwd_addr.offset,
+                load_fwd_addr.base_val,
+                load_fwd_addr.eff_addr,
+                $time);
+        end
+    endtask
+
     always @(posedge clk) begin
         display_str_disp("str_rob_a", tp.str_rob[0]);
         display_str_disp("str_rob_b", tp.str_rob[1]);
+
+        display_load_fwd("load_fwd_a", tp.load_fwd_addrs[0]);
+        display_load_fwd("load_fwd_b", tp.load_fwd_addrs[1]);
     end
 
     initial begin

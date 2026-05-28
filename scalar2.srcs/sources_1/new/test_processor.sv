@@ -32,7 +32,9 @@ module test_processor(
     // Functional unit outputs
     cdb_entry int_cdb_a, int_cdb_b;
     cdb_entry imm_cdb_a, imm_cdb_b;
+
     str_disp_entry str_rob [0:1];
+    load_fwd_addr load_fwd_addrs [0:1];
 
     // CDB output
     cdb_entry cdb_arr [0:CDB_SIZE - 1];
@@ -96,7 +98,7 @@ module test_processor(
                            .cdb_arr(),
                            .id_to_free(),
                            .str_fwd_vals(str_rob),
-                           .load_fwd_addrs(),
+                           .load_fwd_addrs(load_fwd_addrs),
                            .str_disp_a_reg(str_disp_a),
                            .str_disp_b_reg(str_disp_b),
                            .load_fwd_a_reg(load_fwd_a),
@@ -123,6 +125,18 @@ module test_processor(
                          .str_a(str_disp_a),
                          .str_b(str_disp_b),
                          .str_rob(str_rob) );
+
+    func_unit_load fu_load(.clk(clk),
+                           .rst(rst),
+                           .load_fwd_a(load_fwd_a),
+                           .load_fwd_b(load_fwd_b),
+                           .load_mem(),
+                           .load_imm(),
+                           .mem_rd_data(),
+                           .mem_rd_addr(),
+                           .fwd_addrs(load_fwd_addrs),
+                           .load_mem_op(),
+                           .load_imm_op() );
 
     common_data_bus cdb(.int_a(int_cdb_a),
                         .int_b(int_cdb_b),
