@@ -66,6 +66,13 @@ module res_station_mem(
     logic [11:0] s4_load_eff_addr [0:7];
     logic s4_load_valid_addr [0:7];
 
+    // Stage 5 Get changed RS entries from CDB
+    store_rs_entry s5_store_buffer [0:7];
+    load_rs_entry s5_load_buffer [0:7];
+
+    // Stage 6 Free committed RS entries
+    // Stage 7 Store to load forwarding - might omit for now
+
     // Stage 0 - Get inputs
     always_ff @ (posedge clk) begin
         if(rst) begin
@@ -240,6 +247,7 @@ module res_station_mem(
     end
 
     // Stage 4
+    // Get forwarded addresses from stores
     always_comb begin
         s4_store_eff_addr = store_eff_addr;
         s4_store_valid_addr = store_valid_addr;
@@ -265,6 +273,15 @@ module res_station_mem(
         if(load_fwd_addrs[1].valid) begin
             s4_load_eff_addr[load_fwd_addrs[1].idx] = load_fwd_addrs[1].eff_addr;
             s4_load_valid_addr[load_fwd_addrs[1].idx] = 1;
+        end
+    end
+
+    // Stage 5
+    // Update RS's with CDB 
+    // Possibly pipeline without circular dependency
+    always_comb begin
+        for(int i = 0; i < CDB_SIZE; i++) begin
+            
         end
     end
 endmodule

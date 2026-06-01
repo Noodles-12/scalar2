@@ -12,7 +12,7 @@ module reorder_buffer(
     
     output logic [3:0] amount_executed,
     output rob_entry output_arr [0:1],
-    output logic [5:0] id_to_free [0:1]
+    output logic [4:0] id_to_free [0:1]
 );
 
     rob_entry buffer [0:31], next_buffer [0:31];
@@ -39,9 +39,12 @@ module reorder_buffer(
             tail <= '0;
             count <= '0;
 
-
             output_arr <= '{default: '0};
             id_to_free <= '{default: '0};
+
+            lut <= '{default: '0};
+            lut_valid <= '{default: '0};
+
             amount_executed <= '0;
         end else begin
             buffer <= next_buffer;
@@ -52,6 +55,10 @@ module reorder_buffer(
 
             output_arr <= comb_output_arr;
             id_to_free <= comb_id_to_free;
+
+            lut <= next_lut;
+            lut_valid <= next_lut_valid;
+
             amount_executed <= next_amount_executed;
         end
     end
@@ -66,6 +73,9 @@ module reorder_buffer(
         comb_output_arr = '{default: '0};
         comb_id_to_free = '{default: '0};
         next_amount_executed = amount_executed;
+
+        next_lut = lut;
+        next_lut_valid = lut_valid;
 
         // Inserting into buffer
         if(input_a.valid && !full) begin
