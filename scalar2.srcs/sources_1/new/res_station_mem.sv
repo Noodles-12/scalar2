@@ -29,6 +29,7 @@ module res_station_mem(
 
     load_rs_entry load_buffer [0:7];
     logic [2:0] l_head, l_tail;
+
     logic [3:0] store_count, load_count;
 
     logic [11:0] store_eff_addr [0:7];
@@ -37,43 +38,7 @@ module res_station_mem(
     logic [11:0] load_eff_addr [0:7];
     logic load_valid_addr [0:7];
 
-    // Stage 1 Insert input instructions in RS
-    store_rs_entry s1_store_buffer [0:7];
-    load_rs_entry s1_load_buffer [0:7];
-    logic [3:0] s1_store_count, s1_load_count;
-    logic [2:0] s1_s_head, s1_s_tail, s1_l_head, s1_l_tail;
 
-    // Stage 2 Dispatch loads 
-    store_rs_entry s2_store_buffer [0:7];
-    load_rs_entry s2_load_buffer [0:7];
-
-    logic [2:0] load_fwd_idx_a, load_fwd_idx_b;
-    logic load_fwd_found_a, load_fwd_found_b;
-    load_fwd_addr load_fwd_a, load_fwd_b;
-
-    // Stage 3 Dispatch ready stores
-    store_rs_entry s3_store_buffer [0:7];
-    load_rs_entry s3_load_buffer [0:7];
-
-    logic [2:0] str_disp_idx_a, str_disp_idx_b;
-    logic str_disp_found_a, str_disp_found_b;
-    str_disp_entry str_disp_a, str_disp_b;
-
-    // Stage 4 Get forwarded store & load eddresses
-    logic [11:0] s4_store_eff_addr [0:7];
-    logic s4_store_valid_addr [0:7];
-
-    logic [11:0] s4_load_eff_addr [0:7];
-    logic s4_load_valid_addr [0:7];
-
-    // Stage 5 Get changed RS entries from CDB
-    store_rs_entry s5_store_buffer [0:7];
-    load_rs_entry s5_load_buffer [0:7];
-
-    // Stage 6 Free committed RS entries
-    // Stage 7 Store to load forwarding - might omit for now
-
-    // Stage 0 - Get inputs
     always_ff @ (posedge clk) begin
         if(rst) begin
             store_buffer <= '{default: '0};
@@ -97,30 +62,15 @@ module res_station_mem(
             store_eff_addr <= '{default: '0};
             store_valid_addr <= '{default: '0};
         end else begin
-            store_buffer <= s3_store_buffer;
-            load_buffer <= s3_load_buffer;
 
-            store_count <= s1_store_count;
-            load_count <= s1_load_count;
-
-            s_head <= s1_s_head;
-            s_tail <= s1_s_tail;
-
-            l_head <= s1_l_head;
-            l_tail <= s1_l_tail;
-
-            load_fwd_a_reg <= load_fwd_a;
-            load_fwd_b_reg <= load_fwd_b;
-
-            str_disp_a_reg <= str_disp_a;
-            str_disp_b_reg <= str_disp_b;
-
-            store_eff_addr <= s4_store_eff_addr;
-            store_valid_addr <= s4_store_valid_addr;
         end
     end
 
-    // 1 Insert Entries
+    always_comb begin
+        
+    end
+
+    /* // 1 Insert Entries
     always_comb begin
         s1_store_buffer = store_buffer;
         s1_load_buffer = load_buffer;
@@ -283,5 +233,5 @@ module res_station_mem(
         for(int i = 0; i < CDB_SIZE; i++) begin
             
         end
-    end
+    end */
 endmodule
