@@ -85,7 +85,6 @@ module reorder_buffer(
             end
 
             // Commits
-            // Fix for store instructions or make memory be lut inferenced to have multiple data_mem writes
             for (int i = 0; i < 2; i++) begin
                 if (commit_reqs[i].valid) begin
                     output_arr[i] <= buffer[commit_reqs[i].idx];

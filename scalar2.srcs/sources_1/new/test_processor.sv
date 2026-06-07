@@ -82,7 +82,7 @@ module test_processor(
                            .output_b_reg(int_rs_out_b),
                            .almost_full() );
 
-    res_station_imm rs_imm(.clk(clk),
+    /* res_station_imm rs_imm(.clk(clk),
                            .rst(rst),
                            .instr_a(rs_dp_a[1]),
                            .instr_b(rs_dp_b[1]),
@@ -104,7 +104,7 @@ module test_processor(
                            .load_fwd_a_reg(load_fwd_a),
                            .load_fwd_b_reg(load_fwd_b),
                            .load_disp_mem(),
-                           .load_disp_imm() );
+                           .load_disp_imm() ); */
 
     func_unit_int fu_int(.clk(clk),
                          .rst(rst),
@@ -113,7 +113,7 @@ module test_processor(
                          .out_a(int_cdb_a),
                          .out_b(int_cdb_b) );
 
-    func_unit_imm fu_imm(.clk(clk),
+    /* func_unit_imm fu_imm(.clk(clk),
                          .rst(rst),
                          .imm_instr_a(imm_rs_out_a),
                          .imm_instr_b(imm_rs_out_b),
@@ -136,7 +136,7 @@ module test_processor(
                            .mem_rd_addr(),
                            .fwd_addrs(load_fwd_addrs),
                            .load_mem_op(),
-                           .load_imm_op() );
+                           .load_imm_op() ); */
 
     common_data_bus cdb(.int_a(int_cdb_a),
                         .int_b(int_cdb_b),
