@@ -34,9 +34,9 @@ module res_station_int(
     // Dispatch logics
     dispatch_req disp_req;
 
-    // a & b used for finding available entries; c & d used for pushing first two finished instructions
-    logic done_a, done_b, done_c, done_d;
-    logic [2:0] idx_a, idx_b, idx_c, idx_d;
+    // a & b used for finding available entries; c used for pushing first finished instructions
+    logic done_a, done_b, done_c;
+    logic [2:0] idx_a, idx_b, idx_c;
 
     assign almost_full = (filled_stations >= 7);
 

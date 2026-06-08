@@ -5,37 +5,25 @@ import config_pkg::*;
 module func_unit_imm(
     input logic clk,
     input logic rst,
-    input imm_rs_entry imm_instr_a,
-    input imm_rs_entry imm_instr_b,
+    input imm_rs_entry imm_instr,
 
-    output cdb_entry out_a,
-    output cdb_entry out_b
+    output cdb_entry cdb_result
 );
+    logic [31:0] result;
 
-    logic [31:0] result_a, result_b;
+    alu_imm alu_a(.input1(imm_instr.value_s),
+                  .imm(imm_instr.imm),
+                  .opcode(imm_instr.opcode),
+                  .result(result) );
 
-    alu_imm alu_a(.input1(imm_instr_a.value_s),
-                  .imm(imm_instr_a.imm),
-                  .opcode(imm_instr_a.opcode),
-                  .result(result_a) );
-
-    alu_imm alu_b(.input1(imm_instr_b.value_s),
-                  .imm(imm_instr_b.imm),
-                  .opcode(imm_instr_b.opcode),
-                  .result(result_b) );
-
+    // Testing to see if checking for invalid instruction even matters
     always_ff @ (posedge clk) begin
         if (rst) begin
-            out_a <= '0;
-            out_b <= '0;
+            cdb_result <= '0;
         end else begin
-            out_a.result <= result_a;
-            out_a.id <= imm_instr_a.id;
-            out_a.prf <= imm_instr_a.dest;
-
-            out_b.result <= result_b;
-            out_b.id <= imm_instr_b.id;
-            out_b.prf <= imm_instr_b.dest;
+            cdb_result.result <= result;
+            cdb_result.id <= imm_instr.id;
+            cdb_result.prf <= imm_instr.dest;
         end
     end
 endmodule

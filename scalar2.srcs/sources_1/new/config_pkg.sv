@@ -41,7 +41,7 @@ package config_pkg;
     localparam DATABUS_WIDTH    = 36;
     localparam ADDRBUS_SIZE     = 32;
     localparam DATA_MEM_SIZE    = 4096;
-    localparam CDB_SIZE         = 6;
+    localparam CDB_SIZE         = 3;
     localparam ALU_RS_SIZE      = 16;
     localparam MEM_RS_SIZE      = 8;
     localparam RS_SIZE          = 8;
