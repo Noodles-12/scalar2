@@ -8,7 +8,7 @@ module reg_file(
     input  logic rst,
     input  instruction instr_a,
     input  instruction instr_b,
-    input  cdb_entry cdb_arr [0:CDB_SIZE - 1],
+    input  cdb_entry cdb_arr [0:2], // Replace with CDB_SIZE - 1 when mem RS & store/load FU fully updated
     input  rob_entry commit_arr [0:1],
 
     output rs_entry rename_a,
@@ -57,6 +57,7 @@ module reg_file(
     rs_entry ff1_rename_a;
     rob_entry ff1_rob_a;
     instruction ff1_instr_b;
+    rob_entry ff1_commit_arr [0:1];
 
     // --- Stage 2 Logics ---
     logic [PHYS_REGS_BITS - 1:0] s2_alias_table [0:NUM_ARCH_REGS - 1];
@@ -105,20 +106,6 @@ module reg_file(
             s1_valid_a <= (instr_a.opcode != 0);
             s1_valid_b <= (instr_b.opcode != 0);
         end
-
-        /* for(int i = 0; i < CDB_SIZE; i++) begin
-            if(cdb_arr[i] != 0)
-                $display("CDB change coming in to change P%d to %d | %t",
-                    cdb_arr[i].prf,
-                    cdb_arr[i].result,
-                    $time);
-        end
-
-        if(instr_a.opcode != 0)
-            $display("Instruction A operation %d | %t", instr_a.opcode, $time);
-
-        if(instr_b.opcode != 0)
-            $display("Instruction B operation %d | %t", instr_b.opcode, $time); */
     end
 
     // Stage 1: Rename instruction A
@@ -140,7 +127,7 @@ module reg_file(
         s1_rename_a.int_rs.valid = (s1_instr_a.opcode != 0); 
         s1_rob_a.valid = (s1_instr_a.opcode != 0);
 
-        case(s1_instr_a.opcode) inside
+        unique case(s1_instr_a.opcode) inside
             [1:14] : begin
                 s1_rename_a.int_rs.opcode = instr_a.opcode;
                 s1_idx_as = s1_alias_table[instr_a.reg_s];
@@ -214,7 +201,7 @@ module reg_file(
             s1_free_list[free_a_idx] = 0;
             s1_valid_list[free_a_idx] = 0;
 
-            case(s1_instr_a.opcode) inside
+            unique case(s1_instr_a.opcode) inside
                 [1:14] : begin
                     s1_rename_a.int_rs.dest = free_a_idx;
                 end
@@ -225,6 +212,21 @@ module reg_file(
                     s1_rename_a.load_rs.dest = free_a_idx;
                 end
             endcase
+        end
+
+        for(int i = 0; i < 3; i++) begin
+            if(!cdb_arr[i].valid) continue;
+
+            s1_phys_file[cdb_arr[i].prf] = cdb_arr[i].result;
+            s1_valid_list[cdb_arr[i].prf] = 1;
+        end
+
+        for(int i = 0; i < 2; i++) begin
+            if(!commit_arr[i].valid) continue;
+            if(commit_arr[i].is_store) continue;
+
+            s1_free_list[commit_arr[i].old_prf] = 1;
+            s1_phys_file[commit_arr[i].new_prf] = commit_arr[i].result;
         end
     end
 
@@ -242,6 +244,7 @@ module reg_file(
             ff1_rename_a <= '0;
             ff1_rob_a <= '0;
             ff1_instr_b <= '0;
+            //ff1_commit_arr <= '{default: 0};
 
             s2_valid_a <= 0;
             s2_valid_b <= 0;
@@ -256,6 +259,7 @@ module reg_file(
             ff1_rename_a <= s1_rename_a;
             ff1_rob_a <= s1_rob_a;
             ff1_instr_b <= s1_instr_b;
+            //ff1_commit_arr <= commit_arr;
 
             s2_valid_a <= (s1_instr_a.opcode != 0);
             s2_valid_b <= (s1_instr_b.opcode != 0);
@@ -275,7 +279,7 @@ module reg_file(
         s2_rename_b.int_rs.valid = (ff1_instr_b.opcode != 0);
         s2_rob_b.valid = (ff1_instr_b.opcode != 0);
 
-        case(ff1_instr_b.opcode) inside
+        unique case(ff1_instr_b.opcode) inside
             [1:14] : begin
                 s2_rename_b.int_rs.opcode = ff1_instr_b.opcode;
                 s2_idx_bs = s2_alias_table[ff1_instr_b.reg_s];
@@ -309,9 +313,9 @@ module reg_file(
                 s2_rename_b.load_rs.reg_s = s2_idx_bs;
                 s2_rename_b.load_rs.value_s = s2_phys_file[s2_idx_bs];
                 s2_rename_b.load_rs.check_s = s2_valid_list[s2_idx_bs];
-                s2_rename_b.load_rs.offset = instr_a.imm;
+                s2_rename_b.load_rs.offset = ff1_instr_b.imm;
 
-                s2_rob_b.old_prf = s1_alias_table[ff1_instr_b.reg_d];
+                s2_rob_b.old_prf = s2_alias_table[ff1_instr_b.reg_d];
                 s2_rob_b.arch = ff1_instr_b.reg_d;
             end
 
@@ -348,7 +352,7 @@ module reg_file(
             s2_free_list[free_b_idx] = 0;
             s2_valid_list[free_b_idx] = 0;
 
-            case(ff1_instr_b.opcode) inside
+            unique case(ff1_instr_b.opcode) inside
                 [1:14] : begin
                     s2_rename_b.int_rs.dest = free_b_idx;
                 end
