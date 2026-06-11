@@ -9,7 +9,6 @@ module common_data_bus(
     
     output cdb_entry cdb_arr [0:CDB_SIZE - 1]
 );
-
     assign cdb_arr[0] = int_res;
     assign cdb_arr[1] = imm_res;
     assign cdb_arr[2] = load_res;

@@ -2,18 +2,6 @@
 
 import config_pkg::*;
 
-typedef struct packed {
-    logic valid;
-    logic [4:0] idx;
-    imm_rs_entry entry;
-} insert_req;
-
-typedef struct packed { 
-    logic valid;
-    logic [4:0] idx;
-    imm_rs_entry entry;
-} dispatch_req;
-
 module res_station_imm(
     input logic clk,
     input logic rst,
@@ -24,6 +12,18 @@ module res_station_imm(
     output imm_rs_entry instr_op,
     output logic almost_full
 );
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        imm_rs_entry entry;
+    } insert_req;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        imm_rs_entry entry;
+    } dispatch_req;
 
     logic [3:0] filled_stations;
 
@@ -44,8 +44,7 @@ module res_station_imm(
         if (rst) begin
             res_station <= '{default: '0};
 
-            output_a_reg <= '0;
-            output_b_reg <= '0;
+            instr_op <= '0;
         end else begin
             for(int i = 0; i < 2; i++) begin
                 if(insert_reqs[i].valid) begin
@@ -56,6 +55,18 @@ module res_station_imm(
             if(disp_req.valid) begin
                 instr_op <= disp_req.entry;
                 res_station[disp_req.idx] <= '0;
+            end
+
+            for (int i = 0; i < CDB_SIZE; i++) begin
+                if (!cdb_arr[i].valid) continue;
+                for (int j = 0; j < RS_SIZE; j++) begin
+                    if (!res_station[j].valid) continue;
+
+                    if (res_station[j].reg_s == cdb_arr[i].prf) begin
+                        res_station[j].value_s <= cdb_arr[i].result;
+                        res_station[j].check_s <= 1;
+                    end
+                end
             end
         end
     end
@@ -116,27 +127,11 @@ module res_station_imm(
     end
 
     // CDB update block
-    /* always_comb begin
-
-    end */
 
     /* always_comb begin
         next_res_station = res_station;
 
         filled_stations = '0;
-
-        // Take in CDB to adjust RS entries
-        for(int i = 0; i < CDB_SIZE; i++) begin
-            if (!cdb_arr[i].valid) continue;
-            for(int j = 0; j < RS_SIZE - 1; j++) begin
-                if (!next_res_station[j].valid) continue;
-
-                if(next_res_station[j].reg_s == cdb_arr[i].prf) begin
-                    next_res_station[j].value_s = cdb_arr[i].result;
-                    next_res_station[j].check_s = 1;
-                end
-            end
-        end
 
         // Get amount of filled
         for(int i = 0; i < RS_SIZE - 1; i++) begin

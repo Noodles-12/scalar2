@@ -8,7 +8,7 @@ module reg_file(
     input  logic rst,
     input  instruction instr_a,
     input  instruction instr_b,
-    input  cdb_entry cdb_arr [0:2], // Replace with CDB_SIZE - 1 when mem RS & store/load FU fully updated
+    input  cdb_entry cdb_arr [0:CDB_SIZE - 1], // Replace with CDB_SIZE - 1 when mem RS & store/load FU fully updated
     input  rob_entry commit_arr [0:1],
 
     output rs_entry rename_a,
@@ -214,7 +214,7 @@ module reg_file(
             endcase
         end
 
-        for(int i = 0; i < 3; i++) begin
+        for(int i = 0; i < CDB_SIZE - 1; i++) begin
             if(!cdb_arr[i].valid) continue;
 
             s1_phys_file[cdb_arr[i].prf] = cdb_arr[i].result;

@@ -2,18 +2,6 @@
 
 import config_pkg::*;
 
-typedef struct packed {
-    logic valid;
-    logic [4:0] idx;
-    int_rs_entry entry;
-} insert_req;
-
-typedef struct packed { 
-    logic valid;
-    logic [4:0] idx;
-    int_rs_entry entry;
-} dispatch_req;
-
 module res_station_int(
     input logic clk,
     input logic rst,
@@ -24,6 +12,18 @@ module res_station_int(
     output int_rs_entry instr_op,
     output logic almost_full
 );
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        int_rs_entry entry;
+    } insert_req;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        int_rs_entry entry;
+    } dispatch_req;
     logic [3:0] filled_stations;
 
     int_rs_entry res_station [0:RS_SIZE - 1];
@@ -56,6 +56,22 @@ module res_station_int(
                 instr_op <= disp_req.entry;
                 res_station[disp_req.idx] <= '0;
             end
+
+            for (int i = 0; i < CDB_SIZE; i++) begin
+                if (!cdb_arr[i].valid) continue;
+                for (int j = 0; j < RS_SIZE; j++) begin
+                    if (!res_station[j].valid) continue;
+
+                    if (res_station[j].reg_s == cdb_arr[i].prf) begin
+                        res_station[j].value_s <= cdb_arr[i].result;
+                        res_station[j].check_s <= 1;
+                    end
+                    if (res_station[j].reg_t == cdb_arr[i].prf) begin
+                        res_station[j].value_t <= cdb_arr[i].result;
+                        res_station[j].check_t <= 1;
+                    end
+                end
+            end
         end
     end
 
@@ -67,7 +83,7 @@ module res_station_int(
         idx_a = '0; idx_b = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
-            if (!next_res_station[i].valid) begin
+            if (!res_station[i].valid) begin
                 if (!done_a) begin
                     idx_a = i;
                     done_a = 1;
@@ -113,24 +129,6 @@ module res_station_int(
     end
 
     /* always_comb begin
-
-        // Take in CDB to adjust RS entries
-        for(int i = 0; i < CDB_SIZE; i++) begin
-            if (!cdb_arr[i].valid) continue;
-            for(int j = 0; j < RS_SIZE; j++) begin
-                if (!next_res_station[j].valid) continue;
-
-                if (next_res_station[j].reg_s == cdb_arr[i].prf) begin
-                    next_res_station[j].value_s = cdb_arr[i].result;
-                    next_res_station[j].check_s = 1;
-                end
-                if (next_res_station[j].reg_s == cdb_arr[i].prf) begin
-                    next_res_station[j].value_s = cdb_arr[i].result;
-                    next_res_station[j].check_s = 1;
-                end
-            end
-        end
-
         // Get amount of filled
         for(int i = 0; i < RS_SIZE; i++) begin
             if(next_res_station[i].id != 0) begin

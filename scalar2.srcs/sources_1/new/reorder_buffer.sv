@@ -2,18 +2,6 @@
 
 import config_pkg::*;
 
-typedef struct packed { 
-    logic valid;
-    logic [4:0] idx;
-    logic [4:0] id;
-} commit_req;
-
-typedef struct packed {
-    logic valid;
-    logic [4:0] idx;
-    rob_entry entry;
-} insert_req;
-
 module reorder_buffer(
     input logic clk,
     input logic rst,
@@ -25,6 +13,18 @@ module reorder_buffer(
     output rob_entry output_arr [0:1],
     output logic [4:0] id_to_free [0:1]
 );
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        logic [4:0] id;
+    } commit_req;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] idx;
+        rob_entry entry;
+    } insert_req;
 
     rob_entry buffer [0:31];
 
