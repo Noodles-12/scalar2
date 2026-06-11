@@ -77,7 +77,7 @@ module reg_file(
             for (int i = 0; i < NUM_PHYS_REGS; i++) begin
                 valid_list[i] <= 1;
                 free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
-                phys_file[i] <= 32'(i);
+                phys_file[i] <= 32'(0);
             end
 
             for (int i = 0; i < NUM_ARCH_REGS; i++)
@@ -91,7 +91,7 @@ module reg_file(
             rename_b <= '0;
             rob_b <= '0;
         end else begin
-            if((ff1_instr_b.opcode != 0) || ff1_rob_a.valid) begin
+            if(s2_valid_a || s2_valid_b) begin
                 alias_table <= s2_alias_table;
                 phys_file <= s2_phys_file;
                 valid_list <= s2_valid_list;
@@ -185,6 +185,8 @@ module reg_file(
 
                 s1_rob_a.is_store = 1;
             end
+            
+            default: begin end
         endcase
 
         for(int i = 0; i < NUM_PHYS_REGS; i++) begin
@@ -214,7 +216,7 @@ module reg_file(
             endcase
         end
 
-        for(int i = 0; i < CDB_SIZE - 1; i++) begin
+        for(int i = 0; i < CDB_SIZE; i++) begin
             if(!cdb_arr[i].valid) continue;
 
             s1_phys_file[cdb_arr[i].prf] = cdb_arr[i].result;
@@ -238,7 +240,7 @@ module reg_file(
             for(int i = 0; i < NUM_PHYS_REGS; i++) begin
                 ff1_valid_list[i] <= 1;
                 ff1_free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
-                ff1_phys_file[i] <= 32'(i);
+                ff1_phys_file[i] <= 32'(0);
             end
 
             ff1_rename_a <= '0;
@@ -337,6 +339,8 @@ module reg_file(
 
                 s2_rob_b.is_store = 1;
             end
+            
+            default: begin end
         endcase
 
         for(int i = 0; i < NUM_PHYS_REGS; i++) begin

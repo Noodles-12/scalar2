@@ -55,7 +55,8 @@ module res_station_imm(
             if(disp_req.valid) begin
                 instr_op <= disp_req.entry;
                 res_station[disp_req.idx] <= '0;
-            end
+            end else
+                instr_op <= '0;
 
             for (int i = 0; i < CDB_SIZE; i++) begin
                 if (!cdb_arr[i].valid) continue;

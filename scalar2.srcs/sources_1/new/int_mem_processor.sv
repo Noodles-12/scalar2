@@ -7,8 +7,8 @@ module int_mem_processor(clk, rst, amount_executed);
     output logic [0:3] amount_executed;
 
     // Program Counter
-    logic [0:11] pc_next, pc_out;
-    assign pc_next = pc_out + 12'd2;
+    logic [ADDRBUS_SIZE-1:0] pc_next, pc_out;
+    assign pc_next = pc_out + ADDRBUS_SIZE'(2);
 
     // Fetch
     instruction instr_a, instr_b;
@@ -34,7 +34,7 @@ module int_mem_processor(clk, rst, amount_executed);
     load_fwd_addr load_fwd_addrs [0:1];
 
     logic [0:DATABUS_WIDTH - 1] mem_rd_data;
-	logic [0:ADDRBUS_SIZE - 1] mem_rd_addr;
+	logic [ADDRBUS_SIZE-1:0] mem_rd_addr;
     logic [0:5] mem_str_to_free;
 
     // Functional unit outputs

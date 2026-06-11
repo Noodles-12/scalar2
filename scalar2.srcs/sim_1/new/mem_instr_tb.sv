@@ -19,7 +19,7 @@ module mem_instr_tb();
     load_fwd_addr load_fwd_addrs [0:1];
 
     logic [0:DATABUS_WIDTH - 1] mem_rd_data;
-	logic [0:ADDRBUS_SIZE - 1] mem_rd_addr;
+	logic [ADDRBUS_SIZE-1:0] mem_rd_addr;
 
     load_rs_entry load_disp_mem, load_disp_imm;
     cdb_entry load_mem_cdb, load_imm_cdb;

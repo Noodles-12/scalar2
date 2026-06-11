@@ -21,9 +21,13 @@ module func_unit_imm(
         if (rst) begin
             cdb_result <= '0;
         end else begin
-            cdb_result.result <= result;
-            cdb_result.id <= imm_instr.id;
-            cdb_result.prf <= imm_instr.dest;
+            if(imm_instr.valid) begin
+                cdb_result.valid <= 1;
+                cdb_result.result <= result;
+                cdb_result.id <= imm_instr.id;
+                cdb_result.prf <= imm_instr.dest;
+            end else
+                cdb_result <= '0;
         end
     end
 endmodule

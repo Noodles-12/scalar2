@@ -39,7 +39,7 @@ package config_pkg;
     localparam PHYS_REGS_BITS   = 5;
     localparam NUM_PHYS_REGS    = (1 << PHYS_REGS_BITS);
     localparam DATABUS_WIDTH    = 36;
-    localparam ADDRBUS_SIZE     = 32;
+    localparam ADDRBUS_SIZE     = 12;
     localparam DATA_MEM_SIZE    = 4096;
     localparam CDB_SIZE         = 3;
     localparam ALU_RS_SIZE      = 16;
@@ -160,9 +160,14 @@ package config_pkg;
 
     typedef struct packed {
         logic [0:DATABUS_WIDTH-1] write_data;
-        logic [0:ADDRBUS_SIZE-1] write_addr;
+        logic [ADDRBUS_SIZE-1:0] write_addr;
         logic is_valid;
     } mem_write_entry;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] id;
+    } id_to_free;
 
     typedef struct packed {
         logic valid;

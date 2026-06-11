@@ -6,7 +6,7 @@ module data_memory(clk, rst, commit_arr, read_addr,
                     read_data);
     input logic clk, rst;
     input rob_entry commit_arr [0:1];
-    input [0:ADDRBUS_SIZE - 1] read_addr;
+    input [ADDRBUS_SIZE-1:0] read_addr;
 
     output logic [0:DATABUS_WIDTH - 1] read_data;
 

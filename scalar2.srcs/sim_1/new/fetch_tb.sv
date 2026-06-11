@@ -4,7 +4,7 @@ import config_pkg::*;
 
 module fetch_tb();
     logic clk;
-    logic [0:ADDRBUS_SIZE - 1] ip_addr, passed_addr;
+    logic [ADDRBUS_SIZE-1:0] ip_addr, passed_addr;
     instruction instr_a, instr_b;
 
     program_counter pc(.clk(clk),

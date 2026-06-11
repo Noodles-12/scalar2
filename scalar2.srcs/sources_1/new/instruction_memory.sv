@@ -3,9 +3,9 @@
 import config_pkg::*;
 
 module instruction_memory (
-    input  logic clk,
-    input  logic rst,
-    input  logic [31:0] ip_addr,
+    input logic clk,
+    input logic rst,
+    input logic [ADDRBUS_SIZE - 1:0] ip_addr,
 
     output logic [31:0] instr_a,
     output logic [31:0] instr_b
@@ -23,8 +23,8 @@ module instruction_memory (
             instr_a <= '0;
             instr_b <= '0;
         end else begin
-            instr_a <= mem[ip_addr[11:0]];
-            instr_b <= mem[ip_addr[11:0] + 12'd1];
+            instr_a <= mem[ip_addr];
+            instr_b <= mem[ip_addr + ADDRBUS_SIZE'(1)];
         end
     end
 

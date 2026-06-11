@@ -6,7 +6,7 @@ module int_processor(clk, rst);
     input logic clk, rst;
 
     // Program Counter
-    logic [0:11] pc_next, pc_out;
+    logic [ADDRBUS_SIZE - 1:0] pc_next, pc_out;
 
     // Fetch
     instruction instr_a, instr_b;
@@ -31,10 +31,10 @@ module int_processor(clk, rst);
     cdb_entry cdb_arr [0:CDB_SIZE-1];
 
     // ROB outputs
-    rob_entry rob_out_arr [0:CDB_SIZE - 1];
-    logic [4:0] id_to_free [0:1];
+    rob_entry rob_out_arr [0:1];
+    id_to_free ids_to_free [0:1];
 
-    assign pc_next = pc_out + 12'd2;
+    assign pc_next = pc_out + ADDRBUS_SIZE'(2);
 
     program_counter pc(.clk(clk),
                        .write_enable(~rst),
@@ -64,7 +64,7 @@ module int_processor(clk, rst);
                              .rename_b(rename_b),
                              .rob_a(rob_a),
                              .rob_b(rob_b),
-                             .id_to_free(id_to_free),
+                             .ids_to_free(ids_to_free),
                              .rs_op_a(rs_dp_a),
                              .rs_op_b(rs_dp_b),
                              .rob_op_a(rob_dp_a),
@@ -108,5 +108,5 @@ module int_processor(clk, rst);
                        .cdb_arr(cdb_arr),
                        .str_rob(),
                        .output_arr(rob_out_arr),
-                       .id_to_free(id_to_free) );
+                       .ids_to_free(ids_to_free) );
 endmodule

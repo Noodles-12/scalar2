@@ -9,7 +9,7 @@ module rename_dispatch_pl(
     input rs_entry rename_b,
     input rob_entry rob_a,
     input rob_entry rob_b,
-    input logic [4:0] id_to_free [0:1],
+    input id_to_free ids_to_free [0:1],
 
     output rs_entry rs_op_a [0:3],
     output rs_entry rs_op_b [0:3],
@@ -67,10 +67,10 @@ module rename_dispatch_pl(
 
         // Finding free ids
         for(int i = 0; i < 32; i++) begin
-            if(!done_a) begin
+            if(id_list[i] && !done_a) begin
                 free_id_a = i;
                 done_a = 1;
-            end else if (!done_b) begin
+            end else if (id_list[i] && !done_b) begin
                 free_id_b = i;
                 done_b = 1;
             end
@@ -91,8 +91,8 @@ module rename_dispatch_pl(
 
         // Freeing any id of commited instructions
         for(int i = 0; i < 2; i++) begin
-            if(id_to_free[i] == 0) continue;
-            next_id_list[id_to_free[i]] = 1;
+            if(!ids_to_free[i].valid) continue;
+            next_id_list[ids_to_free[i].id] = 1;
         end
 
         // Dispatch Logic

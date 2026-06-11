@@ -11,7 +11,7 @@ module reorder_buffer(
     input str_disp_entry str_rob [0:1],
     
     output rob_entry output_arr [0:1],
-    output logic [4:0] id_to_free [0:1]
+    output id_to_free ids_to_free [0:1]
 );
 
     typedef struct packed {
@@ -69,7 +69,7 @@ module reorder_buffer(
             count <= '0;
 
             output_arr <= '{default: '0};
-            id_to_free <= '{default: '0};
+            ids_to_free <= '{default: '0};
 
             lut <= '{default: '0};
             lut_valid <= '{default: '0};
@@ -88,12 +88,13 @@ module reorder_buffer(
             for (int i = 0; i < 2; i++) begin
                 if (commit_reqs[i].valid) begin
                     output_arr[i] <= buffer[commit_reqs[i].idx];
-                    id_to_free[i] <= buffer[commit_reqs[i].idx].id;
+                    ids_to_free[i].valid <= 1;
+                    ids_to_free[i].id <= buffer[commit_reqs[i].idx].id;
                     lut_valid[commit_reqs[i].id] <= 0;
                     buffer[commit_reqs[i].idx] <= '0;
                 end else begin
                     output_arr[i] <= '0;
-                    id_to_free[i] <= '0;
+                    ids_to_free[i] <= '0;
                 end
             end
 
@@ -136,7 +137,7 @@ module reorder_buffer(
             insert_count = insert_count + 1;
         end
 
-        if(input_b.valid && insert_count < 31) begin
+        if(input_b.valid && (count + insert_count) < 32) begin
             insert_reqs[1].valid = 1;
             insert_reqs[1].entry = input_b;
             insert_reqs[1].idx = insert_tail;
