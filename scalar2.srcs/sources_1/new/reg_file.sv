@@ -105,6 +105,21 @@ module reg_file(
 
             s1_valid_a <= (instr_a.opcode != 0);
             s1_valid_b <= (instr_b.opcode != 0);
+
+            for(int i = 0; i < CDB_SIZE; i++) begin
+                if(!cdb_arr[i].valid) continue;
+
+                phys_file[cdb_arr[i].prf] <= cdb_arr[i].result;
+                valid_list[cdb_arr[i].prf] <= 1;
+            end
+
+            for(int i = 0; i < 2; i++) begin
+                if(!commit_arr[i].valid) continue;
+                if(commit_arr[i].is_store) continue;
+
+                free_list[commit_arr[i].old_prf] <= 1;
+                phys_file[commit_arr[i].new_prf] <= commit_arr[i].result;
+            end
         end
     end
 
@@ -196,7 +211,7 @@ module reg_file(
             end
         end
 
-        // Any instruciton besides stores should use this since stores (later branches) don't write into registers; no destination
+        // Any instruction besides stores should use this since stores (later branches) don't write into registers; no destination
         if(free_a_found && s1_rename_a.int_rs.valid && (instr_a.opcode != 6'b011011)) begin
             s1_rob_a.new_prf = free_a_idx;
             s1_alias_table[instr_a.reg_d] = free_a_idx;
@@ -216,20 +231,6 @@ module reg_file(
             endcase
         end
 
-        for(int i = 0; i < CDB_SIZE; i++) begin
-            if(!cdb_arr[i].valid) continue;
-
-            s1_phys_file[cdb_arr[i].prf] = cdb_arr[i].result;
-            s1_valid_list[cdb_arr[i].prf] = 1;
-        end
-
-        for(int i = 0; i < 2; i++) begin
-            if(!commit_arr[i].valid) continue;
-            if(commit_arr[i].is_store) continue;
-
-            s1_free_list[commit_arr[i].old_prf] = 1;
-            s1_phys_file[commit_arr[i].new_prf] = commit_arr[i].result;
-        end
     end
 
     always_ff @ (posedge clk) begin

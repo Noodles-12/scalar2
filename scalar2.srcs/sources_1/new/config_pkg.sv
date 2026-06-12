@@ -1,20 +1,7 @@
 `timescale 1ns / 1ps
 
 package config_pkg;
-    // --- Immediate ALU Opcodes ---
-    localparam IALU_ADD     = 15;
-    localparam IALU_SUB     = 16;
-    localparam IALU_RSHI    = 17;
-    localparam IALU_LSHI    = 18;
-    localparam IALU_AND     = 19;
-    localparam IALU_OR      = 20;
-    localparam IALU_EQ      = 21;
-    localparam IALU_GTE     = 22;
-    localparam IALU_LTE     = 23;
-    localparam IALU_GT      = 24;
-    localparam IALU_LT      = 25;
-
-    // --- ALU Parameters ---
+    // --- ALU Opcodes ---
     localparam ALU_ADD      = 1;
     localparam ALU_SUB      = 2;
     localparam ALU_LSHIFT   = 3;
@@ -31,6 +18,19 @@ package config_pkg;
     localparam ALU_NOR      = 12;
     localparam ALU_NAND     = 13;
     localparam ALU_XOR      = 14;
+
+    // --- Immediate ALU Opcodes ---
+    localparam IALU_ADD     = 15;
+    localparam IALU_SUB     = 16;
+    localparam IALU_RSHI    = 17;
+    localparam IALU_LSHI    = 18;
+    localparam IALU_AND     = 19;
+    localparam IALU_OR      = 20;
+    localparam IALU_EQ      = 21;
+    localparam IALU_GTE     = 22;
+    localparam IALU_LTE     = 23;
+    localparam IALU_GT      = 24;
+    localparam IALU_LT      = 25;
 
     // --- Processor Parameters ---
     localparam INSTR_WIDTH      = 32;
