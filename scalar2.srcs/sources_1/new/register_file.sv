@@ -36,15 +36,19 @@ module register_file(
     logic [PHYS_REGS_BITS - 1:0] free_a, free_b;
     logic found_a, found_b;
 
-    logic [PHYS_REGS_BITS - 1:0] idx_as, idx_at;
     rs_entry res_stat_a;
     rob_entry rob_a;
     rat_rename rename_a;
+    logic [PHYS_REGS_BITS - 1:0] idx_as, idx_at, idx_ad;
+    logic [31:0] value_as, value_at;
+    logic check_as, check_at;
     
-    logic [PHYS_REGS_BITS - 1:0] idx_bs, idx_bt;
     rs_entry res_stat_b;
     rob_entry rob_b;
     rat_rename rename_b;
+    logic [PHYS_REGS_BITS - 1:0] idx_bs, idx_bt, idx_bd;
+    logic [31:0] value_bs, value_bt;
+    logic check_bs, check_bt;
 
     always_ff @ (posedge clk) begin
         if(rst) begin
@@ -56,6 +60,12 @@ module register_file(
                 valid_list[i] <= 1;
                 free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
             end
+            
+            res_stat_a_op <= '0;
+            res_stat_b_op <= '0;
+
+            rob_a_op <= '0;
+            rob_b_op <= '0;
         end else begin
             if(rename_a.valid) begin
                 alias_table[rename_a.arch_reg] = rename_a.idx;
@@ -98,50 +108,62 @@ module register_file(
     // Rename of instruction A
     always_comb begin
         res_stat_a = '0; rob_a = '0;
-        idx_as = '0; idx_at = '0;
+        idx_as = '0; idx_at = '0; idx_ad = '0;
+        value_as = '0; value_at = '0;
+        check_as = 0; check_at = 0;
         rename_a = '0;
 
         // Valid bit should be in same position for any type of RS entry
         res_stat_a.int_rs.valid = (instr_a.opcode != 0); 
         rob_a.valid = (instr_a.opcode != 0);
 
+        idx_as = alias_table[instr_a.reg_s];
+        value_as = phys_file[idx_as];
+        check_as = valid_list[idx_as];
+
+        idx_at = alias_table[instr_a.reg_t];
+        value_at = phys_file[idx_at];
+        check_at = valid_list[idx_at];
+
+        idx_ad = alias_table[instr_a.reg_d];
+
         unique case(instr_a.opcode) inside
             [1:14] : begin
                 res_stat_a.int_rs.opcode = instr_a.opcode;
-                idx_as = alias_table[instr_a.reg_s];
-                res_stat_a.int_rs.reg_s = idx_as;
-                res_stat_a.int_rs.value_s = phys_file[idx_as];
-                res_stat_a.int_rs.check_s = valid_list[idx_as];
-                idx_at = alias_table[instr_a.reg_t];
-                res_stat_a.int_rs.reg_t = idx_at;
-                res_stat_a.int_rs.value_t = phys_file[idx_at];
-                res_stat_a.int_rs.check_t = valid_list[idx_at];
 
-                rob_a.old_prf = alias_table[instr_a.reg_d];
+                res_stat_a.int_rs.reg_s = idx_as;
+                res_stat_a.int_rs.value_s = value_as;
+                res_stat_a.int_rs.check_s = check_as;
+
+                res_stat_a.int_rs.reg_t = idx_at;
+                res_stat_a.int_rs.value_t = value_at;
+                res_stat_a.int_rs.check_t = check_at;
+
+                rob_a.old_prf = idx_ad;
                 rob_a.arch = instr_a.reg_d;
             end
 
             [15:25] : begin
                 res_stat_a.imm_rs.opcode = instr_a.opcode;
-                idx_as = alias_table[instr_a.reg_s];
+
                 res_stat_a.imm_rs.reg_s = idx_as;
-                res_stat_a.imm_rs.value_s = phys_file[idx_as];
-                res_stat_a.imm_rs.check_s = valid_list[idx_as];
+                res_stat_a.imm_rs.value_s = value_as;
+                res_stat_a.imm_rs.check_s = check_as;
                 res_stat_a.imm_rs.imm = instr_a.imm;
 
-                rob_a.old_prf = alias_table[instr_a.reg_d];
+                rob_a.old_prf = idx_ad;
                 rob_a.arch = instr_a.reg_d;
             end
 
             [26:26] : begin
                 res_stat_a.load_rs.opcode = instr_a.opcode;
-                idx_as = alias_table[instr_a.reg_s];
+
                 res_stat_a.load_rs.reg_s = idx_as;
-                res_stat_a.load_rs.value_s = phys_file[idx_as];
-                res_stat_a.load_rs.check_s = valid_list[idx_as];
+                res_stat_a.load_rs.value_s = value_as;
+                res_stat_a.load_rs.check_s = check_as;
                 res_stat_a.load_rs.offset = instr_a.imm;
                 
-                rob_a.old_prf = alias_table[instr_a.reg_d];
+                rob_a.old_prf = idx_ad;
                 rob_a.arch = instr_a.reg_d;
             end
 
@@ -149,17 +171,15 @@ module register_file(
                 res_stat_a.store_rs.opcode = instr_a.opcode;        
                 // reg_s position in instruction is register that has value to combine with offset for effective address
                 // Flipped compared to other instructions
-                idx_as = alias_table[instr_a.reg_s]; 
                 res_stat_a.store_rs.reg_d = idx_as;
-                res_stat_a.store_rs.value_d = phys_file[idx_as];
-                res_stat_a.store_rs.check_d = valid_list[idx_as];
+                res_stat_a.store_rs.value_d = value_as;
+                res_stat_a.store_rs.check_d = check_as;
 
                 // reg_d position in instruction is the source register of the data to put into memory
                 // Flipped compared to other operations
-                idx_at = alias_table[instr_a.reg_d];
                 res_stat_a.store_rs.reg_s = idx_at;
-                res_stat_a.store_rs.value_s = phys_file[idx_at];
-                res_stat_a.store_rs.check_s = valid_list[idx_at];
+                res_stat_a.store_rs.value_s = value_at;
+                res_stat_a.store_rs.check_s = check_at;
 
                 res_stat_a.store_rs.offset = instr_a.imm;
 
@@ -192,7 +212,9 @@ module register_file(
 
     always_comb begin
         res_stat_b = '0; rob_b = '0;
-        idx_bs = '0; idx_bt = '0;
+        idx_bs = '0; idx_bt = '0; idx_bd = '0;
+        value_bs = '0; value_bt = '0;
+        check_bs = 0; check_bt = 0;
         rename_b = '0;
 
         // Valid bit should be in same position for any type of RS entry
@@ -203,7 +225,6 @@ module register_file(
             idx_bs = (instr_b.reg_s == instr_a.reg_d) ? free_a : alias_table[instr_b.reg_s];
             idx_bt = (instr_b.reg_t == instr_a.reg_d) ? free_a : alias_table[instr_b.reg_t]; 
         end
-        //idx_bs = (instr_b.reg_s == instr_a.reg_d) ? alias_table[instr_b.reg_s];
 
         unique case(instr_b.opcode) inside
             [1:14] : begin

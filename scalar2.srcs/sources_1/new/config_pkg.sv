@@ -38,7 +38,7 @@ package config_pkg;
     localparam NUM_ARCH_REGS    = (1 << ARCH_REGS_BITS);
     localparam PHYS_REGS_BITS   = 5;
     localparam NUM_PHYS_REGS    = (1 << PHYS_REGS_BITS);
-    localparam DATABUS_WIDTH    = 36;
+    localparam DATABUS_WIDTH    = 32;
     localparam ADDRBUS_SIZE     = 12;
     localparam DATA_MEM_SIZE    = 4096;
     localparam CDB_SIZE         = 3;
