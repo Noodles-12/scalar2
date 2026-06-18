@@ -11,7 +11,8 @@ module register_file(
     output rs_entry res_stat_a_op,
     output rs_entry res_stat_b_op,
     output rob_entry rob_a_op,
-    output rob_entry rob_b_op
+    output rob_entry rob_b_op,
+    output [3:0] last_arch_reg
 );
     typedef struct packed {
         logic valid;
@@ -21,14 +22,14 @@ module register_file(
 
     // Register Alias Table (RAT) - 16 Registers
     // Each register holds the index of a physical register in PRF (0-31)
-    logic [PHYS_REGS_BITS - 1:0] alias_table [0:NUM_ARCH_REGS - 1];
+    (* max_fanout = 8 *) logic [PHYS_REGS_BITS - 1:0] alias_table [0:NUM_ARCH_REGS - 1];
 
     // Physical Register File (PRF) - 32 Registers
-    logic [31:0] phys_file [0:NUM_PHYS_REGS - 1];
+    (* max_fanout = 8 *) logic [31:0] phys_file [0:NUM_PHYS_REGS - 1];
     // Free list that contains free bit for each physical register
-    logic free_list [0:NUM_PHYS_REGS - 1];
+    (* max_fanout = 8 *) logic free_list [0:NUM_PHYS_REGS - 1];
     // Valid list that contains valid bit for each physical register
-    logic valid_list [0:NUM_PHYS_REGS - 1];
+    (* max_fanout = 8 *) logic valid_list [0:NUM_PHYS_REGS - 1];
 
     // Register Retirement Table (RRT) - Structurally same as RAT
     logic [PHYS_REGS_BITS - 1:0] retire_table [0:NUM_ARCH_REGS - 1];
@@ -46,6 +47,7 @@ module register_file(
     rs_entry res_stat_b;
     rob_entry rob_b;
     rat_rename rename_b;
+    logic s_match, t_match, d_match;
     logic [PHYS_REGS_BITS - 1:0] idx_bs, idx_bt, idx_bd;
     logic [31:0] value_bs, value_bt;
     logic check_bs, check_bt;
@@ -68,15 +70,29 @@ module register_file(
             rob_b_op <= '0;
         end else begin
             if(rename_a.valid) begin
-                alias_table[rename_a.arch_reg] = rename_a.idx;
-                valid_list[rename_a.idx] = 0;
-                free_list[rename_a.idx] = 0;
+                alias_table[rename_a.arch_reg] <= rename_a.idx;
+                valid_list[rename_a.idx] <= 0;
+                free_list[rename_a.idx] <= 0;
             end
 
             if(rename_b.valid) begin
-                alias_table[rename_b.arch_reg] = rename_b.idx;
-                valid_list[rename_b.idx] = 0;
-                free_list[rename_b.idx] = 0;
+                alias_table[rename_b.arch_reg] <= rename_b.idx;
+                valid_list[rename_b.idx] <= 0;
+                free_list[rename_b.idx] <= 0;
+            end
+
+            for(int i = 0; i < CDB_SIZE; i++) begin
+                if(!cdb_arr[i].valid) continue;
+
+                phys_file[cdb_arr[i].prf] <= cdb_arr[i].result;
+                valid_list[cdb_arr[i].prf] <= 1;
+            end
+
+            for(int i = 0; i < 2; i++) begin
+                if(!commit_arr[i].valid) continue;
+
+                free_list[commit_arr[i].old_prf] <= 1;
+                phys_file[commit_arr[i].new_prf] <= commit_arr[i].result;
             end
 
             res_stat_a_op <= res_stat_a;
@@ -221,24 +237,33 @@ module register_file(
         res_stat_b.int_rs.valid = (instr_b.opcode != 0); 
         rob_b.valid = (instr_b.opcode != 0);
 
-        if(instr_a.opcode != 6'b011011) begin
-            idx_bs = (instr_b.reg_s == instr_a.reg_d) ? free_a : alias_table[instr_b.reg_s];
-            idx_bt = (instr_b.reg_t == instr_a.reg_d) ? free_a : alias_table[instr_b.reg_t]; 
-        end
+        s_match = (instr_b.reg_s == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
+        t_match = (instr_b.reg_t == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
+        d_match = (instr_b.reg_d == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
+
+        idx_bs = s_match ? free_a : alias_table[instr_b.reg_s];
+        check_bs = s_match ? 0 : valid_list[idx_bs];
+        value_bs = phys_file[idx_bs];
+
+        idx_bt = t_match ? free_a : alias_table[instr_b.reg_t];
+        check_bt = t_match ? 0 : valid_list[idx_bt];
+        value_bt = phys_file[idx_bt];
+
+        idx_bd = d_match ? free_a : alias_table[instr_b.reg_d];
 
         unique case(instr_b.opcode) inside
             [1:14] : begin
                 res_stat_b.int_rs.opcode = instr_b.opcode;
     
                 res_stat_b.int_rs.reg_s = idx_bs;
-                res_stat_b.int_rs.value_s = phys_file[idx_bs];
-                res_stat_b.int_rs.check_s = valid_list[idx_bs];
+                res_stat_b.int_rs.value_s = value_bs;
+                res_stat_b.int_rs.check_s = check_bs;
 
                 res_stat_b.int_rs.reg_t = idx_bt;
-                res_stat_b.int_rs.value_t = phys_file[idx_bt];
-                res_stat_b.int_rs.check_t = valid_list[idx_bt];
+                res_stat_b.int_rs.value_t = value_bt;
+                res_stat_b.int_rs.check_t = check_bt;
 
-                rob_b.old_prf = alias_table[instr_b.reg_d];
+                rob_b.old_prf = idx_bd;
                 rob_b.arch = instr_b.reg_d;
             end
 
@@ -246,11 +271,11 @@ module register_file(
                 res_stat_b.imm_rs.opcode = instr_b.opcode;
 
                 res_stat_b.imm_rs.reg_s = idx_bs;
-                res_stat_b.imm_rs.value_s = phys_file[idx_bs];
-                res_stat_b.imm_rs.check_s = valid_list[idx_bs];
+                res_stat_b.imm_rs.value_s = value_bs;
+                res_stat_b.imm_rs.check_s = check_bs;
                 res_stat_b.imm_rs.imm = instr_b.imm;
 
-                rob_b.old_prf = alias_table[instr_b.reg_d];
+                rob_b.old_prf = idx_bd;
                 rob_b.arch = instr_b.reg_d;
             end
 
@@ -258,11 +283,11 @@ module register_file(
                 res_stat_b.load_rs.opcode = instr_b.opcode;
 
                 res_stat_b.load_rs.reg_s = idx_bs;
-                res_stat_b.load_rs.value_s = phys_file[idx_bs];
-                res_stat_b.load_rs.check_s = valid_list[idx_bs];
+                res_stat_b.load_rs.value_s = value_bs;
+                res_stat_b.load_rs.check_s = check_bs;
                 res_stat_b.load_rs.offset = instr_b.imm;
 
-                rob_b.old_prf = alias_table[instr_b.reg_d];
+                rob_b.old_prf = idx_bd;
                 rob_b.arch = instr_b.reg_d;
             end
 
@@ -272,15 +297,15 @@ module register_file(
                 // Flipped compared to other instructions
 
                 res_stat_b.store_rs.reg_d = idx_bs;
-                res_stat_b.store_rs.value_d = phys_file[idx_bs];
-                res_stat_b.store_rs.check_d = valid_list[idx_bs];
+                res_stat_b.store_rs.value_d = value_bs;
+                res_stat_b.store_rs.check_d = check_bs;
 
                 // reg_d position in instruction is the source register of the data to put into memory
                 // Flipped compared to other operations
 
                 res_stat_b.store_rs.reg_s = idx_bt;
-                res_stat_b.store_rs.value_s = phys_file[idx_bt];
-                res_stat_b.store_rs.check_s = valid_list[idx_bt];
+                res_stat_b.store_rs.value_s = value_bt;
+                res_stat_b.store_rs.check_s = check_bt;
 
                 res_stat_b.store_rs.offset = instr_b.imm;
 
@@ -310,4 +335,6 @@ module register_file(
             endcase
         end
     end
+
+    assign last_arch_reg = phys_file[alias_table[NUM_ARCH_REGS-1]][3:0];
 endmodule

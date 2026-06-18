@@ -16,6 +16,7 @@ module int_processor_tb();
     task automatic gold_execute(input instruction instr);
         case(instr.opcode)
             1:  gold_regs[instr.reg_d] = gold_regs[instr.reg_s] + gold_regs[instr.reg_t];
+            2:  gold_regs[instr.reg_d] = gold_regs[instr.reg_s] - gold_regs[instr.reg_t];
             15: gold_regs[instr.reg_d] = gold_regs[instr.reg_s] + instr.imm;
         endcase
     endtask
@@ -26,17 +27,20 @@ module int_processor_tb();
         begin
             instruction instr;
             int fh;
-            
+
             fh = $fopen("instr_mem.mem", "r");
-            while(!$feof(fh)) begin
-                $fscanf(fh, "%h\n", instr);
+            if (fh == 0) begin
+                $display("ERROR: could not open instr_mem.mem");
+                $finish;
+            end
+            while ($fscanf(fh, "%h\n", instr) == 1) begin
                 gold_execute(instr);
             end
             $fclose(fh);
         end
         rst = 1; #10; rst = 0;
 
-        #140;
+        #250;
         $finish;
     end
 endmodule

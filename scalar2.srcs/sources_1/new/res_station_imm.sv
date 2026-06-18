@@ -87,7 +87,7 @@ module res_station_imm(
                     idx_a = i;
                 end else if (!done_b) begin
                     done_b = 1;
-                    idx_b = 1;
+                    idx_b = i;
                 end
             end
         end

@@ -2,9 +2,12 @@
 
 import config_pkg::*;
 
-module int_processor(clk, rst);
-    input logic clk, rst;
+module int_processor(
+    input clk, 
+    input rst,
 
+    output [3:0] reg_op
+);
     // Program Counter
     logic [ADDRBUS_SIZE - 1:0] pc_next, pc_out;
 
@@ -42,21 +45,21 @@ module int_processor(clk, rst);
                        .op_addr(pc_out) );
 
     instruction_memory instr_mem(.clk(clk),
-                                 .rst(rst),
                                  .ip_addr(pc_out),
                                  .instr_a(instr_a),
                                  .instr_b(instr_b) );
 
-    reg_file rf(.clk(clk),
-                .rst(rst),
-                .instr_a(instr_a),
-                .instr_b(instr_b),
-                .cdb_arr(cdb_arr),
-                .commit_arr(rob_out_arr),
-                .rename_a(rename_a),
-                .rename_b(rename_b),
-                .rob_a(rob_a),
-                .rob_b(rob_b) );
+    register_file rf(.clk(clk),
+                     .rst(rst),
+                     .instr_a(instr_a),
+                     .instr_b(instr_b),
+                     .cdb_arr(cdb_arr),
+                     .commit_arr(rob_out_arr),
+                     .res_stat_a_op(rename_a),
+                     .res_stat_b_op(rename_b),
+                     .rob_a_op(rob_a),
+                     .rob_b_op(rob_b),
+                     .last_arch_reg(reg_op) );
 
     rename_dispatch_pl dp_pl(.clk(clk),
                              .rst(rst),

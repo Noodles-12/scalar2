@@ -26,13 +26,13 @@ module reorder_buffer(
         rob_entry entry;
     } insert_req;
 
-    rob_entry buffer [0:31];
+    (* max_fanout = 8 *) rob_entry buffer [0:31];
 
-    logic [4:0] lut [0:31];
-    logic lut_valid [0:31];
+    (* max_fanout = 8 *) logic [4:0] lut [0:31];
+    (* max_fanout = 8 *) logic lut_valid [0:31];
 
-    logic [4:0] head, head_p1, head_p2;
-    logic [4:0] tail, count;
+    (* max_fanout = 8 *) logic [4:0] head, head_p1, head_p2;
+    (* max_fanout = 8 *) logic [4:0] tail, count;
 
     logic full;
 
