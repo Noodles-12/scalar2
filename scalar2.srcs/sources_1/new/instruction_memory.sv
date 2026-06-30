@@ -19,13 +19,13 @@ module instruction_memory (
         $readmemh("instr_mem.mem", mem);
     end
 
-    // Cycle N: BRAM read — no reset, allows output register merging
+    // Cycle N: BRAM read; no reset, allows output register merging
     always_ff @(posedge clk) begin
         instr_a_r <= mem[{ip_addr[ADDRBUS_SIZE - 1:1], 1'b0}];
         instr_b_r <= mem[{ip_addr[ADDRBUS_SIZE - 1:1], 1'b1}];
     end
 
-    // Cycle N+1: second register stage — cuts BRAM output off critical path
+    // Cycle N+1: second register stage; cuts BRAM output off critical path
     always_ff @(posedge clk) begin
         instr_a <= instr_a_r;
         instr_b <= instr_b_r;
