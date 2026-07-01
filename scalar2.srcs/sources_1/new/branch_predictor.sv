@@ -7,10 +7,14 @@ module branch_predictor(
     input logic clk,
     input logic [11:0] pc,
     input instruction instr_a,
+    input logic [11:0] addr_a,
     input instruction instr_b,
+    input logic [11:0] addr_b,
     
     output instruction instr_a_op,
-    output instruction instr_b_op
+    output instruction instr_b_op,
+    output instr_code code_a,
+    output instr_code code_b
 );
 
     typedef enum logic [1:0] {
