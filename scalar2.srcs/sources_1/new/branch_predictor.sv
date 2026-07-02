@@ -15,15 +15,7 @@ module branch_predictor(
     output instruction instr_b_op,
     output instr_code code_a,
     output instr_code code_b
-);
-
-    typedef enum logic [1:0] {
-        NORMAL          = 2'b00,
-        JUMP            = 2'b01,
-        UNTAKEN_BRANCH  = 2'b10,
-        TAKEN_BRANCH    = 2'b11
-    } instr_code;
-    
+);  
     logic [1:0] history_table [0:31];
     
     instr_code code_a, code_b;

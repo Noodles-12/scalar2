@@ -1,26 +1,18 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 06/29/2026 10:12:17 AM
-// Design Name: 
-// Module Name: controller
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
+import config_pkg::*;
 
 module controller(
+    input instr_code code_a,
+    input instr_code code_b,
+    input logic [11:0] addr_a,
+    input logic [11:0] addr_b,
+    input logic [11:0] curr_pc,
 
-    );
+    output logic predict_flush,
+    output logic mispredict_flush,
+    output logic [11:0] next_pc
+);
+
+
 endmodule

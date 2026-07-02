@@ -169,6 +169,13 @@ package config_pkg;
         logic [4:0] id;
     } id_to_free;
 
+    typedef enum logic [1:0] {
+        NORMAL          = 2'b00,
+        JUMP            = 2'b01,
+        UNTAKEN_BRANCH  = 2'b10,
+        TAKEN_BRANCH    = 2'b11
+    } instr_code;
+
     typedef struct packed {
         logic valid;
         logic [2:0] idx;
