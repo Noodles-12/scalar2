@@ -54,9 +54,17 @@ package config_pkg;
         logic [3:0] reg_s;
         logic [3:0] reg_t;
         logic [11:0] imm;
-        logic [1:0]  pad;
+        instr_code [1:0] code;
     } instruction;
 
+    typedef enum logic [1:0] {
+        NORMAL          = 2'b00,
+        JUMP            = 2'b01,
+        UNTAKEN_BRANCH  = 2'b10,
+        TAKEN_BRANCH    = 2'b11
+    } instr_code;
+
+    // Check if I'm even using this
     typedef struct packed {
         logic valid;
         logic [0:DATABUS_WIDTH-1] data;
@@ -168,13 +176,6 @@ package config_pkg;
         logic valid;
         logic [4:0] id;
     } id_to_free;
-
-    typedef enum logic [1:0] {
-        NORMAL          = 2'b00,
-        JUMP            = 2'b01,
-        UNTAKEN_BRANCH  = 2'b10,
-        TAKEN_BRANCH    = 2'b11
-    } instr_code;
 
     typedef struct packed {
         logic valid;

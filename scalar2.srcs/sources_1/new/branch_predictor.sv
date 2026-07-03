@@ -13,19 +13,25 @@ module branch_predictor(
     
     output instruction instr_a_op,
     output instruction instr_b_op,
-    output instr_code code_a,
-    output instr_code code_b
-);  
+    output logic [11:0] addr_a_op,
+    output logic [11:0] addr_b_op
+);
+    
     logic [1:0] history_table [0:31];
     
     instr_code code_a, code_b;
-    logic [1:0] predict_a, predict_b; 
+    logic [1:0] predict_a, predict_b;
+    logic instruction mod_instr_a, mod_instr_b;
 
     always_ff @ (posedge clk) begin
         if(rst) begin
             history_table <= '{default: 2'b10};
         end else begin
+            instr_a_op <= mod_instr_a;
+            instr_b_op <= mod_instr_b;
 
+            addr_a_op <= addr_a;
+            addr_b_op <= addr_b;
         end
     end
 
@@ -51,6 +57,9 @@ module branch_predictor(
             end
             default: code_a = NORMAL;
         endcase
+
+        mod_instr_a = instr_a;
+        mod_instr_a.code = code_a;
     end
     
     // Instruction B code
@@ -75,5 +84,8 @@ module branch_predictor(
             end
             default: code_b = NORMAL;
         endcase
+
+        mod_instr_b = instr_b;
+        mod_instr_b.code = code_b;
     end
 endmodule
