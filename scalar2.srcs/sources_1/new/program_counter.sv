@@ -2,7 +2,6 @@
 
 import config_pkg::*;
 
-// Possibly include addition part?
 module program_counter(
     input logic clk,
     input logic write_enable,

@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import config_pkg::*;
+
 module dependency_resolver(
     input logic clk,
     input logic rst,
@@ -15,7 +17,7 @@ module dependency_resolver(
     output logic [11:0] recov_addr_a,
     output logic [11:0] recov_addr_b
 );
-    logic instr_code code_a, code_b;
+    instr_code code_a, code_b;
 
     assign code_a = instr_a.code;
     assign code_b = instr_b.code;
@@ -24,6 +26,7 @@ module dependency_resolver(
         if(rst || mispredict_flush) begin
             instr_a_op <= '0;
             instr_b_op <= '0;
+            
             recov_addr_a <= '0;
             recov_addr_b <= '0;
         end else if(enable) begin
@@ -31,6 +34,10 @@ module dependency_resolver(
 
             // code_a[0] being 1 represents if instr_a is taken branch or jump
             instr_b_op <= code_a[0] ? '0 : instr_b;
+
+            recov_addr_a <= addr_a;
+
+            recov_addr_b <= code_a[0] ? '0 : reco_addr_b;
         end
     end
 endmodule

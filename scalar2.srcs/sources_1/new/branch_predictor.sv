@@ -13,25 +13,68 @@ module branch_predictor(
     
     output instruction instr_a_op,
     output instruction instr_b_op,
-    output logic [11:0] addr_a_op,
-    output logic [11:0] addr_b_op
+    output logic [11:0] predict_addr_a,
+    output logic [11:0] predict_addr_b,
+    output logic [11:0] recov_addr_a,
+    output logic [11:0] recov_addr_b
 );
-    
     logic [1:0] history_table [0:31];
     
     instr_code code_a, code_b;
     logic [1:0] predict_a, predict_b;
-    logic instruction mod_instr_a, mod_instr_b;
+    instruction mod_instr_a, mod_instr_b;
+
+    logic [11:0] taken_a, taken_b;
+    logic [11:0] return_a, return_b;
+
+    assign taken_a = instr_a.imm;
+    assign taken_b = instr_b.imm;
+    assign return_a = addr_a + 1;
+    assign return_b = addr_b + 1;
 
     always_ff @ (posedge clk) begin
         if(rst) begin
             history_table <= '{default: 2'b10};
+            instr_a_op <= '0;
+            instr_b_op <= '0;
+
+            addr_a_op <= '0;
+            addr_b_op <= '0;
         end else begin
             instr_a_op <= mod_instr_a;
             instr_b_op <= mod_instr_b;
 
-            addr_a_op <= addr_a;
-            addr_b_op <= addr_b;
+            unique case(code_a)
+                NORMAL:         predict_addr_a <= '0;
+                JUMP:           predict_addr_a <= taken_a;
+                UNTAKEN_BRANCH: predict_addr_a <= return_a;
+                TAKEN_BRANCH:   predict_addr_a <= taken_a;
+                default:        predict_addr_a <= '0;
+            endcase
+
+            unique case(code_a)
+                NORMAL:         recov_addr_a <= '0;
+                JUMP:           recov_addr_a <= '0;
+                UNTAKEN_BRANCH: recov_addr_a <= taken_a;
+                TAKEN_BRANCH:   recov_addr_a <= return_a;
+                default:        recov_addr_a <= '0;
+            endcase
+
+            unique case(code_b)
+                NORMAL:         predict_addr_b <= '0;
+                JUMP:           predict_addr_b <= taken_b;
+                UNTAKEN_BRANCH: predict_addr_b <= return_b;
+                TAKEN_BRANCH:   predict_addr_b <= taken_b;
+                default:        predict_addr_b <= '0;
+            endcase
+
+            unique case(code_b)
+                NORMAL:         recov_addr_b <= '0;
+                JUMP:           recov_addr_b <= '0;
+                UNTAKEN_BRANCH: recov_addr_b <= taken_b;
+                TAKEN_BRANCH:   recov_addr_b <= return_b;
+                default:        recov_addr_b <= '0;
+            endcase
         end
     end
 
@@ -39,7 +82,7 @@ module branch_predictor(
     always_comb begin
         predict_a = history_table[instr_a.imm];
 
-        case(instr_a.opcode) inside
+        unique case(instr_a.opcode) inside
             [6'b000001:6'b011011] : begin
                 code_a = NORMAL;
             end
@@ -66,7 +109,7 @@ module branch_predictor(
     always_comb begin
         predict_b = history_table[instr_b.imm];
 
-        case(instr_b.opcode) inside
+        unique case(instr_b.opcode) inside
             [6'b000001:6'b011011] : begin
                 code_b = NORMAL;
             end
