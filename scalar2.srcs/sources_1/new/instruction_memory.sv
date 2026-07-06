@@ -3,8 +3,8 @@
 import config_pkg::*;
 
 module instruction_memory (
-    input  logic clk,
-    input  logic [ADDRBUS_SIZE-1:0] ip_addr,
+    input logic clk,
+    input logic [ADDRBUS_SIZE-1:0] ip_addr,
 
     output logic [31:0] instr_a,
     output logic [31:0] instr_b,

@@ -3,8 +3,6 @@
 import config_pkg::*;
 
 module controller(
-    input logic clk,
-    input logic rst,
     input instr_code code_a,
     input instr_code code_b,
     input logic [11:0] target_a,
@@ -50,9 +48,9 @@ module controller(
 
     always_comb begin
         unique case(pc_sel)
-            2'b00: next_pc = curr_pc + 1;
-            2'b01: next_pc = addr_a;
-            2'b10: next_pc = addr_b;
+            2'b00: next_pc = curr_pc + 2;
+            2'b01: next_pc = target_a;
+            2'b10: next_pc = target_b;
             2'b11: next_pc = recov_addr;
         endcase
     end
