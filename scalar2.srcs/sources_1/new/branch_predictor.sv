@@ -9,8 +9,8 @@ module branch_predictor(
     input logic [11:0] addr_a,
     input instruction instr_b,
     input logic [11:0] addr_b,
-    input logic predict_flush
-    input logic mispredict_signal,
+    input logic predict_flush,
+    input logic mispredict_flush,
     input logic enable,
     
     output instruction instr_a_op,
@@ -37,11 +37,15 @@ module branch_predictor(
     always_ff @ (posedge clk) begin
         if(rst) begin
             history_table <= '{default: 2'b10};
+
             instr_a_op <= '0;
             instr_b_op <= '0;
 
-            addr_a_op <= '0;
-            addr_b_op <= '0;
+            predict_addr_b <= '0;
+            predict_addr_b <= '0;
+
+            recov_addr_a <= '0;
+            recov_addr_b <= '0;
         end else begin
             instr_a_op <= mod_instr_a;
             instr_b_op <= mod_instr_b;

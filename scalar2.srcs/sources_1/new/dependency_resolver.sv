@@ -37,7 +37,7 @@ module dependency_resolver(
 
             recov_addr_a <= addr_a;
 
-            recov_addr_b <= code_a[0] ? '0 : reco_addr_b;
+            recov_addr_b <= code_a[0] ? '0 : addr_b;
         end
     end
 endmodule

@@ -47,6 +47,13 @@ package config_pkg;
     localparam RS_SIZE          = 8;
 
     // --- Types ---
+    typedef enum logic [1:0] {
+        NORMAL          = 2'b00,
+        JUMP            = 2'b01,
+        UNTAKEN_BRANCH  = 2'b10,
+        TAKEN_BRANCH    = 2'b11
+    } instr_code;
+
     // opcode, reg_d, reg_s, reg_t, imm, pad
     typedef struct packed {
         logic [5:0] opcode;
@@ -54,15 +61,8 @@ package config_pkg;
         logic [3:0] reg_s;
         logic [3:0] reg_t;
         logic [11:0] imm;
-        instr_code [1:0] code;
+        instr_code code;
     } instruction;
-
-    typedef enum logic [1:0] {
-        NORMAL          = 2'b00,
-        JUMP            = 2'b01,
-        UNTAKEN_BRANCH  = 2'b10,
-        TAKEN_BRANCH    = 2'b11
-    } instr_code;
 
     // Check if I'm even using this
     typedef struct packed {

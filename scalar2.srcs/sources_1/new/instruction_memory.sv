@@ -4,6 +4,8 @@ import config_pkg::*;
 
 module instruction_memory (
     input logic clk,
+    input logic predict_flush,
+    input logic mispredict_flush,
     input logic [ADDRBUS_SIZE-1:0] ip_addr,
 
     output logic [31:0] instr_a,
@@ -20,10 +22,17 @@ module instruction_memory (
     end
 
     always_ff @(posedge clk) begin
-        instr_a <= mem[ip_addr];
-        instr_b <= mem[ip_addr + 1];
-        instr_a_addr <= ip_addr;
-        instr_b_addr <= ip_addr + 1;
+        if(predict_flush || mispredict_flush) begin
+            instr_a <= '0;
+            instr_b <= '0;
+            instr_a_addr <= '0;
+            instr_b_addr <= '0;
+        end else begin
+            instr_a <= mem[ip_addr];
+            instr_b <= mem[ip_addr + 1];
+            instr_a_addr <= ip_addr;
+            instr_b_addr <= ip_addr + 1;
+        end
     end
 
 endmodule

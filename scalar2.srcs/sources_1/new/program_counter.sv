@@ -5,7 +5,7 @@ import config_pkg::*;
 module program_counter(
     input logic clk,
     input logic rst,
-    input logic write_enable,
+    input logic enable,
     input logic [ADDRBUS_SIZE-1:0] ip_addr,
     
     output logic [ADDRBUS_SIZE-1:0] op_addr
@@ -15,7 +15,7 @@ module program_counter(
         if (rst) begin
             op_addr <= '0;
         end else begin
-            if(write_enable) begin
+            if(enable) begin
                 op_addr <= ip_addr;
             end
         end
