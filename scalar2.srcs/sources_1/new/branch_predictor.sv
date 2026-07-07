@@ -86,14 +86,14 @@ module branch_predictor(
 
     // Instruction A code
     always_comb begin
-        predict_a = history_table[instr_a.imm];
+        predict_a = history_table[addr_a[4:0]];
 
         unique case(instr_a.opcode) inside
-            [6'b000001:6'b011011] : begin
+            [1:27] : begin
                 code_a = NORMAL;
             end
             
-            [6'b011100:6'b100001] : begin
+            [28:33] : begin
                 if(predict_a > 2'b01) begin
                     code_a = TAKEN_BRANCH;
                 end else begin
@@ -101,7 +101,7 @@ module branch_predictor(
                 end
             end
             
-            [6'b100010:6'b100011] : begin
+            [34:34] : begin
                 code_a = JUMP;
             end
             default: code_a = NORMAL;
@@ -113,14 +113,14 @@ module branch_predictor(
     
     // Instruction B code
     always_comb begin
-        predict_b = history_table[instr_b.imm];
+        predict_b = history_table[addr_b[4:0]];
 
         unique case(instr_b.opcode) inside
-            [6'b000001:6'b011011] : begin
+            [1:27] : begin
                 code_b = NORMAL;
             end
             
-            [6'b011100:6'b100001] : begin
+            [28:33] : begin
                 if(predict_b > 2'b01) begin
                     code_b = TAKEN_BRANCH;
                 end else begin
@@ -128,7 +128,7 @@ module branch_predictor(
                 end
             end
             
-            [6'b100010:6'b100011] : begin
+            [34:34] : begin
                 code_b = JUMP;
             end
             default: code_b = NORMAL;
