@@ -12,7 +12,7 @@ module alu_imm(input1, imm, opcode, result);
     assign imm_extended = {20'b0, imm};
 
     always_comb begin
-        case(opcode)
+        unique case(opcode)
             IALU_ADD:  result = input1 + imm_extended;          // addi
             IALU_SUB:  result = input1 - imm_extended;          // subi
             IALU_RSHI: result = input1 >> imm_extended[5:0];    // rshi

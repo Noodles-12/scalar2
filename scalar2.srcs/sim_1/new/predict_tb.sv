@@ -12,6 +12,11 @@ module predict_tb();
     instruction mod_instr_a, mod_instr_b;
     logic [ADDRBUS_SIZE-1:0] predict_a, predict_b;
     logic [ADDRBUS_SIZE-1:0] recov_a, recov_b;
+    logic [4:0] hist_a, hist_b;
+
+    instruction instr_a_f, instr_b_f;
+    logic [ADDRBUS_SIZE-1:0] recov_a_f, recov_b_f;
+    logic [4:0] hist_a_f, hist_b_f;
 
     logic predict_flush, mispredict_flush;
     logic [ADDRBUS_SIZE-1:0] mispredict_addr;
@@ -21,6 +26,7 @@ module predict_tb();
         .rst(rst),
         .enable(1'b1),
         .ip_addr(next_pc),
+
         .op_addr(pc_addr)
     );
 
@@ -41,6 +47,7 @@ module predict_tb();
 
     instruction_memory instr_mem(
         .clk(clk),
+        .rst(rst),
         .ip_addr(pc_addr),
         .predict_flush(predict_flush),
         .mispredict_flush(mispredict_flush),
@@ -67,7 +74,9 @@ module predict_tb();
         .predict_addr_a(predict_a),
         .predict_addr_b(predict_b),
         .recov_addr_a(recov_a),
-        .recov_addr_b(recov_b)
+        .recov_addr_b(recov_b),
+        .hist_a(hist_a),
+        .hist_b(hist_b)
     );
 
     dependency_resolver dep_rsvr(
@@ -75,15 +84,19 @@ module predict_tb();
         .rst(rst),
         .instr_a(mod_instr_a),
         .instr_b(mod_instr_b),
-        .addr_a(recov_a),
-        .addr_b(recov_b),
+        .recov_a(recov_a),
+        .recov_b(recov_b),
+        .hist_a(hist_a),
+        .hist_b(hist_b),
         .mispredict_flush(mispredict_flush),
         .enable(1'b1),
 
-        .instr_a_op(),
-        .instr_b_op(),
-        .recov_addr_a(),
-        .recov_addr_b()
+        .instr_a_op(instr_a_f),
+        .instr_b_op(instr_b_f),
+        .recov_addr_a(recov_a_f),
+        .recov_addr_b(recov_b_f),
+        .hist_a_op(hist_a_f),
+        .hist_b_op(hist_b_f)
     );
 
     always #5 clk = ~clk;
@@ -92,7 +105,7 @@ module predict_tb();
         clk = 0; rst = 1; #10;
         rst = 0;
 
-        #70;
+        #120;
 
         $finish;
     end

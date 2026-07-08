@@ -127,11 +127,25 @@ package config_pkg;
         logic dispatched;
     } store_rs_entry;
 
+    typedef struct packed {
+        logic valid;
+        logic [4:0] id;
+        logic [5:0] opcode;
+        logic [4:0] reg_s;
+        logic [31:0] value_s;
+        logic check_s;
+        logic [4:0] reg_t;
+        logic [31:0] value_t;
+        logic check_t;
+        logic [12:0] padding;
+    } branch_rs_entry;
+
     typedef union packed {
         int_rs_entry int_rs;
         imm_rs_entry imm_rs;
         load_rs_entry load_rs;
         store_rs_entry store_rs;
+        branch_rs_entry branch_rs;
         logic [100:0] raw;
     } rs_entry;
 

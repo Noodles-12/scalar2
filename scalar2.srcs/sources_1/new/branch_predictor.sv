@@ -18,7 +18,9 @@ module branch_predictor(
     output logic [11:0] predict_addr_a,
     output logic [11:0] predict_addr_b,
     output logic [11:0] recov_addr_a,
-    output logic [11:0] recov_addr_b
+    output logic [11:0] recov_addr_b,
+    output logic [4:0] hist_a,
+    output logic [4:0] hist_b
 );
     logic [1:0] history_table [0:31];
     
@@ -35,20 +37,24 @@ module branch_predictor(
     assign return_b = addr_b + 1;
 
     always_ff @ (posedge clk) begin
-        if(rst) begin
-            history_table <= '{default: 2'b10};
-
+        if(rst || predict_flush || mispredict_flush) begin
             instr_a_op <= '0;
             instr_b_op <= '0;
 
-            predict_addr_b <= '0;
+            predict_addr_a <= '0;
             predict_addr_b <= '0;
 
             recov_addr_a <= '0;
             recov_addr_b <= '0;
-        end else begin
+
+            hist_a <= '0;
+            hist_b <= '0;
+        end else if(enable) begin
             instr_a_op <= mod_instr_a;
             instr_b_op <= mod_instr_b;
+
+            hist_a <= addr_a[4:0];
+            hist_b <= addr_b[4:0];
 
             unique case(code_a)
                 NORMAL:         predict_addr_a <= '0;
@@ -81,6 +87,12 @@ module branch_predictor(
                 TAKEN_BRANCH:   recov_addr_b <= return_b;
                 default:        recov_addr_b <= '0;
             endcase
+        end
+    end
+
+    always_ff @ (posedge clk) begin
+        if(rst) begin
+            history_table <= '{default: 2'b10};
         end
     end
 

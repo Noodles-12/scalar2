@@ -1,10 +1,16 @@
 `timescale 1ns / 1ps
 
+import config_pkg::*;
+
 module register_file(
     input logic clk,
     input logic rst,
     input instruction instr_a,
     input instruction instr_b,
+    input logic [11:0] recov_a,
+    input logic [11:0] recov_b,
+    input logic [4:0] hist_a,
+    input logic [4:0] hist_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input rob_entry commit_arr [0:1],
 
@@ -201,6 +207,18 @@ module register_file(
 
                 rob_a.is_store = 1;
             end
+
+            [28:33] : begin
+                res_stat_b.branch_rs.opcode = instr_a.opcode;
+                res_stat_a.branch_rs.reg_s = idx_as;
+                res_stat_a.branch_rs.value_s = value_as;
+                res_stat_a.branch_rs.check_s = check_as;
+
+                res_stat_a.branch_rs.reg_t = idx_at;
+                res_stat_a.branch_rs.value_t = value_at;
+                res_stat_a.branch_rs.check_t = check_at;
+
+            end
             
             default : begin end
         endcase
@@ -310,6 +328,18 @@ module register_file(
                 res_stat_b.store_rs.offset = instr_b.imm;
 
                 rob_b.is_store = 1;
+            end
+
+            [28:33] : begin
+                res_stat_b.branch_rs.opcode = instr_b.opcode;
+    
+                res_stat_b.branch_rs.reg_s = idx_bs;
+                res_stat_b.branch_rs.value_s = value_bs;
+                res_stat_b.branch_rs.check_s = check_bs;
+
+                res_stat_b.branch_rs.reg_t = idx_bt;
+                res_stat_b.branch_rs.value_t = value_bt;
+                res_stat_b.branch_rs.check_t = check_bt;
             end
             
             default : begin end
