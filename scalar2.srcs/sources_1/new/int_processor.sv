@@ -55,8 +55,8 @@ module int_processor(
                      .instr_b(instr_b),
                      .cdb_arr(cdb_arr),
                      .commit_arr(rob_out_arr),
-                     .res_stat_a_op(rename_a),
-                     .res_stat_b_op(rename_b),
+                     .rs_a_op(rename_a),
+                     .rs_b_op(rename_b),
                      .rob_a_op(rob_a),
                      .rob_b_op(rob_b),
                      .last_arch_reg(reg_op) );

@@ -14,8 +14,8 @@ module reg_file_tb();
                 .instr_b(instr_b),
                 .cdb_arr(),
                 .commit_arr(),
-                .res_stat_a_op(rs_entry_a),
-                .res_stat_b_op(rs_entry_b),
+                .rs_a_op(rs_entry_a),
+                .rs_b_op(rs_entry_b),
                 .rob_a_op(),
                 .rob_b_op() );
 

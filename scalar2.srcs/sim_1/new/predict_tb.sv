@@ -14,9 +14,12 @@ module predict_tb();
     logic [ADDRBUS_SIZE-1:0] recov_a, recov_b;
     logic [4:0] hist_a, hist_b;
 
-    instruction instr_a_f, instr_b_f;
-    logic [ADDRBUS_SIZE-1:0] recov_a_f, recov_b_f;
-    logic [4:0] hist_a_f, hist_b_f;
+    instruction instr_a_rslv, instr_b_rslv;
+    logic [ADDRBUS_SIZE-1:0] recov_a_rslv, recov_b_rslv;
+    logic [4:0] hist_a_rslv, hist_b_rslv;
+
+    rs_entry rs_a, rs_b;
+    rob_entry rob_a, rob_b;
 
     logic predict_flush, mispredict_flush;
     logic [ADDRBUS_SIZE-1:0] mispredict_addr;
@@ -91,12 +94,31 @@ module predict_tb();
         .mispredict_flush(mispredict_flush),
         .enable(1'b1),
 
-        .instr_a_op(instr_a_f),
-        .instr_b_op(instr_b_f),
-        .recov_addr_a(recov_a_f),
-        .recov_addr_b(recov_b_f),
-        .hist_a_op(hist_a_f),
-        .hist_b_op(hist_b_f)
+        .instr_a_op(instr_a_rslv),
+        .instr_b_op(instr_b_rslv),
+        .recov_addr_a(recov_a_rslv),
+        .recov_addr_b(recov_b_rslv),
+        .hist_a_op(hist_a_rslv),
+        .hist_b_op(hist_b_rslv)
+    );
+
+    register_file rf(
+        .clk(clk),
+        .rst(rst),
+        .instr_a(instr_a_rslv),
+        .instr_b(instr_b_rslv),
+        .recov_a(recov_a_rslv),
+        .recov_b(recov_b_rslv),
+        .hist_a(hist_a_rslv),
+        .hist_b(hist_b_rslv),
+        .cdb_arr(),
+        .commit_arr(),
+
+        .rs_a_op(rs_a),
+        .rs_b_op(rs_b),
+        .rob_a_op(rob_a),
+        .rob_b_op(rob_b),
+        .last_arch_reg()
     );
 
     always #5 clk = ~clk;

@@ -14,8 +14,8 @@ module register_file(
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input rob_entry commit_arr [0:1],
 
-    output rs_entry res_stat_a_op,
-    output rs_entry res_stat_b_op,
+    output rs_entry rs_a_op,
+    output rs_entry rs_b_op,
     output rob_entry rob_a_op,
     output rob_entry rob_b_op,
     output [3:0] last_arch_reg
@@ -43,14 +43,14 @@ module register_file(
     logic [PHYS_REGS_BITS - 1:0] free_a, free_b;
     logic found_a, found_b;
 
-    rs_entry res_stat_a;
+    rs_entry rs_a;
     rob_entry rob_a;
     rat_rename rename_a;
     logic [PHYS_REGS_BITS - 1:0] idx_as, idx_at, idx_ad;
     logic [31:0] value_as, value_at;
     logic check_as, check_at;
     
-    rs_entry res_stat_b;
+    rs_entry rs_b;
     rob_entry rob_b;
     rat_rename rename_b;
     logic s_match, t_match, d_match;
@@ -69,8 +69,8 @@ module register_file(
                 free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
             end
             
-            res_stat_a_op <= '0;
-            res_stat_b_op <= '0;
+            rs_a_op <= '0;
+            rs_b_op <= '0;
 
             rob_a_op <= '0;
             rob_b_op <= '0;
@@ -95,14 +95,14 @@ module register_file(
             end
 
             for(int i = 0; i < 2; i++) begin
-                if(!commit_arr[i].valid) continue;
+                if(!commit_arr[i].reg_rob.valid) continue;
 
-                free_list[commit_arr[i].old_prf] <= 1;
-                phys_file[commit_arr[i].new_prf] <= commit_arr[i].result;
+                free_list[commit_arr[i].reg_rob.old_prf] <= 1;
+                phys_file[commit_arr[i].reg_rob.new_prf] <= commit_arr[i].reg_rob.result; // Needed?
             end
 
-            res_stat_a_op <= res_stat_a;
-            res_stat_b_op <= res_stat_b;
+            rs_a_op <= rs_a;
+            rs_b_op <= rs_b;
 
             rob_a_op <= rob_a;
             rob_b_op <= rob_b;
@@ -129,15 +129,15 @@ module register_file(
 
     // Rename of instruction A
     always_comb begin
-        res_stat_a = '0; rob_a = '0;
+        rs_a = '0; rob_a = '0;
         idx_as = '0; idx_at = '0; idx_ad = '0;
         value_as = '0; value_at = '0;
         check_as = 0; check_at = 0;
         rename_a = '0;
 
         // Valid bit should be in same position for any type of RS entry
-        res_stat_a.int_rs.valid = (instr_a.opcode != 0); 
-        rob_a.valid = (instr_a.opcode != 0);
+        rs_a.int_rs.valid = (instr_a.opcode != 0); 
+        rob_a.reg_rob.valid = (instr_a.opcode != 0);
 
         idx_as = alias_table[instr_a.reg_s];
         value_as = phys_file[idx_as];
@@ -151,93 +151,94 @@ module register_file(
 
         unique case(instr_a.opcode) inside
             [1:14] : begin
-                res_stat_a.int_rs.opcode = instr_a.opcode;
+                rs_a.int_rs.opcode = instr_a.opcode;
 
-                res_stat_a.int_rs.reg_s = idx_as;
-                res_stat_a.int_rs.value_s = value_as;
-                res_stat_a.int_rs.check_s = check_as;
+                rs_a.int_rs.reg_s = idx_as;
+                rs_a.int_rs.value_s = value_as;
+                rs_a.int_rs.check_s = check_as;
 
-                res_stat_a.int_rs.reg_t = idx_at;
-                res_stat_a.int_rs.value_t = value_at;
-                res_stat_a.int_rs.check_t = check_at;
+                rs_a.int_rs.reg_t = idx_at;
+                rs_a.int_rs.value_t = value_at;
+                rs_a.int_rs.check_t = check_at;
 
-                rob_a.old_prf = idx_ad;
-                rob_a.arch = instr_a.reg_d;
+                rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
             [15:25] : begin
-                res_stat_a.imm_rs.opcode = instr_a.opcode;
+                rs_a.imm_rs.opcode = instr_a.opcode;
 
-                res_stat_a.imm_rs.reg_s = idx_as;
-                res_stat_a.imm_rs.value_s = value_as;
-                res_stat_a.imm_rs.check_s = check_as;
-                res_stat_a.imm_rs.imm = instr_a.imm;
+                rs_a.imm_rs.reg_s = idx_as;
+                rs_a.imm_rs.value_s = value_as;
+                rs_a.imm_rs.check_s = check_as;
+                rs_a.imm_rs.imm = instr_a.imm;
 
-                rob_a.old_prf = idx_ad;
-                rob_a.arch = instr_a.reg_d;
+                rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
             [26:26] : begin
-                res_stat_a.load_rs.opcode = instr_a.opcode;
+                rs_a.load_rs.opcode = instr_a.opcode;
 
-                res_stat_a.load_rs.reg_s = idx_as;
-                res_stat_a.load_rs.value_s = value_as;
-                res_stat_a.load_rs.check_s = check_as;
-                res_stat_a.load_rs.offset = instr_a.imm;
+                rs_a.load_rs.reg_s = idx_as;
+                rs_a.load_rs.value_s = value_as;
+                rs_a.load_rs.check_s = check_as;
+                rs_a.load_rs.offset = instr_a.imm;
                 
-                rob_a.old_prf = idx_ad;
-                rob_a.arch = instr_a.reg_d;
+                rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
             [27:27] : begin
-                res_stat_a.store_rs.opcode = instr_a.opcode;        
+                rs_a.store_rs.opcode = instr_a.opcode;        
                 // reg_s position in instruction is register that has value to combine with offset for effective address
                 // Flipped compared to other instructions
-                res_stat_a.store_rs.reg_d = idx_as;
-                res_stat_a.store_rs.value_d = value_as;
-                res_stat_a.store_rs.check_d = check_as;
+                rs_a.store_rs.reg_d = idx_as;
+                rs_a.store_rs.value_d = value_as;
+                rs_a.store_rs.check_d = check_as;
 
                 // reg_d position in instruction is the source register of the data to put into memory
                 // Flipped compared to other operations
-                res_stat_a.store_rs.reg_s = idx_at;
-                res_stat_a.store_rs.value_s = value_at;
-                res_stat_a.store_rs.check_s = check_at;
+                rs_a.store_rs.reg_s = idx_at;
+                rs_a.store_rs.value_s = value_at;
+                rs_a.store_rs.check_s = check_at;
 
-                res_stat_a.store_rs.offset = instr_a.imm;
-
-                rob_a.is_store = 1;
+                rs_a.store_rs.offset = instr_a.imm;
             end
 
             [28:33] : begin
-                res_stat_b.branch_rs.opcode = instr_a.opcode;
-                res_stat_a.branch_rs.reg_s = idx_as;
-                res_stat_a.branch_rs.value_s = value_as;
-                res_stat_a.branch_rs.check_s = check_as;
+                rs_b.branch_rs.opcode = instr_a.opcode;
+                rs_a.branch_rs.reg_s = idx_as;
+                rs_a.branch_rs.value_s = value_as;
+                rs_a.branch_rs.check_s = check_as;
 
-                res_stat_a.branch_rs.reg_t = idx_at;
-                res_stat_a.branch_rs.value_t = value_at;
-                res_stat_a.branch_rs.check_t = check_at;
+                rs_a.branch_rs.reg_t = idx_at;
+                rs_a.branch_rs.value_t = value_at;
+                rs_a.branch_rs.check_t = check_at;
 
+                rob_a.branch_rob.recov_addr = recov_a;
+                rob_a.branch_rob.hist_entry = hist_a;
+                rob_a.branch_rob.predict = instr_a.code[0];
             end
             
             default : begin end
         endcase
 
-        if(found_a && (instr_a.opcode != 0) && (instr_a.opcode != 6'b011011)) begin
-            rob_a.new_prf = free_a;
+        if(found_a && (instr_a.opcode != 0) && !(instr_a.opcode inside {[27:33]})) begin
+            rob_a.reg_rob.new_prf = free_a;
             rename_a.valid = 1;
             rename_a.idx = free_a;
             rename_a.arch_reg = instr_a.reg_d;
             
             unique case(instr_a.opcode) inside
                 [1:14] : begin
-                    res_stat_a.int_rs.dest = free_a;
+                    rs_a.int_rs.dest = free_a;
                 end
                 [15:25] : begin
-                    res_stat_a.imm_rs.dest = free_a;
+                    rs_a.imm_rs.dest = free_a;
                 end
                 [26:26] : begin
-                    res_stat_a.load_rs.dest = free_a;
+                    rs_a.load_rs.dest = free_a;
                 end
                 default : begin end
             endcase
@@ -245,15 +246,15 @@ module register_file(
     end
 
     always_comb begin
-        res_stat_b = '0; rob_b = '0;
+        rs_b = '0; rob_b = '0;
         idx_bs = '0; idx_bt = '0; idx_bd = '0;
         value_bs = '0; value_bt = '0;
         check_bs = 0; check_bt = 0;
         rename_b = '0;
 
         // Valid bit should be in same position for any type of RS entry
-        res_stat_b.int_rs.valid = (instr_b.opcode != 0); 
-        rob_b.valid = (instr_b.opcode != 0);
+        rs_b.int_rs.valid = (instr_b.opcode != 0); 
+        rob_b.reg_rob.valid = (instr_b.opcode != 0);
 
         s_match = (instr_b.reg_s == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
         t_match = (instr_b.reg_t == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
@@ -271,95 +272,97 @@ module register_file(
 
         unique case(instr_b.opcode) inside
             [1:14] : begin
-                res_stat_b.int_rs.opcode = instr_b.opcode;
+                rs_b.int_rs.opcode = instr_b.opcode;
     
-                res_stat_b.int_rs.reg_s = idx_bs;
-                res_stat_b.int_rs.value_s = value_bs;
-                res_stat_b.int_rs.check_s = check_bs;
+                rs_b.int_rs.reg_s = idx_bs;
+                rs_b.int_rs.value_s = value_bs;
+                rs_b.int_rs.check_s = check_bs;
 
-                res_stat_b.int_rs.reg_t = idx_bt;
-                res_stat_b.int_rs.value_t = value_bt;
-                res_stat_b.int_rs.check_t = check_bt;
+                rs_b.int_rs.reg_t = idx_bt;
+                rs_b.int_rs.value_t = value_bt;
+                rs_b.int_rs.check_t = check_bt;
 
-                rob_b.old_prf = idx_bd;
-                rob_b.arch = instr_b.reg_d;
+                rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
             [15:25] : begin
-                res_stat_b.imm_rs.opcode = instr_b.opcode;
+                rs_b.imm_rs.opcode = instr_b.opcode;
 
-                res_stat_b.imm_rs.reg_s = idx_bs;
-                res_stat_b.imm_rs.value_s = value_bs;
-                res_stat_b.imm_rs.check_s = check_bs;
-                res_stat_b.imm_rs.imm = instr_b.imm;
+                rs_b.imm_rs.reg_s = idx_bs;
+                rs_b.imm_rs.value_s = value_bs;
+                rs_b.imm_rs.check_s = check_bs;
+                rs_b.imm_rs.imm = instr_b.imm;
 
-                rob_b.old_prf = idx_bd;
-                rob_b.arch = instr_b.reg_d;
+                rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
             [26:26] : begin
-                res_stat_b.load_rs.opcode = instr_b.opcode;
+                rs_b.load_rs.opcode = instr_b.opcode;
 
-                res_stat_b.load_rs.reg_s = idx_bs;
-                res_stat_b.load_rs.value_s = value_bs;
-                res_stat_b.load_rs.check_s = check_bs;
-                res_stat_b.load_rs.offset = instr_b.imm;
+                rs_b.load_rs.reg_s = idx_bs;
+                rs_b.load_rs.value_s = value_bs;
+                rs_b.load_rs.check_s = check_bs;
+                rs_b.load_rs.offset = instr_b.imm;
 
-                rob_b.old_prf = idx_bd;
-                rob_b.arch = instr_b.reg_d;
+                rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
             [27:27] : begin
-                res_stat_b.store_rs.opcode = instr_b.opcode;
+                rs_b.store_rs.opcode = instr_b.opcode;
                 // reg_s position in instruction is register that has value to combine with offset for effective address
                 // Flipped compared to other instructions
 
-                res_stat_b.store_rs.reg_d = idx_bs;
-                res_stat_b.store_rs.value_d = value_bs;
-                res_stat_b.store_rs.check_d = check_bs;
+                rs_b.store_rs.reg_d = idx_bs;
+                rs_b.store_rs.value_d = value_bs;
+                rs_b.store_rs.check_d = check_bs;
 
                 // reg_d position in instruction is the source register of the data to put into memory
                 // Flipped compared to other operations
 
-                res_stat_b.store_rs.reg_s = idx_bt;
-                res_stat_b.store_rs.value_s = value_bt;
-                res_stat_b.store_rs.check_s = check_bt;
+                rs_b.store_rs.reg_s = idx_bt;
+                rs_b.store_rs.value_s = value_bt;
+                rs_b.store_rs.check_s = check_bt;
 
-                res_stat_b.store_rs.offset = instr_b.imm;
-
-                rob_b.is_store = 1;
+                rs_b.store_rs.offset = instr_b.imm;
             end
 
             [28:33] : begin
-                res_stat_b.branch_rs.opcode = instr_b.opcode;
+                rs_b.branch_rs.opcode = instr_b.opcode;
     
-                res_stat_b.branch_rs.reg_s = idx_bs;
-                res_stat_b.branch_rs.value_s = value_bs;
-                res_stat_b.branch_rs.check_s = check_bs;
+                rs_b.branch_rs.reg_s = idx_bs;
+                rs_b.branch_rs.value_s = value_bs;
+                rs_b.branch_rs.check_s = check_bs;
 
-                res_stat_b.branch_rs.reg_t = idx_bt;
-                res_stat_b.branch_rs.value_t = value_bt;
-                res_stat_b.branch_rs.check_t = check_bt;
+                rs_b.branch_rs.reg_t = idx_bt;
+                rs_b.branch_rs.value_t = value_bt;
+                rs_b.branch_rs.check_t = check_bt;
+
+                rob_b.branch_rob.recov_addr = recov_b;
+                rob_b.branch_rob.hist_entry = hist_b;
+                rob_b.branch_rob.predict = instr_b.code[0];
             end
             
             default : begin end
         endcase
 
-        if(found_b && (instr_b.opcode != 0) && (instr_b.opcode != 6'b011011)) begin
-            rob_b.new_prf = free_b;
+        if(found_b && (instr_b.opcode != 0) && !(instr_b.opcode inside {[27:33]})) begin
+            rob_b.reg_rob.new_prf = free_b;
             rename_b.valid = 1;
             rename_b.idx = free_b;
             rename_b.arch_reg = instr_b.reg_d;
 
             unique case(instr_b.opcode) inside
                 [1:14] : begin
-                    res_stat_b.int_rs.dest = free_b;
+                    rs_b.int_rs.dest = free_b;
                 end
                 [15:25] : begin
-                    res_stat_b.imm_rs.dest = free_b;
+                    rs_b.imm_rs.dest = free_b;
                 end
                 [26:26] : begin
-                    res_stat_b.load_rs.dest = free_b;
+                    rs_b.load_rs.dest = free_b;
                 end
                 default : begin end
             endcase

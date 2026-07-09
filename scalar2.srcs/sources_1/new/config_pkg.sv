@@ -153,12 +153,40 @@ package config_pkg;
         logic valid;
         logic [4:0] id;
         logic done;
+        logic [1:0] code;
         logic [31:0] result;
         logic [4:0] new_prf; // Phys reg to write result into
         logic [4:0] old_prf; // Phys reg to free
         logic [3:0] arch; // Do something with RRT
-        logic [11:0] mem_dest; // store instruction target address
-        logic is_store;
+    } reg_rob_entry;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] id;
+        logic done;
+        logic [1:0] code;
+        logic [31:0] value;
+        logic [11:0] mem_dest;
+        logic [1:0] padding;
+    } str_rob_entry;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] id;
+        logic done;
+        logic [1:0] code;
+        logic [11:0] recov_addr;
+        logic [4:0] hist_entry;
+        logic predict;
+        logic actual;
+        logic [26:0] padding;
+    } branch_rob_entry;
+
+    typedef union packed {
+        reg_rob_entry reg_rob;
+        str_rob_entry str_rob;
+        branch_rob_entry branch_rob;
+        logic [54:0] raw;
     } rob_entry;
 
     // base_val, offset, & idx used for forwarding mem_dest back into entry

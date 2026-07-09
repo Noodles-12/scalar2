@@ -101,6 +101,7 @@ module rename_dispatch_pl(
             [1:14] : code_a = 2'b00;
             [15:25]: code_a = 2'b01;
             [26:27]: code_a = 2'b10;
+            [28:33]: code_a = 2'b11;
             default: code_a = 2'b00;
         endcase
 
@@ -108,6 +109,7 @@ module rename_dispatch_pl(
             [1:14] : code_b = 2'b00;
             [15:25]: code_b = 2'b01;
             [26:27]: code_b = 2'b10;
+            [28:33]: code_b = 2'b11;
             default: code_b = 2'b00;
         endcase
     end
