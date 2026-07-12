@@ -49,6 +49,9 @@ module register_file(
     logic [PHYS_REGS_BITS - 1:0] idx_as, idx_at, idx_ad;
     logic [31:0] value_as, value_at;
     logic check_as, check_at;
+
+    logic match_ai, match_aj, match_ak;
+    logic match_ax, match_ay, match_az;
     
     rs_entry rs_b;
     rob_entry rob_b;
@@ -57,6 +60,9 @@ module register_file(
     logic [PHYS_REGS_BITS - 1:0] idx_bs, idx_bt, idx_bd;
     logic [31:0] value_bs, value_bt;
     logic check_bs, check_bt;
+
+    logic match_bi, match_bj, match_bk;
+    logic match_bx, match_by, match_bz;
 
     always_ff @ (posedge clk) begin
         if(rst) begin
@@ -140,12 +146,34 @@ module register_file(
         rob_a.reg_rob.valid = (instr_a.opcode != 0);
 
         idx_as = alias_table[instr_a.reg_s];
-        value_as = phys_file[idx_as];
-        check_as = valid_list[idx_as];
+
+        match_ai = (idx_as == cdb_arr[0].prf);
+        match_aj = (idx_as == cdb_arr[1].prf);
+        match_ak = (idx_as == cdb_arr[2].prf);
+
+        unique case (1'b1)
+            match_ai: value_as = cdb_arr[0].data;
+            match_aj: value_as = cdb_arr[1].data;
+            match_ak: value_as = cdb_arr[2].data;
+            default:  value_as = phys_file[idx_as];
+        endcase
+
+        check_as = (match_ai || match_aj || match_ak) ? 1'b1 : valid_list[idx_as];
 
         idx_at = alias_table[instr_a.reg_t];
-        value_at = phys_file[idx_at];
-        check_at = valid_list[idx_at];
+
+        match_ax = (idx_at == cdb_arr[0].prf);
+        match_ay = (idx_at == cdb_arr[1].prf);
+        match_az = (idx_at == cdb_arr[2].prf);
+
+        unique case (1'b1)
+            match_ax: value_at = cdb_arr[0].data;
+            match_ay: value_at = cdb_arr[1].data;
+            match_az: value_at = cdb_arr[2].data;
+            default:  value_at = phys_file[idx_at];
+        endcase
+
+        check_at = (match_ax || match_ay || match_az) ? 1'b1 : valid_list[idx_at];
 
         idx_ad = alias_table[instr_a.reg_d];
 
@@ -207,7 +235,7 @@ module register_file(
             end
 
             [28:33] : begin
-                rs_b.branch_rs.opcode = instr_a.opcode;
+                rs_a.branch_rs.opcode = instr_a.opcode;
                 rs_a.branch_rs.reg_s = idx_as;
                 rs_a.branch_rs.value_s = value_as;
                 rs_a.branch_rs.check_s = check_as;
@@ -261,12 +289,39 @@ module register_file(
         d_match = (instr_b.reg_d == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
 
         idx_bs = s_match ? free_a : alias_table[instr_b.reg_s];
-        check_bs = s_match ? 0 : valid_list[idx_bs];
-        value_bs = phys_file[idx_bs];
+
+        match_bi = !s_match && (idx_bs == cdb_arr[0].prf);
+        match_bj = !s_match && (idx_bs == cdb_arr[1].prf);
+        match_bk = !s_match && (idx_bs == cdb_arr[2].prf);
+
+        unique case (1'b1)
+            match_bi: value_bs = cdb_arr[0].data;
+            match_bj: value_bs = cdb_arr[1].data;
+            match_bk: value_bs = cdb_arr[2].data;
+            default:  value_bs = phys_file[idx_bs];
+        endcase
+
+        check_bs = s_match ? 1'b0
+            : (match_bi || match_bj || match_bk) ? 1'b1
+            : valid_list[idx_bs];
+
 
         idx_bt = t_match ? free_a : alias_table[instr_b.reg_t];
-        check_bt = t_match ? 0 : valid_list[idx_bt];
-        value_bt = phys_file[idx_bt];
+
+        match_bx = !t_match && (idx_bt == cdb_arr[0].prf);
+        match_by = !t_match && (idx_bt == cdb_arr[1].prf);
+        match_bz = !t_match && (idx_bt == cdb_arr[2].prf);
+
+        unique case (1'b1)
+            match_bx: value_bt = cdb_arr[0].data;
+            match_by: value_bt = cdb_arr[1].data;
+            match_bz: value_bt = cdb_arr[2].data;
+            default:  value_bt = phys_file[idx_bt];
+        endcase
+
+        check_bt = t_match ? 1'b0
+            : (match_bx || match_by || match_bz) ? 1'b1
+            : valid_list[idx_bt];
 
         idx_bd = d_match ? free_a : alias_table[instr_b.reg_d];
 

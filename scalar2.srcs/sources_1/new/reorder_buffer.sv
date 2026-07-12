@@ -9,6 +9,7 @@ module reorder_buffer(
     input rob_entry input_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input str_disp_entry str_rob [0:1],
+    input branch_disp_entry branch_rob,
     
     output rob_entry output_arr [0:1],
     output id_to_free ids_to_free [0:1]
@@ -56,6 +57,10 @@ module reorder_buffer(
     logic [31:0] str_hit;
     logic [31:0] str_result [0:31];
     logic [11:0] str_dest [0:31];
+
+    // branch_rob logics
+    logic [31:0] branch_hit;
+    logic branch_actual [0:31];
 
     always_ff @ (posedge clk) begin
         if (rst) begin
@@ -105,12 +110,18 @@ module reorder_buffer(
                     buffer[i].done <= 1;
                 end
 
-                if (str_hit[i]) begin
+                if(str_hit[i]) begin
                     buffer[i].done <= 1;
                     buffer[i].result <= str_result[i];
                     buffer[i].mem_dest <= str_dest[i];
                 end
+
+                if(branch_hit[i]) begin
+                    buffer[i].done <= 1;
+                    buffer[i].branch_rob.actual <= branch_actual[i];
+                end
             end
+            
 
             // Update head, tail, count
             head <= commit_head;
@@ -198,6 +209,17 @@ module reorder_buffer(
             str_hit[lut[str_rob[i].id]] = 1;
             str_result[lut[str_rob[i].id]] = str_rob[i].mem_dest;
             str_dest[lut[str_rob[i].id]] = str_rob[i].mem_dest;
+        end
+    end
+
+    // branch_rob block
+    always_comb begin
+        branch_hit = '0;
+        branch_actual = '{default: '0};
+
+        if (branch_rob.valid && lut_valid[branch_rob.id]) begin
+            branch_hit[lut[branch_rob.id]] = 1;
+            branch_actual[lut[branch_rob.id]] = branch_rob.actual;
         end
     end
 endmodule

@@ -101,7 +101,7 @@ module int_processor(
 
     common_data_bus cdb(.int_res(int_cdb),
                         .imm_res(imm_cdb),
-                        .load_res(),
+                        .load_res('0),
                         .cdb_arr(cdb_arr) );
 
     reorder_buffer rob(.clk(clk),

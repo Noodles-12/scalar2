@@ -2,35 +2,49 @@
 
 package config_pkg;
     // --- ALU Opcodes ---
-    localparam ALU_ADD      = 1;
-    localparam ALU_SUB      = 2;
-    localparam ALU_LSHIFT   = 3;
-    localparam ALU_RSHIFT   = 4;
+    typedef enum logic [5:0] {
+        ALU_ADD      = 1,
+        ALU_SUB      = 2,
+        ALU_LSHIFT   = 3,
+        ALU_RSHIFT   = 4,
 
-    localparam ALU_EQ       = 5;
-    localparam ALU_GTE      = 6;
-    localparam ALU_LTE      = 7;
-    localparam ALU_GT       = 8;
-    localparam ALU_LT       = 9;
+        ALU_EQ       = 5,
+        ALU_GTE      = 6,
+        ALU_LTE      = 7,
+        ALU_GT       = 8,
+        ALU_LT       = 9,
 
-    localparam ALU_AND      = 10;
-    localparam ALU_OR       = 11;
-    localparam ALU_NOR      = 12;
-    localparam ALU_NAND     = 13;
-    localparam ALU_XOR      = 14;
+        ALU_AND      = 10,
+        ALU_OR       = 11,
+        ALU_NOR      = 12,
+        ALU_NAND     = 13,
+        ALU_XOR      = 14
+    } alu_opcode;
 
     // --- Immediate ALU Opcodes ---
-    localparam IALU_ADD     = 15;
-    localparam IALU_SUB     = 16;
-    localparam IALU_RSHI    = 17;
-    localparam IALU_LSHI    = 18;
-    localparam IALU_AND     = 19;
-    localparam IALU_OR      = 20;
-    localparam IALU_EQ      = 21;
-    localparam IALU_GTE     = 22;
-    localparam IALU_LTE     = 23;
-    localparam IALU_GT      = 24;
-    localparam IALU_LT      = 25;
+    typedef enum logic [5:0] {
+        IALU_ADD     = 15,
+        IALU_SUB     = 16,
+        IALU_RSHI    = 17,
+        IALU_LSHI    = 18,
+        IALU_AND     = 19,
+        IALU_OR      = 20,
+        IALU_EQ      = 21,
+        IALU_GTE     = 22,
+        IALU_LTE     = 23,
+        IALU_GT      = 24,
+        IALU_LT      = 25
+    } ialu_opcode;
+
+    // --- Comparator Opcodes ---
+    typedef enum logic [5:0] {
+        COMP_EQ      = 28,
+        COMP_NE      = 29,
+        COMP_GE      = 30,
+        COMP_LT      = 31,
+        COMP_LTU     = 32,
+        COMP_GEU     = 33
+    } comp_opcode;
 
     // --- Processor Parameters ---
     localparam INSTR_WIDTH      = 32;
@@ -200,6 +214,12 @@ package config_pkg;
         logic [11:0] mem_dest;
         logic [31:0] value;
     } str_disp_entry;
+
+    typedef struct packed {
+        logic valid;
+        logic [4:0] id;
+        logic result;
+    } branch_disp_entry;
 
     typedef struct packed {
         logic valid;

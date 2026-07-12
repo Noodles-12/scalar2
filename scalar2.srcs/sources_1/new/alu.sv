@@ -11,7 +11,7 @@ module alu(
 );
 
     always_comb begin
-        unique case(opcode)
+        unique case(alu_opcode'(opcode))
             ALU_ADD: result = input1 + input2;
             ALU_SUB: result = input1 - input2;
             ALU_LSHIFT: result = input1 << input2[5:0];

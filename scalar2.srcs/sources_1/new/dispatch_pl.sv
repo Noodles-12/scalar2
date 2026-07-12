@@ -2,7 +2,7 @@
 
 import config_pkg::*;
 
-module rename_dispatch_pl(
+module dispatch_pl(
     input logic clk,
     input logic rst,
     input rs_entry rename_a,
