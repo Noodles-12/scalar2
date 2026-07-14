@@ -147,14 +147,14 @@ module register_file(
 
         idx_as = alias_table[instr_a.reg_s];
 
-        match_ai = (idx_as == cdb_arr[0].prf);
-        match_aj = (idx_as == cdb_arr[1].prf);
-        match_ak = (idx_as == cdb_arr[2].prf);
+        match_ai = cdb_arr[0].valid && (idx_as == cdb_arr[0].prf);
+        match_aj = cdb_arr[1].valid && (idx_as == cdb_arr[1].prf);
+        match_ak = cdb_arr[2].valid && (idx_as == cdb_arr[2].prf);
 
         unique case (1'b1)
-            match_ai: value_as = cdb_arr[0].data;
-            match_aj: value_as = cdb_arr[1].data;
-            match_ak: value_as = cdb_arr[2].data;
+            match_ai: value_as = cdb_arr[0].result;
+            match_aj: value_as = cdb_arr[1].result;
+            match_ak: value_as = cdb_arr[2].result;
             default:  value_as = phys_file[idx_as];
         endcase
 
@@ -162,14 +162,14 @@ module register_file(
 
         idx_at = alias_table[instr_a.reg_t];
 
-        match_ax = (idx_at == cdb_arr[0].prf);
-        match_ay = (idx_at == cdb_arr[1].prf);
-        match_az = (idx_at == cdb_arr[2].prf);
+        match_ax = cdb_arr[0].valid && (idx_at == cdb_arr[0].prf);
+        match_ay = cdb_arr[1].valid && (idx_at == cdb_arr[1].prf);
+        match_az = cdb_arr[2].valid && (idx_at == cdb_arr[2].prf);
 
         unique case (1'b1)
-            match_ax: value_at = cdb_arr[0].data;
-            match_ay: value_at = cdb_arr[1].data;
-            match_az: value_at = cdb_arr[2].data;
+            match_ax: value_at = cdb_arr[0].result;
+            match_ay: value_at = cdb_arr[1].result;
+            match_az: value_at = cdb_arr[2].result;
             default:  value_at = phys_file[idx_at];
         endcase
 
@@ -290,14 +290,14 @@ module register_file(
 
         idx_bs = s_match ? free_a : alias_table[instr_b.reg_s];
 
-        match_bi = !s_match && (idx_bs == cdb_arr[0].prf);
-        match_bj = !s_match && (idx_bs == cdb_arr[1].prf);
-        match_bk = !s_match && (idx_bs == cdb_arr[2].prf);
+        match_bi = !s_match && cdb_arr[0].valid && (idx_bs == cdb_arr[0].prf);
+        match_bj = !s_match && cdb_arr[1].valid && (idx_bs == cdb_arr[1].prf);
+        match_bk = !s_match && cdb_arr[2].valid && (idx_bs == cdb_arr[2].prf);
 
         unique case (1'b1)
-            match_bi: value_bs = cdb_arr[0].data;
-            match_bj: value_bs = cdb_arr[1].data;
-            match_bk: value_bs = cdb_arr[2].data;
+            match_bi: value_bs = cdb_arr[0].result;
+            match_bj: value_bs = cdb_arr[1].result;
+            match_bk: value_bs = cdb_arr[2].result;
             default:  value_bs = phys_file[idx_bs];
         endcase
 
@@ -308,14 +308,14 @@ module register_file(
 
         idx_bt = t_match ? free_a : alias_table[instr_b.reg_t];
 
-        match_bx = !t_match && (idx_bt == cdb_arr[0].prf);
-        match_by = !t_match && (idx_bt == cdb_arr[1].prf);
-        match_bz = !t_match && (idx_bt == cdb_arr[2].prf);
+        match_bx = !t_match && cdb_arr[0].valid && (idx_bt == cdb_arr[0].prf);
+        match_by = !t_match && cdb_arr[1].valid && (idx_bt == cdb_arr[1].prf);
+        match_bz = !t_match && cdb_arr[2].valid && (idx_bt == cdb_arr[2].prf);
 
         unique case (1'b1)
-            match_bx: value_bt = cdb_arr[0].data;
-            match_by: value_bt = cdb_arr[1].data;
-            match_bz: value_bt = cdb_arr[2].data;
+            match_bx: value_bt = cdb_arr[0].result;
+            match_by: value_bt = cdb_arr[1].result;
+            match_bz: value_bt = cdb_arr[2].result;
             default:  value_bt = phys_file[idx_bt];
         endcase
 

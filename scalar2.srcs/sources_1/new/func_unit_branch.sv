@@ -16,14 +16,14 @@ module func_unit_branch(
 
     always_ff @ (posedge clk) begin
         if(rst) begin
-            branch_disp_entry <= 0;
+            result_op <= '0;
         end else begin
             if(branch_instr.valid) begin
                 result_op.valid <= 1;
                 result_op.id <= branch_instr.id;
                 result_op.result <= result;
             end else begin
-                result <= 0;
+                result_op <= '0;
             end
         end
     end

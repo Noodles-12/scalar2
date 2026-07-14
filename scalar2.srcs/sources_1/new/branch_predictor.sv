@@ -92,7 +92,7 @@ module branch_predictor(
 
     always_ff @ (posedge clk) begin
         if(rst) begin
-            history_table <= '{default: 2'b10};
+            history_table <= '{default: 2'b01};
         end
     end
 

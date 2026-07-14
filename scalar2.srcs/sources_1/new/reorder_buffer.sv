@@ -84,8 +84,8 @@ module reorder_buffer(
             for (int i = 0; i < 2; i++) begin
                 if (insert_reqs[i].valid) begin
                     buffer[insert_reqs[i].idx] <= insert_reqs[i].entry;
-                    lut[insert_reqs[i].entry.id] <= insert_reqs[i].idx;
-                    lut_valid[insert_reqs[i].entry.id] <= 1;
+                    lut[insert_reqs[i].entry.reg_rob.id] <= insert_reqs[i].idx;
+                    lut_valid[insert_reqs[i].entry.reg_rob.id] <= 1;
                 end
             end
 
@@ -94,7 +94,7 @@ module reorder_buffer(
                 if (commit_reqs[i].valid) begin
                     output_arr[i] <= buffer[commit_reqs[i].idx];
                     ids_to_free[i].valid <= 1;
-                    ids_to_free[i].id <= buffer[commit_reqs[i].idx].id;
+                    ids_to_free[i].id <= buffer[commit_reqs[i].idx].reg_rob.id;
                     lut_valid[commit_reqs[i].id] <= 0;
                     buffer[commit_reqs[i].idx] <= '0;
                 end else begin
@@ -106,18 +106,18 @@ module reorder_buffer(
             // CDB & str_rob updates
             for(int i = 0; i < 32; i++) begin
                 if(cdb_hit[i]) begin
-                    buffer[i].result <= cdb_result[i];
-                    buffer[i].done <= 1;
+                    buffer[i].reg_rob.result <= cdb_result[i];
+                    buffer[i].reg_rob.done <= 1;
                 end
 
                 if(str_hit[i]) begin
-                    buffer[i].done <= 1;
-                    buffer[i].result <= str_result[i];
-                    buffer[i].mem_dest <= str_dest[i];
+                    buffer[i].str_rob.done <= 1;
+                    buffer[i].str_rob.value <= str_result[i];
+                    buffer[i].str_rob.mem_dest <= str_dest[i];
                 end
 
                 if(branch_hit[i]) begin
-                    buffer[i].done <= 1;
+                    buffer[i].branch_rob.done <= 1;
                     buffer[i].branch_rob.actual <= branch_actual[i];
                 end
             end
@@ -140,7 +140,7 @@ module reorder_buffer(
         insert_count = '0;
 
         // Inserting into buffer
-        if(input_a.valid && !full) begin
+        if(input_a.reg_rob.valid && !full) begin
             insert_reqs[0].valid = 1;
             insert_reqs[0].entry = input_a;
             insert_reqs[0].idx = tail;
@@ -148,7 +148,7 @@ module reorder_buffer(
             insert_count = insert_count + 1;
         end
 
-        if(input_b.valid && (count + insert_count) < 32) begin
+        if(input_b.reg_rob.valid && (count + insert_count) < 32) begin
             insert_reqs[1].valid = 1;
             insert_reqs[1].entry = input_b;
             insert_reqs[1].idx = insert_tail;
@@ -164,18 +164,18 @@ module reorder_buffer(
         commit_count = '0;
 
         // Iteration 0 reads directly from registered head
-        if (buffer[head].valid && buffer[head].done) begin
+        if (buffer[head].reg_rob.valid && buffer[head].reg_rob.done) begin
             commit_reqs[0].valid = 1;
             commit_reqs[0].idx = head;
-            commit_reqs[0].id = buffer[head].id;
+            commit_reqs[0].id = buffer[head].reg_rob.id;
             commit_count = 1;
             commit_head = head_p1;
 
             // Iteration 1 only happens if first commit happened, unrolled dependency
-            if (buffer[head_p1].valid && buffer[head_p1].done) begin
+            if (buffer[head_p1].reg_rob.valid && buffer[head_p1].reg_rob.done) begin
                 commit_reqs[1].valid = 1;
                 commit_reqs[1].idx = head_p1;
-                commit_reqs[1].id = buffer[head_p1].id;
+                commit_reqs[1].id = buffer[head_p1].reg_rob.id;
                 commit_count = 2;
                 commit_head = head_p2;
             end
@@ -219,7 +219,7 @@ module reorder_buffer(
 
         if (branch_rob.valid && lut_valid[branch_rob.id]) begin
             branch_hit[lut[branch_rob.id]] = 1;
-            branch_actual[lut[branch_rob.id]] = branch_rob.actual;
+            branch_actual[lut[branch_rob.id]] = branch_rob.result;
         end
     end
 endmodule

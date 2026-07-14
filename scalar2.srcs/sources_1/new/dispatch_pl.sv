@@ -101,12 +101,12 @@ module dispatch_pl(
         // Assigning & freeing ids if id was found & instruction is valid
         if(done_a && rename_a.int_rs.valid) begin
             rs_disp_a.int_rs.id = free_a;
-            rob_disp_a.id = free_a;
+            rob_disp_a.reg_rob.id = free_a;
         end
 
         if(done_b && rename_b.int_rs.valid) begin
             rs_disp_b.int_rs.id = free_b;
-            rob_disp_b.id = free_b;
+            rob_disp_b.reg_rob.id = free_b;
         end
 
         // ---------------- CDB snoop for instruction A ----------------
@@ -119,9 +119,9 @@ module dispatch_pl(
                     match_as_k = (rs_disp_a.int_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_as_i: begin rs_disp_a.int_rs.value_s = cdb_arr[0].data; rs_disp_a.int_rs.check_s = 1'b1; end
-                        match_as_j: begin rs_disp_a.int_rs.value_s = cdb_arr[1].data; rs_disp_a.int_rs.check_s = 1'b1; end
-                        match_as_k: begin rs_disp_a.int_rs.value_s = cdb_arr[2].data; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_i: begin rs_disp_a.int_rs.value_s = cdb_arr[0].result; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_j: begin rs_disp_a.int_rs.value_s = cdb_arr[1].result; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_k: begin rs_disp_a.int_rs.value_s = cdb_arr[2].result; rs_disp_a.int_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -133,9 +133,9 @@ module dispatch_pl(
                     match_at_k = (rs_disp_a.int_rs.reg_t == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_at_i: begin rs_disp_a.int_rs.value_t = cdb_arr[0].data; rs_disp_a.int_rs.check_t = 1'b1; end
-                        match_at_j: begin rs_disp_a.int_rs.value_t = cdb_arr[1].data; rs_disp_a.int_rs.check_t = 1'b1; end
-                        match_at_k: begin rs_disp_a.int_rs.value_t = cdb_arr[2].data; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_i: begin rs_disp_a.int_rs.value_t = cdb_arr[0].result; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_j: begin rs_disp_a.int_rs.value_t = cdb_arr[1].result; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_k: begin rs_disp_a.int_rs.value_t = cdb_arr[2].result; rs_disp_a.int_rs.check_t = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -149,9 +149,9 @@ module dispatch_pl(
                     match_as_k = (rs_disp_a.imm_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_as_i: begin rs_disp_a.imm_rs.value_s = cdb_arr[0].data; rs_disp_a.imm_rs.check_s = 1'b1; end
-                        match_as_j: begin rs_disp_a.imm_rs.value_s = cdb_arr[1].data; rs_disp_a.imm_rs.check_s = 1'b1; end
-                        match_as_k: begin rs_disp_a.imm_rs.value_s = cdb_arr[2].data; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_i: begin rs_disp_a.imm_rs.value_s = cdb_arr[0].result; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_j: begin rs_disp_a.imm_rs.value_s = cdb_arr[1].result; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_k: begin rs_disp_a.imm_rs.value_s = cdb_arr[2].result; rs_disp_a.imm_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -165,9 +165,9 @@ module dispatch_pl(
                     match_as_k = (rs_disp_a.store_rs.reg_d == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_as_i: begin rs_disp_a.store_rs.value_d = cdb_arr[0].data; rs_disp_a.store_rs.check_d = 1'b1; end
-                        match_as_j: begin rs_disp_a.store_rs.value_d = cdb_arr[1].data; rs_disp_a.store_rs.check_d = 1'b1; end
-                        match_as_k: begin rs_disp_a.store_rs.value_d = cdb_arr[2].data; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_i: begin rs_disp_a.store_rs.value_d = cdb_arr[0].result; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_j: begin rs_disp_a.store_rs.value_d = cdb_arr[1].result; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_k: begin rs_disp_a.store_rs.value_d = cdb_arr[2].result; rs_disp_a.store_rs.check_d = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -178,9 +178,9 @@ module dispatch_pl(
                     match_at_k = (rs_disp_a.store_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_at_i: begin rs_disp_a.store_rs.value_s = cdb_arr[0].data; rs_disp_a.store_rs.check_s = 1'b1; end
-                        match_at_j: begin rs_disp_a.store_rs.value_s = cdb_arr[1].data; rs_disp_a.store_rs.check_s = 1'b1; end
-                        match_at_k: begin rs_disp_a.store_rs.value_s = cdb_arr[2].data; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_i: begin rs_disp_a.store_rs.value_s = cdb_arr[0].result; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_j: begin rs_disp_a.store_rs.value_s = cdb_arr[1].result; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_k: begin rs_disp_a.store_rs.value_s = cdb_arr[2].result; rs_disp_a.store_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -198,9 +198,9 @@ module dispatch_pl(
                     match_bs_k = (rs_disp_b.int_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_bs_i: begin rs_disp_b.int_rs.value_s = cdb_arr[0].data; rs_disp_b.int_rs.check_s = 1'b1; end
-                        match_bs_j: begin rs_disp_b.int_rs.value_s = cdb_arr[1].data; rs_disp_b.int_rs.check_s = 1'b1; end
-                        match_bs_k: begin rs_disp_b.int_rs.value_s = cdb_arr[2].data; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_i: begin rs_disp_b.int_rs.value_s = cdb_arr[0].result; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_j: begin rs_disp_b.int_rs.value_s = cdb_arr[1].result; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_k: begin rs_disp_b.int_rs.value_s = cdb_arr[2].result; rs_disp_b.int_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -211,9 +211,9 @@ module dispatch_pl(
                     match_bt_k = (rs_disp_b.int_rs.reg_t == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_bt_i: begin rs_disp_b.int_rs.value_t = cdb_arr[0].data; rs_disp_b.int_rs.check_t = 1'b1; end
-                        match_bt_j: begin rs_disp_b.int_rs.value_t = cdb_arr[1].data; rs_disp_b.int_rs.check_t = 1'b1; end
-                        match_bt_k: begin rs_disp_b.int_rs.value_t = cdb_arr[2].data; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_i: begin rs_disp_b.int_rs.value_t = cdb_arr[0].result; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_j: begin rs_disp_b.int_rs.value_t = cdb_arr[1].result; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_k: begin rs_disp_b.int_rs.value_t = cdb_arr[2].result; rs_disp_b.int_rs.check_t = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -226,9 +226,9 @@ module dispatch_pl(
                     match_bs_k = (rs_disp_b.imm_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_bs_i: begin rs_disp_b.imm_rs.value_s = cdb_arr[0].data; rs_disp_b.imm_rs.check_s = 1'b1; end
-                        match_bs_j: begin rs_disp_b.imm_rs.value_s = cdb_arr[1].data; rs_disp_b.imm_rs.check_s = 1'b1; end
-                        match_bs_k: begin rs_disp_b.imm_rs.value_s = cdb_arr[2].data; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_i: begin rs_disp_b.imm_rs.value_s = cdb_arr[0].result; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_j: begin rs_disp_b.imm_rs.value_s = cdb_arr[1].result; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_k: begin rs_disp_b.imm_rs.value_s = cdb_arr[2].result; rs_disp_b.imm_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -241,9 +241,9 @@ module dispatch_pl(
                     match_bs_k = (rs_disp_b.store_rs.reg_d == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_bs_i: begin rs_disp_b.store_rs.value_d = cdb_arr[0].data; rs_disp_b.store_rs.check_d = 1'b1; end
-                        match_bs_j: begin rs_disp_b.store_rs.value_d = cdb_arr[1].data; rs_disp_b.store_rs.check_d = 1'b1; end
-                        match_bs_k: begin rs_disp_b.store_rs.value_d = cdb_arr[2].data; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_i: begin rs_disp_b.store_rs.value_d = cdb_arr[0].result; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_j: begin rs_disp_b.store_rs.value_d = cdb_arr[1].result; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_k: begin rs_disp_b.store_rs.value_d = cdb_arr[2].result; rs_disp_b.store_rs.check_d = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -254,9 +254,9 @@ module dispatch_pl(
                     match_bt_k = (rs_disp_b.store_rs.reg_s == cdb_arr[2].prf);
 
                     unique case (1'b1)
-                        match_bt_i: begin rs_disp_b.store_rs.value_s = cdb_arr[0].data; rs_disp_b.store_rs.check_s = 1'b1; end
-                        match_bt_j: begin rs_disp_b.store_rs.value_s = cdb_arr[1].data; rs_disp_b.store_rs.check_s = 1'b1; end
-                        match_bt_k: begin rs_disp_b.store_rs.value_s = cdb_arr[2].data; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_i: begin rs_disp_b.store_rs.value_s = cdb_arr[0].result; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_j: begin rs_disp_b.store_rs.value_s = cdb_arr[1].result; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_k: begin rs_disp_b.store_rs.value_s = cdb_arr[2].result; rs_disp_b.store_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
