@@ -190,6 +190,7 @@ module register_file(
                 rs_a.int_rs.check_t = check_at;
 
                 rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.code = ROB_REG;
                 rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
@@ -202,6 +203,7 @@ module register_file(
                 rs_a.imm_rs.imm = instr_a.imm;
 
                 rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.code = ROB_REG;
                 rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
@@ -214,6 +216,7 @@ module register_file(
                 rs_a.load_rs.offset = instr_a.imm;
                 
                 rob_a.reg_rob.old_prf = idx_ad;
+                rob_a.reg_rob.code = ROB_REG;
                 rob_a.reg_rob.arch = instr_a.reg_d;
             end
 
@@ -247,6 +250,7 @@ module register_file(
                 rob_a.branch_rob.recov_addr = recov_a;
                 rob_a.branch_rob.hist_entry = hist_a;
                 rob_a.branch_rob.predict = instr_a.code[0];
+                rob_a.branch_rob.code = ROB_BRN;
             end
             
             default : begin end
@@ -338,6 +342,7 @@ module register_file(
                 rs_b.int_rs.check_t = check_bt;
 
                 rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.code = ROB_REG;
                 rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
@@ -350,6 +355,7 @@ module register_file(
                 rs_b.imm_rs.imm = instr_b.imm;
 
                 rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.code = ROB_REG;
                 rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
@@ -362,6 +368,7 @@ module register_file(
                 rs_b.load_rs.offset = instr_b.imm;
 
                 rob_b.reg_rob.old_prf = idx_bd;
+                rob_b.reg_rob.code = ROB_REG;
                 rob_b.reg_rob.arch = instr_b.reg_d;
             end
 
@@ -398,6 +405,7 @@ module register_file(
                 rob_b.branch_rob.recov_addr = recov_b;
                 rob_b.branch_rob.hist_entry = hist_b;
                 rob_b.branch_rob.predict = instr_b.code[0];
+                rob_b.branch_rob.code = ROB_BRN;
             end
             
             default : begin end

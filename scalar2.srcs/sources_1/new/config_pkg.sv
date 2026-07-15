@@ -46,6 +46,18 @@ package config_pkg;
         COMP_GEU     = 33
     } comp_opcode;
 
+    typedef enum logic [1:0] {
+        ROB_REG = 2'b00,
+        ROB_STR = 2'b01,
+        ROB_BRN = 2'b10
+    } rob_t;
+
+    typedef enum logic [1:0] { 
+        COMMIT_NORM = 2'b00,
+        COMMIT_PRED = 2'b01,
+        COMMIT_MISP = 2'b10
+    } commit_t;
+
     // --- Processor Parameters ---
     localparam INSTR_WIDTH      = 32;
     localparam ARCH_REGS_BITS   = 4;

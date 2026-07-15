@@ -7,5 +7,4 @@ module commit_pl(
     input rob_entry rob_b
 );
 
-
 endmodule
