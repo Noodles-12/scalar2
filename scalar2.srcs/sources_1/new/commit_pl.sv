@@ -19,14 +19,14 @@ module commit_pl(
 
         if(rob_type_a == ROB_BRN) begin
             if(rob_a.branch_rob.predict != rob_a.branch_rob.actual) begin
-                commit_type_a = COMMIT_MISP;
+                commit_type_a = COMMIT_BAD;
             end
             else begin
-                commit_type_a = COMMIT_PRED;
+                commit_type_a = COMMIT_GOOD;
             end
         end
         else begin
-            commit_type_a = COMMIT_NORM;
+            commit_type_a = COMMIT_GOOD;
         end
     end
 
@@ -35,14 +35,14 @@ module commit_pl(
 
         if(rob_type_b == ROB_BRN) begin
             if(rob_b.branch_rob.predict != rob_b.branch_rob.actual) begin
-                commit_type_b = COMMIT_MISP;
+                commit_type_b = COMMIT_BAD;
             end
             else begin
-                commit_type_b = COMMIT_PRED;
+                commit_type_b = COMMIT_GOOD;
             end
         end
         else begin
-            commit_type_b = COMMIT_NORM;
+            commit_type_b = COMMIT_GOOD;
         end
     end
 

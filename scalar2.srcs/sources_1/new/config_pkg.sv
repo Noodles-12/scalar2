@@ -59,10 +59,9 @@ package config_pkg;
         ROB_BRN = 2'b10
     } rob_t;
 
-    typedef enum logic [1:0] { 
-        COMMIT_NORM = 2'b00,
-        COMMIT_PRED = 2'b01,
-        COMMIT_MISP = 2'b10
+    typedef enum logic { 
+        COMMIT_GOOD = 1'b0;
+        COMMIT_BAD  = 1'b1;
     } commit_t;
 
     // --- Processor Parameters ---
