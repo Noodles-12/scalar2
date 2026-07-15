@@ -47,6 +47,13 @@ package config_pkg;
     } comp_opcode;
 
     typedef enum logic [1:0] {
+        NORMAL          = 2'b00,
+        JUMP            = 2'b01,
+        UNTAKEN_BRANCH  = 2'b10,
+        TAKEN_BRANCH    = 2'b11
+    } instr_code;
+
+    typedef enum logic [1:0] {
         ROB_REG = 2'b00,
         ROB_STR = 2'b01,
         ROB_BRN = 2'b10
@@ -73,13 +80,6 @@ package config_pkg;
     localparam RS_SIZE          = 8;
 
     // --- Types ---
-    typedef enum logic [1:0] {
-        NORMAL          = 2'b00,
-        JUMP            = 2'b01,
-        UNTAKEN_BRANCH  = 2'b10,
-        TAKEN_BRANCH    = 2'b11
-    } instr_code;
-
     // opcode, reg_d, reg_s, reg_t, imm, pad
     typedef struct packed {
         logic [5:0] opcode;
