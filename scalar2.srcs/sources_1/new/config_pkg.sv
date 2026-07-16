@@ -60,8 +60,8 @@ package config_pkg;
     } rob_t;
 
     typedef enum logic { 
-        COMMIT_GOOD = 1'b0;
-        COMMIT_BAD  = 1'b1;
+        COMMIT_GOOD = 1'b0,
+        COMMIT_BAD  = 1'b1
     } commit_t;
 
     // --- Processor Parameters ---

@@ -5,13 +5,15 @@ import config_pkg::*;
 module branch_predictor(
     input logic rst,
     input logic clk,
+    input logic predict_flush,
+    input logic mispredict_flush,
+    input logic enable,
     input instruction instr_a,
     input logic [11:0] addr_a,
     input instruction instr_b,
     input logic [11:0] addr_b,
-    input logic predict_flush,
-    input logic mispredict_flush,
-    input logic enable,
+    input rob_entry commit_a,
+    input rob_entry commit_b,
     
     output instruction instr_a_op,
     output instruction instr_b_op,
@@ -93,6 +95,8 @@ module branch_predictor(
     always_ff @ (posedge clk) begin
         if(rst) begin
             history_table <= '{default: 2'b01};
+        end else begin
+            
         end
     end
 

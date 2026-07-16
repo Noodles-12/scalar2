@@ -5,14 +5,14 @@ import config_pkg::*;
 module dependency_resolver(
     input logic clk,
     input logic rst,
+    input logic mispredict_flush,
+    input logic enable,
     input instruction instr_a,
     input instruction instr_b,
     input logic [11:0] recov_a,
     input logic [11:0] recov_b,
     input logic [4:0] hist_a,
     input logic [4:0] hist_b,
-    input logic mispredict_flush,
-    input logic enable,
 
     output instruction instr_a_op,
     output instruction instr_b_op,
