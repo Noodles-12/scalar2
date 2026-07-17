@@ -5,6 +5,7 @@ import config_pkg::*;
 module register_file(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input instruction instr_a,
     input instruction instr_b,
     input logic [11:0] recov_a,
@@ -12,7 +13,8 @@ module register_file(
     input logic [4:0] hist_a,
     input logic [4:0] hist_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
-    input rob_entry commit_arr [0:1],
+    input rob_entry commit_a,
+    input rob_entry commit_b,
 
     output rs_entry rs_a_op,
     output rs_entry rs_b_op,
@@ -39,6 +41,7 @@ module register_file(
 
     // Register Retirement Table (RRT) - Structurally same as RAT
     logic [PHYS_REGS_BITS - 1:0] retire_table [0:NUM_ARCH_REGS - 1];
+    logic free_retire_list [0:NUM_PHYS_REGS-1];
 
     logic [PHYS_REGS_BITS - 1:0] free_a, free_b;
     logic found_a, found_b;
@@ -64,6 +67,8 @@ module register_file(
     logic match_bi, match_bj, match_bk;
     logic match_bx, match_by, match_bz;
 
+    logic retire_override;
+
     always_ff @ (posedge clk) begin
         if(rst) begin
             for (int i = 0; i < NUM_ARCH_REGS; i++)
@@ -74,12 +79,11 @@ module register_file(
                 valid_list[i] <= 1;
                 free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
             end
-            
-            rs_a_op <= '0;
-            rs_b_op <= '0;
+        end else if(retire_override) begin
+            alias_table <= retire_table;
+            valid_list <= '{default: 1};
 
-            rob_a_op <= '0;
-            rob_b_op <= '0;
+            free_list <= free_retire_list;
         end else begin
             if(rename_a.valid) begin
                 alias_table[rename_a.arch_reg] <= rename_a.idx;
@@ -100,13 +104,35 @@ module register_file(
                 valid_list[cdb_arr[i].prf] <= 1;
             end
 
-            for(int i = 0; i < 2; i++) begin
-                if(!commit_arr[i].reg_rob.valid) continue;
-
-                free_list[commit_arr[i].reg_rob.old_prf] <= 1;
-                phys_file[commit_arr[i].reg_rob.new_prf] <= commit_arr[i].reg_rob.result; // Needed?
+            if(commit_a.reg_rob.valid && commit_a.reg_rob.code == ROB_REG) begin
+                free_list[commit_a.reg_rob.old_prf] <= 1;
+                retire_table[commit_a.reg_rob.arch] <= commit_a.reg_rob.new_prf;
+                free_retire_list[commit_a.reg_rob.old_prf] <= 1;
+                free_retire_list[commit_a.reg_rob.new_prf] <= 0;
             end
 
+            if(commit_b.reg_rob.valid && commit_b.reg_rob.code == ROB_REG) begin
+                free_list[commit_b.reg_rob.old_prf] <= 1;
+                retire_table[commit_b.reg_rob.arch] <= commit_b.reg_rob.new_prf;
+                free_retire_list[commit_b.reg_rob.old_prf] <= 1;
+                free_retire_list[commit_b.reg_rob.new_prf] <= 0;
+            end
+            //phys_file[commit_arr[i].reg_rob.new_prf] <= commit_arr[i].reg_rob.result; // Needed?
+        end
+    end
+
+    always_ff @ (posedge clk) begin
+        retire_override <= mispredict_signal;
+    end
+
+    always_ff @ (posedge clk) begin
+        if(rst || mispredict_signal) begin
+            rs_a_op <= '0;
+            rs_b_op <= '0;
+
+            rob_a_op <= '0;
+            rob_b_op <= '0;
+        end else begin
             rs_a_op <= rs_a;
             rs_b_op <= rs_b;
 

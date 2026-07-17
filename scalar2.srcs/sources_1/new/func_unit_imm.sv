@@ -5,6 +5,7 @@ import config_pkg::*;
 module func_unit_imm(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input imm_rs_entry imm_instr,
 
     output cdb_entry cdb_result
@@ -18,7 +19,7 @@ module func_unit_imm(
 
     // Testing to see if checking for invalid instruction even matters
     always_ff @ (posedge clk) begin
-        if (rst) begin
+        if (rst || mispredict_signal) begin
             cdb_result <= '0;
         end else begin
             if(imm_instr.valid) begin

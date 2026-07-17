@@ -5,6 +5,7 @@ import config_pkg::*;
 module reorder_buffer(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input rob_entry input_a,
     input rob_entry input_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
@@ -63,7 +64,7 @@ module reorder_buffer(
     logic branch_actual [0:31];
 
     always_ff @ (posedge clk) begin
-        if (rst) begin
+        if (rst || mispredict_signal) begin
             buffer <= '{default: '0};
 
             head <= '0;

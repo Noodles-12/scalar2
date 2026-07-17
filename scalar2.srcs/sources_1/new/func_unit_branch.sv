@@ -3,6 +3,7 @@
 module func_unit_branch(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input branch_rs_entry branch_instr,
 
     output branch_disp_entry result_op
@@ -15,7 +16,7 @@ module func_unit_branch(
                     .result(result) );
 
     always_ff @ (posedge clk) begin
-        if(rst) begin
+        if(rst || mispredict_signal) begin
             result_op <= '0;
         end else begin
             if(branch_instr.valid) begin

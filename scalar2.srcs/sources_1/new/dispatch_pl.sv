@@ -5,6 +5,7 @@ import config_pkg::*;
 module dispatch_pl(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input rs_entry rename_a,
     input rs_entry rename_b,
     input rob_entry rob_a,
@@ -38,7 +39,7 @@ module dispatch_pl(
     (* max_fanout = 8 *) logic id_list [0:31];
 
     always_ff @ (posedge clk) begin
-        if (rst) begin
+        if (rst || mispredict_signal) begin
             id_list <= '{default: 1'b1};
             rob_op_a <= '0;
             rob_op_b <= '0;

@@ -30,6 +30,9 @@ module branch_predictor(
     logic [1:0] predict_a, predict_b;
     instruction mod_instr_a, mod_instr_b;
 
+    logic [1:0] curr_state_a, curr_state_b
+    logic [1:0] next_state_a, next_state_b;
+
     logic [11:0] taken_a, taken_b;
     logic [11:0] return_a, return_b;
 
@@ -94,7 +97,7 @@ module branch_predictor(
 
     always_ff @ (posedge clk) begin
         if(rst) begin
-            history_table <= '{default: 2'b01};
+            history_table <= '{default: 2'b10};
         end else begin
             
         end
@@ -152,5 +155,25 @@ module branch_predictor(
 
         mod_instr_b = instr_b;
         mod_instr_b.code = code_b;
+    end
+
+    always_comb begin
+        curr_state_a = history_table[commit_a.branch_rob.hist_entry];
+
+        if(commit_a.branch_rob.predict && commit_a.branch_rob.actual) begin
+            next_state_a = (curr_state_a == 2'b11) ? 2'b11 : curr_state_a + 1;
+        end else begin
+            next_state_a = (curr_state_a == 2'b00) ? 2'b00 : curr_state_a - 1;
+        end
+    end
+
+    always_comb begin
+        curr_state_b = history_table[commit_b.branch_rob.hist_entry];
+
+        if(commit_b.branch_rob.predict && commit_b.branch_rob.actual) begin
+            next_state_b = (curr_state_b == 2'b11) ? 2'b11 : curr_state_b + 1;
+        end else begin
+            next_state_b = (curr_state_b == 2'b00) ? 2'b00 : curr_state_b - 1;
+        end
     end
 endmodule

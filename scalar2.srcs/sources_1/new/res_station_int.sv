@@ -5,6 +5,7 @@ import config_pkg::*;
 module res_station_int(
     input logic clk,
     input logic rst,
+    input logic mispredict_signal,
     input int_rs_entry instr_a,
     input int_rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
@@ -41,7 +42,7 @@ module res_station_int(
     assign almost_full = (filled_stations >= 7);
 
     always_ff @ (posedge clk) begin
-        if (rst) begin
+        if (rst || mispredict_signal) begin
             res_station <= '{default: '0};
 
             instr_op <= '0;
