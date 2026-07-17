@@ -30,7 +30,7 @@ module branch_predictor(
     logic [1:0] predict_a, predict_b;
     instruction mod_instr_a, mod_instr_b;
 
-    logic [1:0] curr_state_a, curr_state_b
+    logic [1:0] curr_state_a, curr_state_b;
     logic [1:0] next_state_a, next_state_b;
 
     logic [11:0] taken_a, taken_b;
@@ -99,7 +99,18 @@ module branch_predictor(
         if(rst) begin
             history_table <= '{default: 2'b10};
         end else begin
+            // Only yield the write port to commit_b when b is actually a valid branch
+            // commit to the same entry; otherwise an invalid commit_b (all zeros)
+            // would block every branch that hashes to entry 0 from ever training
+            if(commit_a.reg_rob.valid && commit_a.reg_rob.code == ROB_BRN
+            && !(commit_b.reg_rob.valid && commit_b.reg_rob.code == ROB_BRN
+                 && commit_a.branch_rob.hist_entry == commit_b.branch_rob.hist_entry)) begin
+                history_table[commit_a.branch_rob.hist_entry] <= next_state_a;
+            end
             
+            if(commit_b.reg_rob.valid && commit_b.reg_rob.code == ROB_BRN) begin
+                history_table[commit_b.branch_rob.hist_entry] <= next_state_b;
+            end
         end
     end
 
@@ -160,7 +171,7 @@ module branch_predictor(
     always_comb begin
         curr_state_a = history_table[commit_a.branch_rob.hist_entry];
 
-        if(commit_a.branch_rob.predict && commit_a.branch_rob.actual) begin
+        if(commit_a.branch_rob.actual) begin
             next_state_a = (curr_state_a == 2'b11) ? 2'b11 : curr_state_a + 1;
         end else begin
             next_state_a = (curr_state_a == 2'b00) ? 2'b00 : curr_state_a - 1;
@@ -170,7 +181,7 @@ module branch_predictor(
     always_comb begin
         curr_state_b = history_table[commit_b.branch_rob.hist_entry];
 
-        if(commit_b.branch_rob.predict && commit_b.branch_rob.actual) begin
+        if(commit_b.branch_rob.actual) begin
             next_state_b = (curr_state_b == 2'b11) ? 2'b11 : curr_state_b + 1;
         end else begin
             next_state_b = (curr_state_b == 2'b00) ? 2'b00 : curr_state_b - 1;

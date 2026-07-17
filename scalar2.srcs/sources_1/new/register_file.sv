@@ -71,13 +71,16 @@ module register_file(
 
     always_ff @ (posedge clk) begin
         if(rst) begin
-            for (int i = 0; i < NUM_ARCH_REGS; i++)
+            for (int i = 0; i < NUM_ARCH_REGS; i++) begin
                 alias_table[i] <= i;
+                retire_table[i] <= i;
+            end
 
             for (int i = 0; i < NUM_PHYS_REGS; i++) begin
                 phys_file[i] <= '0;
                 valid_list[i] <= 1;
                 free_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
+                free_retire_list[i] <= (i < NUM_ARCH_REGS) ? '0 : '1;
             end
         end else if(retire_override) begin
             alias_table <= retire_table;
@@ -314,9 +317,13 @@ module register_file(
         rs_b.int_rs.valid = (instr_b.opcode != 0); 
         rob_b.reg_rob.valid = (instr_b.opcode != 0);
 
-        s_match = (instr_b.reg_s == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
-        t_match = (instr_b.reg_t == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
-        d_match = (instr_b.reg_d == instr_a.reg_d) && (instr_a.opcode != 6'b011011);
+        // Only match against instr_a if it actually renames a destination register
+        // (stores 27, branches 28-33, jumps & invalid ops leave reg_d meaningless);
+        // matching a non-renaming instr_a would point instr_b at free_a, which is
+        // never written -> check bit stuck at 0 -> deadlock
+        s_match = (instr_b.reg_s == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
+        t_match = (instr_b.reg_t == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
+        d_match = (instr_b.reg_d == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
 
         idx_bs = s_match ? free_a : alias_table[instr_b.reg_s];
 

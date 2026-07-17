@@ -34,11 +34,14 @@ module reorder_buffer(
     (* max_fanout = 8 *) logic lut_valid [0:31];
 
     (* max_fanout = 8 *) logic [4:0] head, head_p1, head_p2;
-    (* max_fanout = 8 *) logic [4:0] tail, count;
+    (* max_fanout = 8 *) logic [4:0] tail;
+    // 6 bits: must be able to hold 32 without wrapping to 0, which would make a
+    // full ROB look empty and let inserts overwrite live entries
+    (* max_fanout = 8 *) logic [5:0] count;
 
     logic full;
 
-    assign full = (head == tail) & (count > 0);
+    assign full = (count >= 32);
 
     // Insert logics
     insert_req insert_reqs [0:1];

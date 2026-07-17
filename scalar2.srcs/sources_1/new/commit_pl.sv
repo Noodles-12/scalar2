@@ -10,8 +10,8 @@ module commit_pl(
 
     output logic mispredict_signal,
     output logic [11:0] mispredict_pc,
-    rob_entry commit_a,
-    rob_entry commit_b
+    output rob_entry commit_a,
+    output rob_entry commit_b
 );
     rob_t rob_type_a, rob_type_b;
     commit_t commit_type_a, commit_type_b;
@@ -50,6 +50,11 @@ module commit_pl(
 
     always_ff @ (posedge clk) begin
         if(rst) begin
+            mispredict_signal <= 1'b0;
+            mispredict_pc <= 12'b0;
+            commit_a <= '0;
+            commit_b <= '0;
+        end else if(mispredict_signal) begin
             mispredict_signal <= 1'b0;
             mispredict_pc <= 12'b0;
             commit_a <= '0;

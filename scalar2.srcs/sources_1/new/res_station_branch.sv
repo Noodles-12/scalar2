@@ -66,12 +66,12 @@ module res_station_branch(
                     if(!res_station[j].valid) continue;
 
                     if(res_station[j].reg_s == cdb_arr[i].prf) begin
-                        res_station[j].value_s = cdb_arr[i].result;
-                        res_station[j].check_s = 1;
+                        res_station[j].value_s <= cdb_arr[i].result;
+                        res_station[j].check_s <= 1;
                     end
                     if(res_station[j].reg_t == cdb_arr[i].prf) begin
-                        res_station[j].value_t = cdb_arr[i].result;
-                        res_station[j].check_t = 1;
+                        res_station[j].value_t <= cdb_arr[i].result;
+                        res_station[j].check_t <= 1;
                     end
                 end
             end
