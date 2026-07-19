@@ -5,15 +5,6 @@ import config_pkg::*;
 /*
     The main point of this testbench is to see that our ROB is filled with the right instructions
         (assuming right predicts) & that all of them are completed/passed to commit (as of 07/13/26 commit_pl not created)
-
-    Golden model self-checking:
-        A separate "golden" emulator reads the same instr_mem.mem image at time 0, walks the
-        program in program order (following taken/untaken branches & jumps exactly as the real
-        branch predictor/controller would under a correct prediction), and pushes one entry per
-        retiring instruction into golden_q. As the ROB actually commits entries out of
-        output_arr, each commit is popped off golden_q and compared. Since this test only
-        assumes correct predictions, golden control flow == actual control flow, so the two
-        queues should drain in lockstep.
 */
 
 module predict_tb();

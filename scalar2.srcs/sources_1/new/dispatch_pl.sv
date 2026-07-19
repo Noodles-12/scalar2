@@ -10,7 +10,8 @@ module dispatch_pl(
     input rs_entry rename_b,
     input rob_entry rob_a,
     input rob_entry rob_b,
-    input id_to_free ids_to_free [0:1],
+    input id_to_free free_id_a,
+    input id_to_free free_id_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
 
     output rs_entry rs_op_a [0:3],
@@ -23,7 +24,7 @@ module dispatch_pl(
     rob_entry rob_disp_a, rob_disp_b;
 
     logic done_a, done_b;
-    logic [4:0] free_a, free_b;
+    logic [4:0] avail_a, avail_b;
 
     logic [1:0] code_a, code_b;
 
@@ -53,35 +54,36 @@ module dispatch_pl(
             rob_op_b <= rob_disp_b;
 
             // Freeing any id of committed instructions
-            for(int i = 0; i < 2; i++) begin
-                if(ids_to_free[i].valid)
-                    id_list[ids_to_free[i].id] <= 1;
-            end
+            if(free_id_a.valid)
+                id_list[free_id_a.id] <= 1;
+
+            if(free_id_b.valid)
+                id_list[free_id_b.id] <= 1;
 
             if(done_a && rename_a.int_rs.valid)
-                id_list[free_a] <= 0;
+                id_list[avail_a] <= 0;
 
             if(done_b && rename_b.int_rs.valid)
-                id_list[free_b] <= 0;
+                id_list[avail_b] <= 0;
         end
     end
 
     always_comb begin
-        done_a = 0; free_a = 0;
-        done_b = 0; free_b = 0;
+        done_a = 0; avail_a = 0;
+        done_b = 0; avail_b = 0;
 
-        // Search lower half for free_a
+        // Search lower half for avail_a
         for (int i = 0; i < 16; i++) begin
             if (id_list[i] && !done_a) begin
-                free_a = i;
+                avail_a = i;
                 done_a = 1;
             end
         end
 
-        // Search upper half for free_b — independent, no dependency on done_a
+        // Search upper half for avail_b — independent, no dependency on done_a
         for (int i = 16; i < 32; i++) begin
             if (id_list[i] && !done_b) begin
-                free_b = i;
+                avail_b = i;
                 done_b = 1;
             end
         end
@@ -101,13 +103,13 @@ module dispatch_pl(
 
         // Assigning & freeing ids if id was found & instruction is valid
         if(done_a && rename_a.int_rs.valid) begin
-            rs_disp_a.int_rs.id = free_a;
-            rob_disp_a.reg_rob.id = free_a;
+            rs_disp_a.int_rs.id = avail_a;
+            rob_disp_a.reg_rob.id = avail_a;
         end
 
         if(done_b && rename_b.int_rs.valid) begin
-            rs_disp_b.int_rs.id = free_b;
-            rob_disp_b.reg_rob.id = free_b;
+            rs_disp_b.int_rs.id = avail_b;
+            rob_disp_b.reg_rob.id = avail_b;
         end
 
         // ---------------- CDB snoop for instruction A ----------------
