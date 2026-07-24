@@ -7,8 +7,8 @@ module func_unit_int(
     input logic rst,
     input logic mispredict_signal,
     input int_rs_entry int_instr,
-    
-    output cdb_entry cdb_result 
+
+    output cdb_entry cdb_result
 );
     logic [31:0] result;
 

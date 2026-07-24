@@ -179,7 +179,7 @@ package config_pkg;
         logic [4:0] id;
         logic done;
         logic [1:0] code;
-        logic [31:0] result;
+        logic [31:0] result; // Don't even need this maybe
         logic [4:0] new_prf; // Phys reg to write result into
         logic [4:0] old_prf; // Phys reg to free
         logic [3:0] arch; // Do something with RRT

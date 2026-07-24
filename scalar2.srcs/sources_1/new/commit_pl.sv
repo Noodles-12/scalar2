@@ -17,7 +17,7 @@ module commit_pl(
     commit_t commit_type_a, commit_type_b;
 
     always_comb begin
-        rob_type_a = rob_a.reg_rob.code;
+        rob_type_a = rob_t'(rob_a.reg_rob.code);
 
         if(rob_type_a == ROB_BRN) begin
             if(rob_a.branch_rob.predict != rob_a.branch_rob.actual) begin
@@ -33,7 +33,7 @@ module commit_pl(
     end
 
     always_comb begin
-        rob_type_b = rob_b.reg_rob.code;
+        rob_type_b = rob_t'(rob_b.reg_rob.code);
 
         if(rob_type_b == ROB_BRN) begin
             if(rob_b.branch_rob.predict != rob_b.branch_rob.actual) begin

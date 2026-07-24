@@ -10,9 +10,9 @@ module dispatch_pl(
     input rs_entry rename_b,
     input rob_entry rob_a,
     input rob_entry rob_b,
-    input id_to_free free_id_a,
-    input id_to_free free_id_b,
-    input cdb_entry cdb_arr [0:CDB_SIZE - 1],
+    input rob_entry commit_a,
+    input rob_entry commit_b,
+    input cdb_entry cdb_arr [0:CDB_SIZE-1],
 
     output rs_entry rs_op_a [0:3],
     output rs_entry rs_op_b [0:3],
@@ -54,11 +54,11 @@ module dispatch_pl(
             rob_op_b <= rob_disp_b;
 
             // Freeing any id of committed instructions
-            if(free_id_a.valid)
-                id_list[free_id_a.id] <= 1;
+            if(commit_a.reg_rob.valid)
+                id_list[commit_a.reg_rob.id] <= 1;
 
-            if(free_id_b.valid)
-                id_list[free_id_b.id] <= 1;
+            if(commit_b.reg_rob.valid)
+                id_list[commit_b.reg_rob.id] <= 1;
 
             if(done_a && rename_a.int_rs.valid)
                 id_list[avail_a] <= 0;
@@ -80,7 +80,7 @@ module dispatch_pl(
             end
         end
 
-        // Search upper half for avail_b — independent, no dependency on done_a
+        // Search upper half for avail_b - independent, no dependency on done_a
         for (int i = 16; i < 32; i++) begin
             if (id_list[i] && !done_b) begin
                 avail_b = i;

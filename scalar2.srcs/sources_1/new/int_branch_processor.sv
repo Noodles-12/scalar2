@@ -2,13 +2,14 @@
 
 module int_branch_processor(
     input logic clk,
-    input logic rst
+    input logic rst,
+
+    output logic [3:0] last_arch_reg
 );
     logic [ADDRBUS_SIZE-1:0] pc_addr;
     logic [ADDRBUS_SIZE-1:0] next_pc;
 
     logic predict_flush, mispredict_flush;
-    logic [ADDRBUS_SIZE-1:0] mispredict_addr;
 
     instruction instr_a, instr_b;
     logic [ADDRBUS_SIZE-1:0] addr_a, addr_b;
@@ -30,11 +31,6 @@ module int_branch_processor(
     // Dispatch
     rs_entry rs_disp_a [0:3], rs_disp_b [0:3];
     rob_entry rob_disp_a, rob_disp_b;
-
-    // Reservation station outputs
-    int_rs_entry int_rs_out;
-    imm_rs_entry imm_rs_out;
-    branch_rs_entry branch_rs_out;
 
     // Reservation station outputs
     int_rs_entry int_rs_out;
@@ -73,7 +69,7 @@ module int_branch_processor(
         .target_b(predict_b),
         .curr_pc(pc_addr),
         .mispredict_signal(commit_misp),
-        .recov_addr(mispredict_addr),
+        .recov_addr(commit_misp_addr),
 
         .predict_flush(predict_flush),
         .mispredict_flush(mispredict_flush),
@@ -155,7 +151,7 @@ module int_branch_processor(
         .rs_b_op(rs_b),
         .rob_a_op(rob_a),
         .rob_b_op(rob_b),
-        .last_arch_reg()
+        .last_arch_reg(last_arch_reg)
     );
 
     dispatch_pl disp_pl(
@@ -166,7 +162,8 @@ module int_branch_processor(
         .rename_b(rs_b),
         .rob_a(rob_a),
         .rob_b(rob_b),
-        .ids_to_free(),
+        .commit_a(commit_a),
+        .commit_b(commit_b),
         .cdb_arr(cdb_arr),
 
         .rs_op_a(rs_disp_a),
@@ -242,7 +239,7 @@ module int_branch_processor(
                        .branch_rob(branch_disp),
 
                        .output_arr(rob_out_arr),
-                       .ids_to_free(ids_to_free) );
+                       .ids_to_free() );
 
     commit_pl commit(
         .clk(clk),
@@ -253,6 +250,6 @@ module int_branch_processor(
         .mispredict_signal(commit_misp),
         .mispredict_pc(commit_misp_addr),
         .commit_a(commit_a),
-        .commit_b(commit_b),
+        .commit_b(commit_b)
     );
 endmodule

@@ -12,7 +12,7 @@ module register_file(
     input logic [11:0] recov_b,
     input logic [4:0] hist_a,
     input logic [4:0] hist_b,
-    input cdb_entry cdb_arr [0:CDB_SIZE - 1],
+    input cdb_entry cdb_arr [0:CDB_SIZE-1],
     input rob_entry commit_a,
     input rob_entry commit_b,
 
