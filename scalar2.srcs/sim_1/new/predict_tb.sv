@@ -64,6 +64,7 @@ module predict_tb();
     );
 
     controller ctrl(
+        .clk(clk),
         .code_a(mod_instr_a.code),
         .code_b(mod_instr_b.code),
         .target_a(predict_a),
@@ -73,7 +74,9 @@ module predict_tb();
         .recov_addr(mispredict_addr),
 
         .predict_flush(predict_flush),
-        .mispredict_flush(mispredict_flush),
+        .mispredict_flush_rob(mispredict_flush),
+        .mispredict_flush_rs(),
+        .mispredict_flush_reg(),
         .next_pc(next_pc),
         .enable()
     );

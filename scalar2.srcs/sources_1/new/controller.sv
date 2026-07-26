@@ -3,6 +3,7 @@
 import config_pkg::*;
 
 module controller(
+    input logic clk,
     input instr_code code_a,
     input instr_code code_b,
     input logic [11:0] target_a,
@@ -12,7 +13,9 @@ module controller(
     input logic [11:0] recov_addr,
 
     output logic predict_flush,
-    output logic mispredict_flush,
+    output logic mispredict_flush_rob,
+    output logic mispredict_flush_rs,
+    output logic mispredict_flush_reg,
     output logic [11:0] next_pc,
     output logic enable
 );
@@ -28,11 +31,12 @@ module controller(
     end
 
     always_comb begin
-        mispredict_flush = 1'b0;
+        mispredict_flush_rob = mispredict_signal;
+    end
 
-        if(mispredict_signal) begin
-            mispredict_flush = 1'b1;
-        end
+    always_ff @ (posedge clk) begin
+        mispredict_flush_rs  <= mispredict_signal;
+        mispredict_flush_reg <= mispredict_signal;
     end
 
     always_comb begin

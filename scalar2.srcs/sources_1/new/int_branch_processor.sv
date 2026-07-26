@@ -9,7 +9,8 @@ module int_branch_processor(
     logic [ADDRBUS_SIZE-1:0] pc_addr;
     logic [ADDRBUS_SIZE-1:0] next_pc;
 
-    logic predict_flush, mispredict_flush;
+    logic predict_flush;
+    logic mispredict_flush_rob, mispredict_flush_rs, mispredict_flush_reg;
 
     instruction instr_a, instr_b;
     logic [ADDRBUS_SIZE-1:0] addr_a, addr_b;
@@ -63,6 +64,7 @@ module int_branch_processor(
     );
 
     controller ctrl(
+        .clk(clk),
         .code_a(mod_instr_a.code),
         .code_b(mod_instr_b.code),
         .target_a(predict_a),
@@ -72,7 +74,9 @@ module int_branch_processor(
         .recov_addr(commit_misp_addr),
 
         .predict_flush(predict_flush),
-        .mispredict_flush(mispredict_flush),
+        .mispredict_flush_rob(mispredict_flush_rob),
+        .mispredict_flush_rs(mispredict_flush_rs),
+        .mispredict_flush_reg(mispredict_flush_reg),
         .next_pc(next_pc),
         .enable()
     );
@@ -82,7 +86,7 @@ module int_branch_processor(
         .rst(rst),
         .ip_addr(pc_addr),
         .predict_flush(predict_flush),
-        .mispredict_flush(mispredict_flush),
+        .mispredict_flush(mispredict_flush_rob),
 
         .instr_a(instr_a),
         .instr_b(instr_b),
@@ -94,7 +98,7 @@ module int_branch_processor(
         .clk(clk),
         .rst(rst),
         .predict_flush(predict_flush),
-        .mispredict_flush(mispredict_flush),
+        .mispredict_flush(mispredict_flush_rob),
         .enable(1'b1),
         .instr_a(instr_a),
         .addr_a(addr_a),
@@ -116,7 +120,7 @@ module int_branch_processor(
     dependency_resolver dep_rsvr(
         .clk(clk),
         .rst(rst),
-        .mispredict_flush(mispredict_flush),
+        .mispredict_flush(mispredict_flush_rob),
         .enable(1'b1),
         .instr_a(mod_instr_a),
         .instr_b(mod_instr_b),
@@ -136,7 +140,7 @@ module int_branch_processor(
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .mispredict_signal(mispredict_flush),
+        .mispredict_signal(mispredict_flush_reg),
         .instr_a(instr_a_rslv),
         .instr_b(instr_b_rslv),
         .recov_a(recov_a_rslv),
@@ -157,7 +161,7 @@ module int_branch_processor(
     dispatch_pl disp_pl(
         .clk(clk),
         .rst(rst),
-        .mispredict_signal(mispredict_flush),
+        .mispredict_signal(mispredict_flush_reg),
         .rename_a(rs_a),
         .rename_b(rs_b),
         .rob_a(rob_a),
@@ -174,7 +178,7 @@ module int_branch_processor(
 
     res_station_int rs_int(.clk(clk),
                            .rst(rst),
-                           .mispredict_signal(mispredict_flush),
+                           .mispredict_signal(mispredict_flush_rs),
                            .instr_a(rs_disp_a[0].int_rs),
                            .instr_b(rs_disp_b[0].int_rs),
                            .cdb_arr(cdb_arr),
@@ -184,7 +188,7 @@ module int_branch_processor(
 
     res_station_imm rs_imm(.clk(clk),
                            .rst(rst),
-                           .mispredict_signal(mispredict_flush),
+                           .mispredict_signal(mispredict_flush_rs),
                            .instr_a(rs_disp_a[1].imm_rs),
                            .instr_b(rs_disp_b[1].imm_rs),
                            .cdb_arr(cdb_arr),
@@ -194,7 +198,7 @@ module int_branch_processor(
 
     res_station_branch rs_branch(.clk(clk),
                                  .rst(rst),
-                                 .mispredict_signal(mispredict_flush),
+                                 .mispredict_signal(mispredict_flush_rs),
                                  .instr_a(rs_disp_a[3].branch_rs),
                                  .instr_b(rs_disp_b[3].branch_rs),
                                  .cdb_arr(cdb_arr),
@@ -204,21 +208,21 @@ module int_branch_processor(
 
     func_unit_int fu_int(.clk(clk),
                          .rst(rst),
-                         .mispredict_signal(mispredict_flush),
+                         .mispredict_signal(mispredict_flush_rs),
                          .int_instr(int_rs_out),
 
                          .cdb_result(int_cdb) );
 
     func_unit_imm fu_imm(.clk(clk),
                          .rst(rst),
-                         .mispredict_signal(mispredict_flush),
+                         .mispredict_signal(mispredict_flush_rs),
                          .imm_instr(imm_rs_out),
 
                          .cdb_result(imm_cdb) );
 
     func_unit_branch fu_branch(.clk(clk),
                                .rst(rst),
-                               .mispredict_signal(mispredict_flush),
+                               .mispredict_signal(mispredict_flush_rs),
                                .branch_instr(branch_rs_out),
 
                                .result_op(branch_disp) );
@@ -231,7 +235,7 @@ module int_branch_processor(
 
     reorder_buffer rob(.clk(clk),
                        .rst(rst),
-                       .mispredict_signal(mispredict_flush),
+                       .mispredict_signal(mispredict_flush_rob),
                        .input_a(rob_disp_a),
                        .input_b(rob_disp_b),
                        .cdb_arr(cdb_arr),
