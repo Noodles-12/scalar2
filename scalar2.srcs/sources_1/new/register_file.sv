@@ -43,6 +43,9 @@ module register_file(
     logic [PHYS_REGS_BITS - 1:0] retire_table [0:NUM_ARCH_REGS - 1];
     logic free_retire_list [0:NUM_PHYS_REGS-1];
 
+    logic [31:0] free_bits;
+    logic [31:0] onehot_a, onehot_b;
+    logic [31:0] free_bits_masked;
     logic [PHYS_REGS_BITS - 1:0] free_a, free_b;
     logic found_a, found_b;
 
@@ -120,7 +123,6 @@ module register_file(
                 free_retire_list[commit_b.reg_rob.old_prf] <= 1;
                 free_retire_list[commit_b.reg_rob.new_prf] <= 0;
             end
-            //phys_file[commit_arr[i].reg_rob.new_prf] <= commit_arr[i].reg_rob.result; // Needed?
         end
     end
 
@@ -146,8 +148,12 @@ module register_file(
 
     // Free physical register finding
     always_comb begin
-        free_a = '0; found_a = 0;
-        free_b = '0; found_b = 0;
+        free_bits = '0; free_bits_masked = '0;
+        free_a = '0; found_a = 0; onehot_a = '0;
+        free_b = '0; found_b = 0; onehot_b = '0;
+
+        free_bits = free_list;
+        onehot_a = free_bits & (~free_bits + 1);
 
         for(int i = 0; i < NUM_PHYS_REGS; i++) begin
             if(free_list[i]) begin
