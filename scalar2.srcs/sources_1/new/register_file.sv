@@ -35,13 +35,13 @@ module register_file(
     // Physical Register File (PRF) - 32 Registers
     (* max_fanout = 8 *) logic [31:0] phys_file [0:NUM_PHYS_REGS - 1];
     // Free list that contains free bit for each physical register
-    (* max_fanout = 8 *) logic free_list [0:NUM_PHYS_REGS - 1];
+    (* max_fanout = 8 *) logic [0:NUM_PHYS_REGS-1] free_list;
     // Valid list that contains valid bit for each physical register
-    (* max_fanout = 8 *) logic valid_list [0:NUM_PHYS_REGS - 1];
+    (* max_fanout = 8 *) logic [0:NUM_PHYS_REGS-1] valid_list;
 
     // Register Retirement Table (RRT) - Structurally same as RAT
     logic [PHYS_REGS_BITS - 1:0] retire_table [0:NUM_ARCH_REGS - 1];
-    logic free_retire_list [0:NUM_PHYS_REGS-1];
+    logic [0:NUM_PHYS_REGS-1] free_retire_list;
 
     logic [31:0] free_bits;
     logic [31:0] onehot_a, onehot_b;
@@ -148,24 +148,24 @@ module register_file(
 
     // Free physical register finding
     always_comb begin
-        free_bits = '0; free_bits_masked = '0;
-        free_a = '0; found_a = 0; onehot_a = '0;
-        free_b = '0; found_b = 0; onehot_b = '0;
-
         free_bits = free_list;
         onehot_a = free_bits & (~free_bits + 1);
 
-        for(int i = 0; i < NUM_PHYS_REGS; i++) begin
-            if(free_list[i]) begin
-                if(!found_a) begin
-                    found_a = 1;
-                    free_a = i;
-                end else if(!found_b) begin
-                    found_b = 1;
-                    free_b = i;
-                end
-            end
+        free_bits_masked = free_bits & (~onehot_a);
+        onehot_b = free_bits_masked & (~free_bits_masked + 1);
+
+        free_a = '0;
+        for (int i = 0; i < NUM_PHYS_REGS; i++) begin
+            if (onehot_a[i]) free_a |= i;
         end
+
+        free_b = '0;
+        for (int i = 0; i < NUM_PHYS_REGS; i++) begin
+            if (onehot_b[i]) free_b |= i;
+        end
+
+        found_a = |free_bits;
+        found_b = |free_bits_masked;
     end
 
     // Rename of instruction A
