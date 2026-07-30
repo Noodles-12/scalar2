@@ -40,6 +40,7 @@ module res_station_mem(
 
     load_rs_entry load_buffer [0:7];
     logic [2:0] l_head, l_tail;
+    logic [2:0] l_tail_comb;
 
     logic [3:0] store_count, store_insert, store_dispatch;
     logic [3:0] load_count, load_insert, load_dispatch;
@@ -52,7 +53,7 @@ module res_station_mem(
 
 
     always_ff @ (posedge clk) begin
-        if(rst) begin
+        if(rst || mispredict_signal) begin
             store_buffer <= '{default: '0};
             load_buffer <= '{default: '0};
 
@@ -74,36 +75,74 @@ module res_station_mem(
             store_eff_addr <= '{default: '0};
             store_valid_addr <= '{default: '0};
         end else begin
+            s_tail <= s_tail_comb;
+            l_tail <= l_tail_comb;
 
+            if(insert_a.valid) begin
+                if(insert_a.is_store) begin
+                    store_buffer[insert_a.idx] <= insert_a.entry;
+                end else begin
+                    load_buffer[insert_a.idx] <= insert_a.entry;
+                end
+            end
+
+            if(insert_b.valid) begin
+                if(insert_b.is_store) begin
+                    store_buffer[insert_b.idx] <= insert_b.entry;
+                end else begin
+                    load_buffer[insert_b.idx] <= insert_b.entry;
+                end
+            end
+
+            for(int i = 0; i < CDB_SIZE; i++) begin
+                if(!cdb_arr[i].valid) continue;
+                for()
+            end
         end
     end
 
     always_comb begin
         load_insert = '0;
         store_insert = '0;
+
+        insert_a = '0;
+        insert_b = '0;
         
         s_tail_comb = s_tail;
+        l_tail_comb = l_tail;
 
-        case(instr_a.load_rs.opcode)
+        unique case(instr_a.load_rs.opcode)
             26 : begin
                 load_insert = load_insert + 1'b1;
+                insert_a.valid = 1;
+                insert_a.is_store = 0;
+                insert_a.idx = l_tail_comb;
+                insert_a.entry = instr_a;
+                l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
                 store_insert = store_insert + 1'b1;
                 insert_a.valid = 1;
+                insert_a.is_store = 1;
                 insert_a.idx = s_tail_comb;
                 insert_a.entry = instr_a;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
         endcase
 
-        case(instr_b.load_rs.opcode)
+        unique case(instr_b.load_rs.opcode)
             26 : begin
                 load_insert = load_insert + 1'b1;
+                insert_a.valid = 1;
+                insert_a.is_store = 0;
+                insert_a.idx = l_tail_comb;
+                insert_a.entry = instr_b;
+                l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
                 store_insert = store_insert + 1'b1;
                 insert_b.valid = 1;
+                insert_b.is_store = 1;
                 insert_b.idx = s_tail_comb;
                 insert_b.entry = instr_b;
                 s_tail_comb = s_tail_comb + 1'b1;
@@ -111,45 +150,7 @@ module res_station_mem(
         endcase
     end
 
-    /* // 1 Insert Entries
-    always_comb begin
-        s1_store_buffer = store_buffer;
-        s1_load_buffer = load_buffer;
-        s1_store_count = store_count;
-        s1_load_count = load_count;
-
-        s1_s_head = s_head; s1_s_tail = s_tail;
-        s1_l_head = l_head; s1_l_tail = l_tail;
-
-        case(instr_a.load_rs.opcode) 
-            26 : begin
-                s1_load_buffer[s1_l_tail] = instr_a;
-                s1_load_buffer[s1_l_tail].count = s1_store_count;
-                s1_load_count = s1_load_count + 1;
-                s1_l_tail = s1_l_tail + 1;
-            end
-            27 : begin
-                s1_store_buffer[s1_s_tail] = instr_a;
-                s1_store_count = s1_store_count + 1;
-                s1_s_tail = s1_s_tail + 1;
-            end
-        endcase
-
-        case(instr_b.load_rs.opcode)
-            26 : begin
-                s1_load_buffer[s1_l_tail] = instr_b;
-                s1_load_buffer[s1_l_tail].count = s1_store_count;
-                s1_load_count = s1_load_count + 1;
-                s1_l_tail = s1_l_tail + 1;
-            end
-            27 : begin
-                s1_store_buffer[s1_s_tail] = instr_b;
-                s1_store_count = s1_store_count + 1;
-                s1_s_tail = s1_s_tail + 1;
-            end
-        endcase
-    end
-
+    /* 
     // Stage 2
     // Dispatching Loads
     always_comb begin
