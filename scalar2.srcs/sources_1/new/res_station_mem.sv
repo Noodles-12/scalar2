@@ -96,7 +96,17 @@ module res_station_mem(
 
             for(int i = 0; i < CDB_SIZE; i++) begin
                 if(!cdb_arr[i].valid) continue;
-                for()
+                for(int j = 0; j < RS_SIZE; j++) begin
+                    if(store_buffer[j].valid && !store_buffer[j].check_s && cdb_arr[i].prf == store_buffer[j].reg_s) begin
+                        store_buffer[j].value_s <= cdb_arr[i].result;
+                        store_buffer[j].check_s <= 1;
+                    end)
+
+                    if(store_buffer[j].valid && !store_buffer[j].check_d && cdb_arr[i].prf == store_buffer[j].reg_d) begin
+                        store_buffer[j].value_d <= cdb_arr[i].result;
+                        store_buffer[j].check_d <= 1;
+                    end
+                end
             end
         end
     end
@@ -149,6 +159,8 @@ module res_station_mem(
             end
         endcase
     end
+
+    
 
     /* 
     // Stage 2
