@@ -14,8 +14,7 @@ module res_station_mem(
     input str_disp_entry str_fwd_vals [0:1],
     input load_fwd_addr load_fwd_addrs [0:1],
     
-    output str_disp_entry str_disp_a_reg,
-    output str_disp_entry str_disp_b_reg,
+    output str_disp_entry str_disp_op,
 
     output load_fwd_addr load_fwd_a_reg,
     output load_fwd_addr load_fwd_b_reg,
@@ -32,7 +31,11 @@ module res_station_mem(
     } insert_req;
 
     // Both load & stores can happen out of order
-    store_rs_entry store_buffer [0:7];  
+    store_rs_entry store_buffer [0:7];
+    logic [7:0] done_stores, store_disp_oh;
+    logic [2:0] store_disp_idx;
+    logic store_disp_found;
+
     logic [2:0] s_head, s_tail;
     logic [2:0] s_tail_comb;
 
@@ -69,8 +72,7 @@ module res_station_mem(
             load_fwd_a_reg <= '0;
             load_fwd_b_reg <= '0;
 
-            str_disp_a_reg <= '0;
-            str_disp_b_reg <= '0;
+            str_disp_op <= '0;
 
             store_eff_addr <= '{default: '0};
             store_valid_addr <= '{default: '0};
@@ -100,13 +102,25 @@ module res_station_mem(
                     if(store_buffer[j].valid && !store_buffer[j].check_s && cdb_arr[i].prf == store_buffer[j].reg_s) begin
                         store_buffer[j].value_s <= cdb_arr[i].result;
                         store_buffer[j].check_s <= 1;
-                    end)
+                    end
 
                     if(store_buffer[j].valid && !store_buffer[j].check_d && cdb_arr[i].prf == store_buffer[j].reg_d) begin
                         store_buffer[j].value_d <= cdb_arr[i].result;
                         store_buffer[j].check_d <= 1;
                     end
                 end
+            end
+
+            if (store_disp_found) begin
+                str_disp_op.valid <= 1'b1;
+                str_disp_op.id <= store_buffer[store_disp_idx].id;
+                str_disp_op.idx <= store_disp_idx;
+                str_disp_op.base_val <= store_buffer[store_disp_idx].value_d[11:0];
+                str_disp_op.offset <= store_buffer[store_disp_idx].offset;
+                str_disp_op.value <= store_buffer[store_disp_idx].value_s;
+                str_disp_op.mem_dest <= '0;
+            end else begin
+                str_disp_op <= '0;
             end
         end
     end
@@ -138,15 +152,16 @@ module res_station_mem(
                 insert_a.entry = instr_a;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
+            default: ;
         endcase
 
         unique case(instr_b.load_rs.opcode)
             26 : begin
                 load_insert = load_insert + 1'b1;
-                insert_a.valid = 1;
-                insert_a.is_store = 0;
-                insert_a.idx = l_tail_comb;
-                insert_a.entry = instr_b;
+                insert_b.valid = 1;
+                insert_b.is_store = 0;
+                insert_b.idx = l_tail_comb;
+                insert_b.entry = instr_b;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
@@ -157,10 +172,28 @@ module res_station_mem(
                 insert_b.entry = instr_b;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
+            default: ;
         endcase
     end
 
-    
+    // Finding finished store
+    always_comb begin
+        done_stores = '0;
+        store_disp_oh = '0;
+        store_disp_idx = '0;
+
+        for(int i = 0; i < RS_SIZE; i++) begin
+            done_stores[i] = store_buffer[i].valid & store_buffer[i].check_s & store_buffer[i].check_d;
+        end
+
+        store_disp_oh = (~done_stores + 1'b1) & done_stores;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (store_disp_oh[i]) store_disp_idx |= i;
+        end
+
+        store_disp_found = |done_stores;
+    end
 
     /* 
     // Stage 2
@@ -277,15 +310,6 @@ module res_station_mem(
         if(load_fwd_addrs[1].valid) begin
             s4_load_eff_addr[load_fwd_addrs[1].idx] = load_fwd_addrs[1].eff_addr;
             s4_load_valid_addr[load_fwd_addrs[1].idx] = 1;
-        end
-    end
-
-    // Stage 5
-    // Update RS's with CDB 
-    // Possibly pipeline without circular dependency
-    always_comb begin
-        for(int i = 0; i < CDB_SIZE; i++) begin
-            
         end
     end */
 endmodule

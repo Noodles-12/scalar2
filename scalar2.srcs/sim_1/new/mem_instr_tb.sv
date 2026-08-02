@@ -23,7 +23,7 @@ module mem_instr_tb();
     str_disp_entry str_fwd_vals [0:1];
     load_fwd_addr load_fwd_addrs [0:1];
 
-    str_disp_entry str_disp_a_reg, str_disp_b_reg;
+    str_disp_entry str_disp_op;
     load_fwd_addr load_fwd_a_reg, load_fwd_b_reg;
     load_rs_entry load_disp_mem, load_disp_imm;
 
@@ -78,8 +78,7 @@ module mem_instr_tb();
         .str_fwd_vals(str_fwd_vals),
         .load_fwd_addrs(load_fwd_addrs),
 
-        .str_disp_a_reg(str_disp_a_reg),
-        .str_disp_b_reg(str_disp_b_reg),
+        .str_disp_op(str_disp_op),
 
         .load_fwd_a_reg(load_fwd_a_reg),
         .load_fwd_b_reg(load_fwd_b_reg),
@@ -116,10 +115,25 @@ module mem_instr_tb();
             rs_mem.load_buffer[0].reg_s, rs_mem.load_buffer[0].offset,
             rs_mem.load_buffer[0].dest);
 
-        $display("store_buffer[0]: valid=%0b opcode=%0d reg_s=%0d reg_d=%0d offset=%0d",
+        $display("store_buffer[0]: valid=%0b opcode=%0d reg_s=%0d reg_d=%0d offset=%0d check_s=%0b check_d=%0b",
             rs_mem.store_buffer[0].valid, rs_mem.store_buffer[0].opcode,
             rs_mem.store_buffer[0].reg_s, rs_mem.store_buffer[0].reg_d,
-            rs_mem.store_buffer[0].offset);
+            rs_mem.store_buffer[0].offset,
+            rs_mem.store_buffer[0].check_s, rs_mem.store_buffer[0].check_d);
+
+        // Store dispatch check: sources were ready at rename (fresh regs),
+        // so the store should be selected and appear on str_disp_op
+        $display("str_disp_op: valid=%0b id=%0d idx=%0d base_val=%0d offset=%0d value=%0d",
+            str_disp_op.valid, str_disp_op.id, str_disp_op.idx,
+            str_disp_op.base_val, str_disp_op.offset, str_disp_op.value);
+
+        if (str_disp_op.valid && str_disp_op.idx == 0
+            && str_disp_op.offset == 12'd8
+            && str_disp_op.base_val == 12'd0
+            && str_disp_op.value == 32'd0)
+            $display("PASS: store dispatched from res_station_mem");
+        else
+            $display("FAIL: store not dispatched or fields wrong");
 
         #110;
 

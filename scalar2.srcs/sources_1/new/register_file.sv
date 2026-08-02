@@ -46,7 +46,7 @@ module register_file(
     logic [31:0] free_bits;
     logic [31:0] onehot_a, onehot_b;
     logic [31:0] free_bits_masked;
-    logic [PHYS_REGS_BITS - 1:0] free_a, free_b;
+    logic [PHYS_REGS_BITS-1:0] free_a, free_b;
     logic found_a, found_b;
 
     rs_entry rs_a;
