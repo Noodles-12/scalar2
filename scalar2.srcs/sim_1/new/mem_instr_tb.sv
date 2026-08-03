@@ -20,10 +20,10 @@ module mem_instr_tb();
 
     logic [5:0] id_to_free [0:1];
 
-    str_disp_entry str_fwd_vals [0:1];
     load_fwd_addr load_fwd_addrs [0:1];
 
     str_disp_entry str_disp_op;
+    str_disp_entry str_rob;
     load_fwd_addr load_fwd_a_reg, load_fwd_b_reg;
     load_rs_entry load_disp_mem, load_disp_imm;
 
@@ -75,7 +75,7 @@ module mem_instr_tb();
         .cdb_arr(cdb_arr),
         .id_to_free(id_to_free),
 
-        .str_fwd_vals(str_fwd_vals),
+        .str_fwd_val(str_rob),
         .load_fwd_addrs(load_fwd_addrs),
 
         .str_disp_op(str_disp_op),
@@ -87,6 +87,13 @@ module mem_instr_tb();
         .load_disp_imm(load_disp_imm)
     );
 
+    func_unit_str fu_str(
+        .clk(clk),
+        .rst(rst),
+        .str_op(str_disp_op),
+        .str_rob(str_rob)
+    );
+
     always #5 clk = ~clk;
 
     initial begin
@@ -96,7 +103,6 @@ module mem_instr_tb();
         cdb_arr = '{default: '0};
         commit_a = '0; commit_b = '0;
         id_to_free = '{default: '0};
-        str_fwd_vals = '{default: '0};
         load_fwd_addrs = '{default: '0};
         instr_a = '0; instr_b = '0;
 
@@ -135,7 +141,34 @@ module mem_instr_tb();
         else
             $display("FAIL: store not dispatched or fields wrong");
 
-        #110;
+        // Store FU check: one cycle after dispatch the store should come out
+        // of func_unit_str with mem_dest = base_val + offset
+        #10;
+
+        $display("str_rob: valid=%0b id=%0d idx=%0d mem_dest=%0d value=%0d",
+            str_rob.valid, str_rob.id, str_rob.idx,
+            str_rob.mem_dest, str_rob.value);
+
+        if (str_rob.valid && str_rob.idx == 0
+            && str_rob.mem_dest == 12'd8
+            && str_rob.value == 32'd0)
+            $display("PASS: store went through func_unit_str");
+        else
+            $display("FAIL: store missing or wrong at func_unit_str output");
+
+        // Forwarding check: str_rob feeds back into str_fwd_val, so one cycle
+        // later the RS should have latched the effective address for entry 0
+        #10;
+
+        $display("store_eff_addr[0]=%0d store_valid_addr[0]=%0b",
+            rs_mem.store_eff_addr[0], rs_mem.store_valid_addr[0]);
+
+        if (rs_mem.store_valid_addr[0] && rs_mem.store_eff_addr[0] == 12'd8)
+            $display("PASS: effective address forwarded back into RS");
+        else
+            $display("FAIL: effective address not stored in RS");
+
+        #90;
 
         $finish;
     end

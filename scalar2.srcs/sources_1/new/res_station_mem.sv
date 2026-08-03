@@ -11,7 +11,7 @@ module res_station_mem(
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input logic [5:0] id_to_free [0:1],
 
-    input str_disp_entry str_fwd_vals [0:1],
+    input str_disp_entry str_fwd_val,
     input load_fwd_addr load_fwd_addrs [0:1],
     
     output str_disp_entry str_disp_op,
@@ -54,6 +54,11 @@ module res_station_mem(
     logic [11:0] load_eff_addr [0:7];
     logic [0:7] load_valid_addr;
 
+    // Store-to-load forwarding logic
+    logic [RS_SIZE-1:0] matching_loads;
+    logic [2:0] matching_str_idx [0:RS_SIZE-1];
+    logic [2:0] idx;
+    logic [3:0] real_count;
 
     always_ff @ (posedge clk) begin
         if(rst || mispredict_signal) begin
@@ -108,6 +113,11 @@ module res_station_mem(
                         store_buffer[j].value_d <= cdb_arr[i].result;
                         store_buffer[j].check_d <= 1;
                     end
+
+                    if (load_buffer[j].valid && !load_buffer[j].check_s && cdb_arr[i].prf == load_buffer[j].reg_s) begin
+                        load_buffer[j].value_s <= cdb_arr[i].result;
+                        load_buffer[j].check_s <= 1;
+                    end
                 end
             end
 
@@ -121,6 +131,11 @@ module res_station_mem(
                 str_disp_op.mem_dest <= '0;
             end else begin
                 str_disp_op <= '0;
+            end
+
+            if (str_fwd_val.valid) begin
+                store_eff_addr[str_fwd_val.idx] <= str_fwd_val.mem_dest;
+                store_valid_addr[str_fwd_val.idx] <= 1;
             end
         end
     end
@@ -195,6 +210,10 @@ module res_station_mem(
         store_disp_found = |done_stores;
     end
 
+    // Store-to-load forwarding logic
+    always_comb begin
+
+    end
     /* 
     // Stage 2
     // Dispatching Loads
