@@ -39,6 +39,8 @@ module res_station_imm(
     logic done_a, done_b, done_c;
     logic [2:0] idx_a, idx_b, idx_c;
 
+    imm_rs_entry instr_a_bypassed, instr_b_bypassed;
+
     assign almost_full = (filled_stations >= 7);
 
     always_ff @ (posedge clk) begin
@@ -80,6 +82,25 @@ module res_station_imm(
         done_a = 0; done_b = 0;
         idx_a = '0; idx_b = '0;
 
+        // Snoop the CDB for values arriving the same cycle an instruction is
+        // dispatched into this RS, so a producer broadcasting this cycle isn't missed.
+        instr_a_bypassed = instr_a;
+        instr_b_bypassed = instr_b;
+
+        for(int i = 0; i < CDB_SIZE; i++) begin
+            if(!cdb_arr[i].valid) continue;
+
+            if(!instr_a_bypassed.check_s && instr_a_bypassed.reg_s == cdb_arr[i].prf) begin
+                instr_a_bypassed.value_s = cdb_arr[i].result;
+                instr_a_bypassed.check_s = 1'b1;
+            end
+
+            if(!instr_b_bypassed.check_s && instr_b_bypassed.reg_s == cdb_arr[i].prf) begin
+                instr_b_bypassed.value_s = cdb_arr[i].result;
+                instr_b_bypassed.check_s = 1'b1;
+            end
+        end
+
         // Always assume there will be an available entry
         for(int i = 0; i < RS_SIZE; i++) begin
             if(!res_station[i].valid) begin
@@ -95,13 +116,13 @@ module res_station_imm(
 
         if(instr_a.valid) begin
             insert_reqs[0].valid = 1;
-            insert_reqs[0].entry = instr_a;
+            insert_reqs[0].entry = instr_a_bypassed;
             insert_reqs[0].idx = idx_a;
         end
 
         if(instr_b.valid) begin
             insert_reqs[1].valid = 1;
-            insert_reqs[1].entry = instr_b;
+            insert_reqs[1].entry = instr_b_bypassed;
             insert_reqs[1].idx = idx_b;
         end
     end

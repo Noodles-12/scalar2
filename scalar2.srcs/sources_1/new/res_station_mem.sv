@@ -40,6 +40,7 @@ module res_station_mem(
     logic [2:0] s_tail_comb;
 
     insert_req insert_a, insert_b;
+    rs_entry instr_a_bypassed, instr_b_bypassed;
 
     load_rs_entry load_buffer [0:7];
     logic [2:0] l_head, l_tail;
@@ -146,9 +147,38 @@ module res_station_mem(
 
         insert_a = '0;
         insert_b = '0;
-        
+
         s_tail_comb = s_tail;
         l_tail_comb = l_tail;
+
+        // Snoop the CDB for values arriving the same cycle an instruction is
+        // dispatched into this RS, so a producer broadcasting this cycle isn't missed.
+        instr_a_bypassed = instr_a;
+        instr_b_bypassed = instr_b;
+
+        for (int i = 0; i < CDB_SIZE; i++) begin
+            if (!cdb_arr[i].valid) continue;
+
+            if (!instr_a_bypassed.store_rs.check_s && cdb_arr[i].prf == instr_a_bypassed.store_rs.reg_s) begin
+                instr_a_bypassed.store_rs.value_s = cdb_arr[i].result;
+                instr_a_bypassed.store_rs.check_s = 1'b1;
+            end
+
+            if (!instr_a_bypassed.store_rs.check_d && cdb_arr[i].prf == instr_a_bypassed.store_rs.reg_d) begin
+                instr_a_bypassed.store_rs.value_d = cdb_arr[i].result;
+                instr_a_bypassed.store_rs.check_d = 1'b1;
+            end
+
+            if (!instr_b_bypassed.store_rs.check_s && cdb_arr[i].prf == instr_b_bypassed.store_rs.reg_s) begin
+                instr_b_bypassed.store_rs.value_s = cdb_arr[i].result;
+                instr_b_bypassed.store_rs.check_s = 1'b1;
+            end
+
+            if (!instr_b_bypassed.store_rs.check_d && cdb_arr[i].prf == instr_b_bypassed.store_rs.reg_d) begin
+                instr_b_bypassed.store_rs.value_d = cdb_arr[i].result;
+                instr_b_bypassed.store_rs.check_d = 1'b1;
+            end
+        end
 
         unique case(instr_a.load_rs.opcode)
             26 : begin
@@ -156,7 +186,7 @@ module res_station_mem(
                 insert_a.valid = 1;
                 insert_a.is_store = 0;
                 insert_a.idx = l_tail_comb;
-                insert_a.entry = instr_a;
+                insert_a.entry = instr_a_bypassed;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
@@ -164,7 +194,7 @@ module res_station_mem(
                 insert_a.valid = 1;
                 insert_a.is_store = 1;
                 insert_a.idx = s_tail_comb;
-                insert_a.entry = instr_a;
+                insert_a.entry = instr_a_bypassed;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
             default: ;
@@ -176,7 +206,7 @@ module res_station_mem(
                 insert_b.valid = 1;
                 insert_b.is_store = 0;
                 insert_b.idx = l_tail_comb;
-                insert_b.entry = instr_b;
+                insert_b.entry = instr_b_bypassed;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
@@ -184,7 +214,7 @@ module res_station_mem(
                 insert_b.valid = 1;
                 insert_b.is_store = 1;
                 insert_b.idx = s_tail_comb;
-                insert_b.entry = instr_b;
+                insert_b.entry = instr_b_bypassed;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
             default: ;
