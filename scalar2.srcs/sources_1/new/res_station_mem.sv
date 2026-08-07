@@ -43,8 +43,8 @@ module res_station_mem(
     insert_req insert_a, insert_b;
     rs_entry instr_a_bypassed, instr_b_bypassed;
 
-    logic [3:0] store_count, store_insert, store_dispatch, store_count_comb;
-    logic [3:0] load_count, load_insert, load_dispatch;
+    logic [3:0] store_insert, store_dispatch;
+    logic [3:0] load_insert, load_dispatch;
 
     logic [11:0] store_eff_addr [0:7];
     logic [0:7] store_valid_addr;
@@ -62,13 +62,16 @@ module res_station_mem(
     logic [2:0] load_fwd_idx;
     logic load_fwd_found;
 
+    // Load dispatch logics
+    logic [RS_SIZE-1:0] done_loads, load_disp_oh;
+    logic [2:0] load_disp_idx;
+    logic load_disp_found;
+
     // Store-to-load forwarding logics
     logic [RS_SIZE-1:0] matching_loads;
     logic [2:0] matching_str_idx [0:RS_SIZE-1];
     logic [3:0] idx;
-    logic [3:0] real_count;
-
-    logic [RS_SIZE-1:0] loads_no_deps;
+    logic [RS_SIZE-1:0] load_no_deps, load_no_deps_comb;
 
     always_ff @ (posedge clk) begin
         if(rst || mispredict_signal) begin
@@ -81,9 +84,6 @@ module res_station_mem(
             l_head <= '0;
             l_tail <= '0;
 
-            store_count <= '0;
-            load_count <= '0;
-
             load_fwd_op <= '0;
 
             str_disp_op <= '0;
@@ -93,8 +93,6 @@ module res_station_mem(
         end else begin
             s_tail <= s_tail_comb;
             l_tail <= l_tail_comb;
-
-            store_count <= store_count_comb;
 
             if(insert_a.valid) begin
                 if(insert_a.is_store) begin
@@ -109,14 +107,6 @@ module res_station_mem(
                     store_buffer[insert_b.idx] <= insert_b.entry;
                 end else begin
                     load_buffer[insert_b.idx] <= insert_b.entry;
-                end
-            end
-
-            for(int i = 0; i < RS_SIZE; i++) begin
-                if(load_buffer[i].valid) begin
-                    load_buffer[i].count <= (load_buffer[i].count > store_dispatch) 
-                                            ? (load_buffer[i].count - store_dispatch) 
-                                            : '0;
                 end
             end
 
@@ -148,7 +138,6 @@ module res_station_mem(
                 str_disp_op.offset <= store_buffer[store_disp_idx].offset;
                 str_disp_op.value <= store_buffer[store_disp_idx].value_s;
                 str_disp_op.mem_dest <= '0;
-                store_buffer[store_disp_idx] <= '0;
             end else begin
                 str_disp_op <= '0;
             end
@@ -171,6 +160,9 @@ module res_station_mem(
                 load_eff_addr[load_fwd_ip.idx] <= load_fwd_ip.eff_addr;
                 load_valid_addr[load_fwd_ip.idx] <= 1;
             end
+
+            // Might remove this & just use comb logic
+            load_no_deps <= load_no_deps_comb;
         end
     end
 
@@ -297,9 +289,28 @@ module res_station_mem(
         load_fwd_found = |loads_to_fwd;
     end
 
+    // Finding finished loads to dispatch
     always_comb begin
-        store_count_comb = store_count + store_insert - store_dispatch;
-        //load_count_comb = load_count + load_insert - load_dispatch;
+        done_loads = '0;
+
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(load_buffer[i].valid && load_valid_addr[i] && load_no_deps[i] && !load_buffer[i].dispatched) begin
+                done_loads[i] = 1'b1;
+            end
+
+            // Matching load check also guarantees valid store with valid value_s to use
+            if(load_buffer[i].valid  && load_valid_addr[i] && matching_loads[i] && !load_buffer[i].dispatched) begin
+                done_loads[i] = 1'b1;
+            end
+        end
+
+        load_disp_oh = (~done_loads + 1'b1) & done_loads;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (load_disp_oh[i]) load_disp_idx |= i;
+        end
+
+        load_disp_found = |done_loads;
     end
 
     always_comb begin
@@ -314,7 +325,7 @@ module res_station_mem(
     always_comb begin
         matching_loads = '0;
         matching_str_idx = '{default: '0};
-        loads_no_deps = '0;
+        load_no_deps_comb = '0;
         idx = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
@@ -333,7 +344,7 @@ module res_station_mem(
                 // In case store was dispatched OOO (theoretically shouldn't happen)
                 if(!store_buffer[idx[2:0]].valid) begin
                     if(idx == s_head) begin
-                        if(!matching_loads[i]) loads_no_deps[i] = 1'b1;
+                        if(!matching_loads[i]) load_no_deps_comb[i] = 1'b1;
                         break;
                     end
                     continue;
@@ -347,8 +358,12 @@ module res_station_mem(
                     If all other stores checked before were not a match AND had an effective address, then
                         this should be the first store that matches the load's effective address especially
                         since this won't happen if there's an unresolved address
+
+                    Store also needs its s register to be ready, could possibly add more functionality
+                        to have the s register from the CDB also update on a separate table for loads but
+                        this is okay for now
                 */
-                if(store_eff_addr[idx[2:0]] == load_eff_addr[i]) begin
+                if((store_eff_addr[idx[2:0]] == load_eff_addr[i]) && store_buffer[idx[2:0]].check_s) begin
                     matching_loads[i] = 1'b1;
                     matching_str_idx[i] = idx[2:0];
                     break;
@@ -361,7 +376,7 @@ module res_station_mem(
                         any previous store and can be dispatched
                     */
                     if(!matching_loads[i]) begin
-                        loads_no_deps[i] = 1'b1;
+                        load_no_deps_comb[i] = 1'b1;
                     end
                     break;
                 end
