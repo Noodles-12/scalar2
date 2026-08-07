@@ -18,8 +18,7 @@ module res_station_mem(
 
     output load_fwd_addr load_fwd_op,
 
-    output load_rs_entry load_disp_mem,
-    output load_rs_entry load_disp_imm
+    output load_disp load_disp_op
 );
 
     typedef struct packed {
@@ -87,6 +86,8 @@ module res_station_mem(
             load_fwd_op <= '0;
 
             str_disp_op <= '0;
+
+            load_disp_op <= '0;
 
             store_eff_addr <= '{default: '0};
             store_valid_addr <= '{default: '0};
@@ -159,6 +160,20 @@ module res_station_mem(
             if(load_fwd_ip.valid) begin
                 load_eff_addr[load_fwd_ip.idx] <= load_fwd_ip.eff_addr;
                 load_valid_addr[load_fwd_ip.idx] <= 1;
+            end
+
+            if(load_disp_found) begin
+                if(matching_loads[load_disp_idx]) begin
+                    load_disp_op.valid <= 1'b1;
+                    load_disp_op.has_dep <= 1'b1;
+                    load_disp_op.load_rs = load_buffer[load_disp_idx];
+                    load_disp_op.value <= store_buffer[matching_str_idx[load_disp_idx]].value_s;
+                end else begin
+                    load_disp_op.valid <= 1'b1;
+                    load_disp_op.has_dep <= 1'b0;
+                    load_disp_op.load_rs = load_buffer[load_disp_idx];
+                    load_disp_op.value <= '0;
+                end
             end
 
             // Might remove this & just use comb logic

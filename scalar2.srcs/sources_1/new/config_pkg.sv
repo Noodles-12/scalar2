@@ -131,7 +131,7 @@ package config_pkg;
         logic check_s;
         logic [11:0] offset;
         logic [4:0] dest;
-        logic [3:0] idx_ref; // Represents index of store queue; everything above this is a store before this load
+        logic [3:0] count; // Represents previous stores before this instruction
         logic dispatched;
         logic pending_addr;
         logic [27:0] padding;
@@ -257,4 +257,11 @@ package config_pkg;
         logic [11:0] base_val;
         logic [11:0] eff_addr;
     } load_fwd_addr;
+
+    typedef struct packed {
+        logic valid;
+        logic has_dep;
+        load_rs_entry load_rs;
+        logic [DATABUS_WIDTH-1:0] value;
+    } load_disp_entry;
 endpackage
