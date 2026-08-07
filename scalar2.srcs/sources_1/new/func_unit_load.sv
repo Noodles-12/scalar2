@@ -9,37 +9,28 @@ import config_pkg::*;
 module func_unit_load(
 	input logic clk,
 	input logic rst,
-	input load_fwd_addr load_fwd_a,
-	input load_fwd_addr load_fwd_b,
+	input logic mispredict_signal,
+	input load_fwd_addr load_entry,
 	input load_rs_entry load_mem,
 	input load_rs_entry load_imm,
 
 	input logic [DATABUS_WIDTH - 1:0] mem_rd_data,
 	output logic [ADDRBUS_SIZE - 1:0] mem_rd_addr,
 	
-	output load_fwd_addr fwd_addrs [0:1],
+	output load_fwd_addr fwd_load_addr,
 	output cdb_entry load_mem_op,
 	output cdb_entry load_imm_op
 );
 
 	always_ff @ (posedge clk) begin
-		if(rst) begin
-			fwd_addrs[0] <= '0;
-			fwd_addrs[1] <= '0;
+		if(rst || mispredict_signal) begin
+			fwd_load_addr <= '0;
 		end else begin
-			// Could maybe remove the conditional check but can't be too sure
-			if(load_fwd_a.valid) begin
-				fwd_addrs[0] <= load_fwd_a;
-				fwd_addrs[0].eff_addr <= load_fwd_a.base_val + load_fwd_a.offset;
+			if(load_entry.valid) begin
+				fwd_load_addr <= load_entry;
+				fwd_load_addr.eff_addr <= load_entry.base_val + load_entry.offset;
 			end else begin
-				fwd_addrs[0] <= '0;
-			end
-
-			if(load_fwd_b.valid) begin
-				fwd_addrs[1] <= load_fwd_b;
-				fwd_addrs[1].eff_addr <= load_fwd_b.base_val + load_fwd_b.offset;
-			end else begin
-				fwd_addrs[1] <= '0;
+				fwd_load_addr <= '0;
 			end
 		end
 	end

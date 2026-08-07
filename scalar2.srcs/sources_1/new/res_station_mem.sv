@@ -12,12 +12,11 @@ module res_station_mem(
     input logic [5:0] id_to_free [0:1],
 
     input str_disp_entry str_fwd_val,
-    input load_fwd_addr load_fwd_addrs [0:1],
+    input load_fwd_addr load_fwd_ip,
     
     output str_disp_entry str_disp_op,
 
-    output load_fwd_addr load_fwd_a_reg,
-    output load_fwd_addr load_fwd_b_reg,
+    output load_fwd_addr load_fwd_op,
 
     output load_rs_entry load_disp_mem,
     output load_rs_entry load_disp_imm
@@ -27,26 +26,24 @@ module res_station_mem(
         logic valid;
         logic is_store;
         logic [4:0] idx;
-        store_rs_entry entry;
+        rs_entry entry;
     } insert_req;
 
     // Both load & stores can happen out of order
     store_rs_entry store_buffer [0:7];
-    logic [7:0] done_stores, store_disp_oh;
-    logic [2:0] store_disp_idx;
-    logic store_disp_found;
+    logic [3:0] s_head, s_tail;
+    logic [3:0] s_tail_comb;
+    logic s_full, s_empty;
 
-    logic [2:0] s_head, s_tail;
-    logic [2:0] s_tail_comb;
+    load_rs_entry load_buffer [0:7];
+    logic [3:0] l_head, l_tail;
+    logic [3:0] l_tail_comb;
+    logic l_full, l_empty;
 
     insert_req insert_a, insert_b;
     rs_entry instr_a_bypassed, instr_b_bypassed;
 
-    load_rs_entry load_buffer [0:7];
-    logic [2:0] l_head, l_tail;
-    logic [2:0] l_tail_comb;
-
-    logic [3:0] store_count, store_insert, store_dispatch;
+    logic [3:0] store_count, store_insert, store_dispatch, store_count_comb;
     logic [3:0] load_count, load_insert, load_dispatch;
 
     logic [11:0] store_eff_addr [0:7];
@@ -55,11 +52,23 @@ module res_station_mem(
     logic [11:0] load_eff_addr [0:7];
     logic [0:7] load_valid_addr;
 
-    // Store-to-load forwarding logic
+    // Store dispatch logics
+    logic [7:0] done_stores, store_disp_oh;
+    logic [2:0] store_disp_idx;
+    logic store_disp_found;
+
+    // Load Forwarding logics
+    logic [7:0] loads_to_fwd, load_fwd_oh;
+    logic [2:0] load_fwd_idx;
+    logic load_fwd_found;
+
+    // Store-to-load forwarding logics
     logic [RS_SIZE-1:0] matching_loads;
     logic [2:0] matching_str_idx [0:RS_SIZE-1];
-    logic [2:0] idx;
+    logic [3:0] idx;
     logic [3:0] real_count;
+
+    logic [RS_SIZE-1:0] loads_no_deps;
 
     always_ff @ (posedge clk) begin
         if(rst || mispredict_signal) begin
@@ -75,8 +84,7 @@ module res_station_mem(
             store_count <= '0;
             load_count <= '0;
 
-            load_fwd_a_reg <= '0;
-            load_fwd_b_reg <= '0;
+            load_fwd_op <= '0;
 
             str_disp_op <= '0;
 
@@ -85,6 +93,8 @@ module res_station_mem(
         end else begin
             s_tail <= s_tail_comb;
             l_tail <= l_tail_comb;
+
+            store_count <= store_count_comb;
 
             if(insert_a.valid) begin
                 if(insert_a.is_store) begin
@@ -99,6 +109,14 @@ module res_station_mem(
                     store_buffer[insert_b.idx] <= insert_b.entry;
                 end else begin
                     load_buffer[insert_b.idx] <= insert_b.entry;
+                end
+            end
+
+            for(int i = 0; i < RS_SIZE; i++) begin
+                if(load_buffer[i].valid) begin
+                    load_buffer[i].count <= (load_buffer[i].count > store_dispatch) 
+                                            ? (load_buffer[i].count - store_dispatch) 
+                                            : '0;
                 end
             end
 
@@ -130,13 +148,28 @@ module res_station_mem(
                 str_disp_op.offset <= store_buffer[store_disp_idx].offset;
                 str_disp_op.value <= store_buffer[store_disp_idx].value_s;
                 str_disp_op.mem_dest <= '0;
+                store_buffer[store_disp_idx] <= '0;
             end else begin
                 str_disp_op <= '0;
+            end
+
+            if (load_fwd_found) begin
+                load_fwd_op.valid <= 1'b1;
+                load_fwd_op.idx <= load_fwd_idx;
+                load_fwd_op.offset <= load_buffer[load_fwd_idx].offset;
+                load_fwd_op.base_val <= load_buffer[load_fwd_idx].value_s[11:0];
+            end else begin
+                load_fwd_op <= '0;
             end
 
             if (str_fwd_val.valid) begin
                 store_eff_addr[str_fwd_val.idx] <= str_fwd_val.mem_dest;
                 store_valid_addr[str_fwd_val.idx] <= 1;
+            end
+
+            if(load_fwd_ip.valid) begin
+                load_eff_addr[load_fwd_ip.idx] <= load_fwd_ip.eff_addr;
+                load_valid_addr[load_fwd_ip.idx] <= 1;
             end
         end
     end
@@ -185,15 +218,16 @@ module res_station_mem(
                 load_insert = load_insert + 1'b1;
                 insert_a.valid = 1;
                 insert_a.is_store = 0;
-                insert_a.idx = l_tail_comb;
+                insert_a.idx = l_tail_comb[2:0];
                 insert_a.entry = instr_a_bypassed;
+                insert_a.entry.idx_ref = s_tail_comb;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
                 store_insert = store_insert + 1'b1;
                 insert_a.valid = 1;
                 insert_a.is_store = 1;
-                insert_a.idx = s_tail_comb;
+                insert_a.idx = s_tail_comb[2:0];
                 insert_a.entry = instr_a_bypassed;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
@@ -205,15 +239,16 @@ module res_station_mem(
                 load_insert = load_insert + 1'b1;
                 insert_b.valid = 1;
                 insert_b.is_store = 0;
-                insert_b.idx = l_tail_comb;
+                insert_b.idx = l_tail_comb[2:0];
                 insert_b.entry = instr_b_bypassed;
+                insert_b.entry.idx_ref = s_tail_comb;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
                 store_insert = store_insert + 1'b1;
                 insert_b.valid = 1;
                 insert_b.is_store = 1;
-                insert_b.idx = s_tail_comb;
+                insert_b.idx = s_tail_comb[2:0];
                 insert_b.entry = instr_b_bypassed;
                 s_tail_comb = s_tail_comb + 1'b1;
             end
@@ -223,6 +258,7 @@ module res_station_mem(
 
     // Finding finished store
     always_comb begin
+        store_dispatch = '0;
         done_stores = '0;
         store_disp_oh = '0;
         store_disp_idx = '0;
@@ -238,127 +274,98 @@ module res_station_mem(
         end
 
         store_disp_found = |done_stores;
+
+        if(store_disp_found) begin
+            store_dispatch = store_dispatch + 1'b1;
+        end
+    end
+
+    // Forwarding loads to get their effective addresses
+    always_comb begin
+        loads_to_fwd = '0;
+
+        for(int i = 0; i < RS_SIZE; i++) begin
+            loads_to_fwd[i] = load_buffer[i].valid & load_buffer[i].check_s & !load_buffer[i].pending_addr;
+        end
+
+        load_fwd_oh = (~loads_to_fwd + 1'b1) & loads_to_fwd;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (load_fwd_oh[i]) load_fwd_idx |= i;
+        end
+
+        load_fwd_found = |loads_to_fwd;
+    end
+
+    always_comb begin
+        store_count_comb = store_count + store_insert - store_dispatch;
+        //load_count_comb = load_count + load_insert - load_dispatch;
+    end
+
+    always_comb begin
+        s_empty = (s_head == s_tail);
+        s_full  = (s_head[2:0] == s_tail[2:0]) && (s_head[3] != s_tail[3]);
+
+        l_empty = (l_head == l_tail);
+        l_full  = (l_head[2:0] == l_tail[2:0]) && (l_head[3] != l_tail[3]);
     end
 
     // Store-to-load forwarding logic
     always_comb begin
-
-    end
-    /* 
-    // Stage 2
-    // Dispatching Loads
-    always_comb begin
-        s2_store_buffer = s1_store_buffer;
-        s2_load_buffer  = s1_load_buffer;
-
-        load_fwd_found_a = 0; load_fwd_idx_a = '0;
-        load_fwd_found_b = 0; load_fwd_idx_b = '0;
-
-        load_fwd_a = '0; load_fwd_b = '0;
+        matching_loads = '0;
+        matching_str_idx = '{default: '0};
+        loads_no_deps = '0;
+        idx = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
-            if(s2_load_buffer[i].check_s && !s2_load_buffer[i].pending_addr) begin
-                if(!load_fwd_found_a) begin
-                    load_fwd_idx_a = i;
-                    load_fwd_found_a = 1;
-                end else if(!load_fwd_found_b) begin
-                    load_fwd_idx_b = i;
-                    load_fwd_found_b = 1;
+            if(!load_buffer[i].valid) continue;
+            if(!load_valid_addr[i]) continue;
+
+            /*
+                Compared to previous RTL, this one is much better because we start from the store index that 
+                the load entry was given on insert. Guaranteed to go through older stores; no need to check
+
+                Making fervent prayers for even half decent hardware/physical efficiency of this
+            */
+            idx = load_buffer[i].idx_ref;
+            for(int j = 0; j < RS_SIZE; j++) begin
+                idx = idx - 1'b1;
+                // In case store was dispatched OOO (theoretically shouldn't happen)
+                if(!store_buffer[idx[2:0]].valid) begin
+                    if(idx == s_head) begin
+                        if(!matching_loads[i]) loads_no_deps[i] = 1'b1;
+                        break;
+                    end
+                    continue;
+                end
+
+                // Conservative check; if store doesn't have valid address, it can't be a match
+                if(!store_valid_addr[idx[2:0]]) break;
+
+                /*
+                    This is a check for matching addresses
+                    If all other stores checked before were not a match AND had an effective address, then
+                        this should be the first store that matches the load's effective address especially
+                        since this won't happen if there's an unresolved address
+                */
+                if(store_eff_addr[idx[2:0]] == load_eff_addr[i]) begin
+                    matching_loads[i] = 1'b1;
+                    matching_str_idx[i] = idx[2:0];
+                    break;
+                end
+
+                if(idx == s_head) begin
+                    /*
+                        If we reach the head of the store queue without finding a match, then we know that all stores before this load
+                        have been checked and none of them match. This means that this load is not dependent on
+                        any previous store and can be dispatched
+                    */
+                    if(!matching_loads[i]) begin
+                        loads_no_deps[i] = 1'b1;
+                    end
+                    break;
                 end
             end
         end
-
-        if(load_fwd_found_a) begin
-            load_fwd_a.valid = 1;
-            load_fwd_a.idx = load_fwd_idx_a;
-            load_fwd_a.offset = s2_load_buffer[load_fwd_idx_a].offset;
-            load_fwd_a.base_val = s2_load_buffer[load_fwd_idx_a].value_s[11:0];
-            s2_load_buffer[load_fwd_idx_a].pending_addr = 1;
-        end
-
-        if(load_fwd_found_b) begin
-            load_fwd_b.valid = 1;
-            load_fwd_b.idx = load_fwd_idx_b;
-            load_fwd_b.offset = s2_load_buffer[load_fwd_idx_b].offset;
-            load_fwd_b.base_val = s2_load_buffer[load_fwd_idx_b].value_s[11:0];
-            s2_load_buffer[load_fwd_idx_b].pending_addr = 1;
-        end
     end
-
-    // Stage 3
-    // Dispatching stores
-    always_comb begin
-        s3_store_buffer = s2_store_buffer;
-        s3_load_buffer = s2_load_buffer;
-
-        str_disp_idx_a = '0; str_disp_found_a = 0;
-        str_disp_idx_b = '0; str_disp_found_b = 0;
-        str_disp_a = '0; str_disp_b = '0;
-
-        for(int i = 0; i < RS_SIZE; i++) begin
-            if(!s3_store_buffer[i].valid) continue;
-
-            // Maybe need a valid check
-            if(s3_store_buffer[i].check_s && s3_store_buffer[i].check_d 
-            && !s3_store_buffer[i].dispatched) begin
-                if(!str_disp_found_a) begin
-                    str_disp_idx_a = i;
-                    str_disp_found_a = 1;
-                end else if (!str_disp_found_b) begin
-                    str_disp_idx_b = i;
-                    str_disp_found_b = 1;
-                end
-            end
-        end
-
-        if(str_disp_found_a) begin
-            str_disp_a.valid = 1;
-            str_disp_a.id = s3_store_buffer[str_disp_idx_a].id;
-            str_disp_a.idx = str_disp_idx_a;
-            str_disp_a.base_val = s3_store_buffer[str_disp_idx_a].value_d;
-            str_disp_a.offset = s3_store_buffer[str_disp_idx_a].offset;
-            str_disp_a.value = s3_store_buffer[str_disp_idx_a].value_s;
-            s3_store_buffer[str_disp_idx_a].dispatched = 1;
-        end
-
-        if(str_disp_found_b) begin
-            str_disp_b.valid = 1;
-            str_disp_b.id = s3_store_buffer[str_disp_idx_b].id;
-            str_disp_b.idx = str_disp_idx_b;
-            str_disp_b.base_val = s3_store_buffer[str_disp_idx_b].value_d;
-            str_disp_b.offset = s3_store_buffer[str_disp_idx_b].offset;
-            str_disp_b.value = s3_store_buffer[str_disp_idx_b].value_s;
-            s3_store_buffer[str_disp_idx_b].dispatched = 1;
-        end
-    end
-
-    // Stage 4
-    // Get forwarded addresses from stores
-    always_comb begin
-        s4_store_eff_addr = store_eff_addr;
-        s4_store_valid_addr = store_valid_addr;
-
-        s4_load_eff_addr = load_eff_addr;
-        s4_load_valid_addr = load_valid_addr;
-
-        if(str_fwd_vals[0].valid) begin
-            s4_store_eff_addr[str_fwd_vals[0].idx] = str_fwd_vals[0].mem_dest;
-            s4_store_valid_addr[str_fwd_vals[0].idx] = 1;
-        end
-
-        if(str_fwd_vals[1].valid) begin
-            s4_store_eff_addr[str_fwd_vals[1].idx] = str_fwd_vals[1].mem_dest;
-            s4_store_valid_addr[str_fwd_vals[1].idx] = 1;
-        end
-
-        if(load_fwd_addrs[0].valid) begin
-            s4_load_eff_addr[load_fwd_addrs[0].idx] = load_fwd_addrs[0].eff_addr;
-            s4_load_valid_addr[load_fwd_addrs[0].idx] = 1;
-        end
-
-        if(load_fwd_addrs[1].valid) begin
-            s4_load_eff_addr[load_fwd_addrs[1].idx] = load_fwd_addrs[1].eff_addr;
-            s4_load_valid_addr[load_fwd_addrs[1].idx] = 1;
-        end
-    end */
 endmodule
