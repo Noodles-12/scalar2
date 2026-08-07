@@ -15,7 +15,8 @@ module func_unit_load(
 	output load_fwd_addr fwd_load_addr,
 	output cdb_entry load_cdb
 );
-	logic load_disp_entry load_disp_reg;
+
+	load_disp_entry load_disp_reg;
 
 	always_ff @ (posedge clk) begin
 		if(rst || mispredict_signal) begin
