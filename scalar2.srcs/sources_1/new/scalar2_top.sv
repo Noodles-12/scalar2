@@ -19,6 +19,14 @@ module scalar2_top(
     instruction instr_a, instr_b;
     logic [ADDRBUS_SIZE-1:0] addr_a, addr_b;
 
+    logic pipe_enable_prev;
+    logic skid_valid;
+    instruction skid_instr_a, skid_instr_b;
+    logic [ADDRBUS_SIZE-1:0] skid_addr_a, skid_addr_b;
+
+    instruction bp_instr_a, bp_instr_b;
+    logic [ADDRBUS_SIZE-1:0] bp_addr_a, bp_addr_b;
+
     instruction mod_instr_a, mod_instr_b;
     logic [ADDRBUS_SIZE-1:0] predict_a, predict_b;
     logic [ADDRBUS_SIZE-1:0] recov_a, recov_b;
@@ -112,6 +120,7 @@ module scalar2_top(
         .ip_addr(pc_addr),
         .predict_flush(predict_flush),
         .mispredict_flush(mispredict_flush_rob),
+        .enable(pipe_enable),
 
         .instr_a(instr_a),
         .instr_b(instr_b),
@@ -318,7 +327,7 @@ module scalar2_top(
     common_data_bus cdb(
         .int_res(int_cdb),
         .imm_res(imm_cdb),
-        .load_res('0),
+        .load_res(load_cdb),
 
         .cdb_arr(cdb_arr)
     );
