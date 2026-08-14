@@ -4,12 +4,12 @@ import config_pkg::*;
 
 module alu_imm(input1, imm, opcode, result);
     input [31:0] input1;
-    input [11:0] imm;
+    input [13:0] imm;
     input [5:0] opcode;
     output logic [31:0] result;
 
     logic [31:0] imm_extended;
-    assign imm_extended = {20'b0, imm};
+    assign imm_extended = {18'b0, imm};
 
     always_comb begin
         unique case(ialu_opcode'(opcode))

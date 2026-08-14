@@ -22,7 +22,9 @@ module branch_predictor(
     output logic [11:0] recov_addr_a,
     output logic [11:0] recov_addr_b,
     output logic [4:0] hist_a,
-    output logic [4:0] hist_b
+    output logic [4:0] hist_b,
+    output logic [1:0] imm_lo_a,
+    output logic [1:0] imm_lo_b
 );
     logic [1:0] history_table [0:31];
     
@@ -54,12 +56,18 @@ module branch_predictor(
 
             hist_a <= '0;
             hist_b <= '0;
+
+            imm_lo_a <= '0;
+            imm_lo_b <= '0;
         end else if(enable) begin
             instr_a_op <= mod_instr_a;
             instr_b_op <= mod_instr_b;
 
             hist_a <= addr_a[4:0];
             hist_b <= addr_b[4:0];
+
+            imm_lo_a <= instr_a.code;
+            imm_lo_b <= instr_b.code;
 
             unique case(code_a)
                 NORMAL:         predict_addr_a <= '0;

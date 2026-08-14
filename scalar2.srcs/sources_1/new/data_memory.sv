@@ -2,39 +2,36 @@
 
 import config_pkg::*;
 
-module data_memory(clk, rst, commit_arr, read_addr, 
-                    read_data);
-    input logic clk, rst;
-    input rob_entry commit_arr [0:1];
-    input [ADDRBUS_SIZE-1:0] read_addr;
+module data_memory(
+    input logic clk,
+    input logic rst,
+    input rob_entry commit_a,
+    input rob_entry commit_b,
+    input logic [ADDRBUS_SIZE-1:0] read_addr,
 
-    output logic [0:DATABUS_WIDTH - 1] read_data;
+    output logic [DATABUS_WIDTH-1:0] read_data
+);
 
-    logic is_store, str_idx;
+    // Using a LUT to implement memory, since Vivado doesn't support 2W/1R BRAMs
+    logic [0:DATABUS_WIDTH - 1] memory [0:DATA_MEM_SIZE - 1];
 
-    always_comb begin
-        is_store = 0;
-        str_idx = 0;
-        for(int i = 0; i < 2; i++) begin
-            if(commit_arr[i].is_store) begin
-                is_store = 1;
-                str_idx = i[0];
-            end
-        end
-    end
-
-    (* ram_style = "block" *) logic [0:DATABUS_WIDTH - 1] memory [0:DATA_MEM_SIZE - 1];
-
-    initial begin
-        $readmemh("data_mem_init.mem", memory);
+    always_ff @ (posedge clk) begin
+        read_data <= memory[read_addr];
     end
 
     always_ff @(posedge clk) begin
-        if(is_store) begin
-            memory[commit_arr[str_idx].mem_dest] <= commit_arr[str_idx].result;
-            $display("MEM[%0d] <= %0d | %t", commit_arr[str_idx].mem_dest, commit_arr[str_idx].result, $time);
-        end
+        if(rst) begin
+            for(int i = 0; i < DATA_MEM_SIZE; i++) begin
+                memory[i] <= '0;
+            end
+        end else begin
+            if(commit_a.reg_rob.code == ROB_STR) begin
+                memory[commit_a.str_rob.mem_dest] <= commit_a.str_rob.value;
+            end
 
-        read_data <= memory[read_addr];
+            if(commit_b.reg_rob.code == ROB_STR) begin
+                memory[commit_b.str_rob.mem_dest] <= commit_b.str_rob.value;
+            end
+        end
     end
 endmodule

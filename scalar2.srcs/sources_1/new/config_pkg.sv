@@ -116,9 +116,9 @@ package config_pkg;
         logic [4:0] reg_s;
         logic [31:0] value_s;
         logic check_s;
-        logic [11:0] imm;
+        logic [13:0] imm;
         logic [4:0] dest;
-        logic [33:0] padding;
+        logic [31:0] padding;
     } imm_rs_entry;
 
     // lw: $dest <= data_mem[($reg_s) + offset]
@@ -131,13 +131,15 @@ package config_pkg;
         logic check_s;
         logic [11:0] offset;
         logic [4:0] dest;
-        logic [3:0] count; // Represents previous stores before this instruction
+        logic [3:0] idx_ref; // Represents previous stores before this instruction
         logic dispatched;
         logic pending_addr;
         logic [27:0] padding;
     } load_rs_entry;
 
-    // sw: data_mem[($reg_d) + offset] <= ($reg_s)
+    // sw: data_mem[(this.reg_d) + offset] <= (this.reg_s); reg_d/reg_s here
+    // are store_rs_entry's own fields (address base / data value), populated
+    // from instruction.reg_s / instruction.reg_t respectively at rename
     typedef struct packed {
         logic valid;
         logic [4:0] id;

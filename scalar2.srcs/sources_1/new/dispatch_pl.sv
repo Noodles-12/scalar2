@@ -6,6 +6,7 @@ module dispatch_pl(
     input logic clk,
     input logic rst,
     input logic mispredict_signal,
+    input logic enable,
     input rs_entry rename_a,
     input rs_entry rename_b,
     input rob_entry rob_a,
@@ -45,26 +46,40 @@ module dispatch_pl(
             rob_op_a <= '0;
             rob_op_b <= '0;
         end else begin
-            for (int i = 0; i < 4; i++) begin
-                rs_op_a[i] <= (i == code_a) ? rs_disp_a : '0;
-                rs_op_b[i] <= (i == code_b) ? rs_disp_b : '0;
-            end
-
-            rob_op_a <= rob_disp_a;
-            rob_op_b <= rob_disp_b;
-
-            // Freeing any id of committed instructions
             if(commit_a.reg_rob.valid)
                 id_list[commit_a.reg_rob.id] <= 1;
 
             if(commit_b.reg_rob.valid)
                 id_list[commit_b.reg_rob.id] <= 1;
 
-            if(done_a && rename_a.int_rs.valid)
-                id_list[avail_a] <= 0;
+            if(enable) begin
+                for (int i = 0; i < 4; i++) begin
+                    rs_op_a[i] <= (i == code_a) ? rs_disp_a : '0;
+                    rs_op_b[i] <= (i == code_b) ? rs_disp_b : '0;
+                end
 
-            if(done_b && rename_b.int_rs.valid)
-                id_list[avail_b] <= 0;
+                rob_op_a <= rob_disp_a;
+                rob_op_b <= rob_disp_b;
+
+                if(done_a && rename_a.int_rs.valid)
+                    id_list[avail_a] <= 0;
+
+                if(done_b && rename_b.int_rs.valid)
+                    id_list[avail_b] <= 0;
+            end else begin
+                // Downstream (RS's and ROB) re-insert unconditionally on
+                // any valid input every cycle, with no dedup — so a held,
+                // still-valid rob_op_a/rs_op_a during a stall would get
+                // re-inserted into a fresh slot every cycle. Must present
+                // "nothing new this cycle" while stalled, not just freeze.
+                for (int i = 0; i < 4; i++) begin
+                    rs_op_a[i] <= '0;
+                    rs_op_b[i] <= '0;
+                end
+
+                rob_op_a <= '0;
+                rob_op_b <= '0;
+            end
         end
     end
 

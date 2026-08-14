@@ -9,11 +9,11 @@ module reorder_buffer(
     input rob_entry input_a,
     input rob_entry input_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
-    input str_disp_entry str_rob [0:1],
+    input str_disp_entry str_rob,
     input branch_disp_entry branch_rob,
     
     output rob_entry output_arr [0:1],
-    output id_to_free ids_to_free [0:1]
+    output logic almost_full
 );
 
     typedef struct packed {
@@ -42,6 +42,7 @@ module reorder_buffer(
     logic full;
 
     assign full = (count >= 32);
+    assign almost_full = (count >= 30);
 
     // Insert logics
     insert_req insert_reqs [0:1];
@@ -78,7 +79,6 @@ module reorder_buffer(
             count <= '0;
 
             output_arr <= '{default: '0};
-            ids_to_free <= '{default: '0};
 
             lut <= '{default: '0};
             lut_valid <= '{default: '0};
@@ -97,13 +97,10 @@ module reorder_buffer(
             for (int i = 0; i < 2; i++) begin
                 if (commit_reqs[i].valid) begin
                     output_arr[i] <= buffer[commit_reqs[i].idx];
-                    ids_to_free[i].valid <= 1;
-                    ids_to_free[i].id <= buffer[commit_reqs[i].idx].reg_rob.id;
                     lut_valid[commit_reqs[i].id] <= 0;
                     buffer[commit_reqs[i].idx] <= '0;
                 end else begin
                     output_arr[i] <= '0;
-                    ids_to_free[i] <= '0;
                 end
             end
 
@@ -206,13 +203,10 @@ module reorder_buffer(
         str_result = '{default: '0};
         str_dest = '{default: '0};
 
-        for (int i = 0; i < 2; i++) begin
-            if (!str_rob[i].valid) continue;
-            if (!lut_valid[str_rob[i].id]) continue;
-
-            str_hit[lut[str_rob[i].id]] = 1;
-            str_result[lut[str_rob[i].id]] = str_rob[i].mem_dest;
-            str_dest[lut[str_rob[i].id]] = str_rob[i].mem_dest;
+        if (str_rob.valid && lut_valid[str_rob.id]) begin
+            str_hit[lut[str_rob.id]] = 1;
+            str_result[lut[str_rob.id]] = str_rob.value;
+            str_dest[lut[str_rob.id]] = str_rob.mem_dest;
         end
     end
 

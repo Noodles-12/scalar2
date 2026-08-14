@@ -26,8 +26,7 @@ module commit_pl(
             else begin
                 commit_type_a = COMMIT_GOOD;
             end
-        end
-        else begin
+        end else begin
             commit_type_a = COMMIT_GOOD;
         end
     end
@@ -42,8 +41,7 @@ module commit_pl(
             else begin
                 commit_type_b = COMMIT_GOOD;
             end
-        end
-        else begin
+        end else begin
             commit_type_b = COMMIT_GOOD;
         end
     end

@@ -38,8 +38,8 @@ module func_unit_load(
 			load_disp_reg <= '0;
 		end else begin
 			if(load_disp_ip.valid) begin
-				if(load_disp_ip.has_dep) begin
-					mem_rd_addr <= load_disp_ip.load_rs.base_val + load_disp_ip.load_rs.offset;
+				if(!load_disp_ip.has_dep) begin
+					mem_rd_addr <= load_disp_ip.load_rs.value_s[11:0] + load_disp_ip.load_rs.offset;
 				end else begin
 					mem_rd_addr <= '0;
 				end
@@ -58,8 +58,8 @@ module func_unit_load(
 		end else begin
 			if(load_disp_ip.valid) begin
 				load_cdb.valid <= 1'b1;
-				load_cdb.id <= load_disp_ip.id;
-				if(load_disp_ip.has_dep) begin
+				load_cdb.id <= load_disp_ip.load_rs.id;
+				if(!load_disp_ip.has_dep) begin
 					load_cdb.result <= mem_rd_data;
 				end else begin
 					load_cdb.result <= load_disp_ip.value;

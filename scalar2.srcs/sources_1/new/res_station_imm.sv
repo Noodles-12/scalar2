@@ -39,9 +39,12 @@ module res_station_imm(
     logic done_a, done_b, done_c;
     logic [2:0] idx_a, idx_b, idx_c;
 
+    logic [RS_SIZE-1:0] free_bits, free_bits_masked;
+    logic [RS_SIZE-1:0] onehot_a, onehot_b;
+
     imm_rs_entry instr_a_bypassed, instr_b_bypassed;
 
-    assign almost_full = (filled_stations >= 7);
+    assign almost_full = (filled_stations >= 6);
 
     always_ff @ (posedge clk) begin
         if (rst || mispredict_signal) begin
@@ -101,18 +104,29 @@ module res_station_imm(
             end
         end
 
-        // Always assume there will be an available entry
+        free_bits = '0;
         for(int i = 0; i < RS_SIZE; i++) begin
-            if(!res_station[i].valid) begin
-                if(!done_a) begin
-                    done_a = 1;
-                    idx_a = i;
-                end else if (!done_b) begin
-                    done_b = 1;
-                    idx_b = i;
-                end
-            end
+            if(!res_station[i].valid) free_bits[i] = 1'b1;
         end
+        if(disp_req.valid) free_bits[disp_req.idx] = 1'b0;
+
+        onehot_a = free_bits & (~free_bits + 1'b1);
+
+        free_bits_masked = free_bits & (~onehot_a);
+        onehot_b = free_bits_masked & (~free_bits_masked + 1'b1);
+
+        idx_a = '0;
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(onehot_a[i]) idx_a |= i;
+        end
+
+        idx_b = '0;
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(onehot_b[i]) idx_b |= i;
+        end
+
+        done_a = |free_bits;
+        done_b = |free_bits_masked;
 
         if(instr_a.valid) begin
             insert_reqs[0].valid = 1;
@@ -123,7 +137,7 @@ module res_station_imm(
         if(instr_b.valid) begin
             insert_reqs[1].valid = 1;
             insert_reqs[1].entry = instr_b_bypassed;
-            insert_reqs[1].idx = idx_b;
+            insert_reqs[1].idx = instr_a.valid ? idx_b : idx_a;
         end
     end
 
@@ -146,6 +160,13 @@ module res_station_imm(
             disp_req.valid = 1;
             disp_req.idx = idx_c;
             disp_req.entry = res_station[idx_c];
+        end
+    end
+
+    always_comb begin
+        filled_stations = '0;
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(res_station[i].valid) filled_stations = filled_stations + 1'b1;
         end
     end
 

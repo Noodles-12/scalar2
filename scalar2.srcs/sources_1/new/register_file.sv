@@ -6,12 +6,15 @@ module register_file(
     input logic clk,
     input logic rst,
     input logic mispredict_signal,
+    input logic enable,
     input instruction instr_a,
     input instruction instr_b,
     input logic [11:0] recov_a,
     input logic [11:0] recov_b,
     input logic [4:0] hist_a,
     input logic [4:0] hist_b,
+    input logic [1:0] imm_lo_a,
+    input logic [1:0] imm_lo_b,
     input cdb_entry cdb_arr [0:CDB_SIZE-1],
     input rob_entry commit_a,
     input rob_entry commit_b,
@@ -20,7 +23,8 @@ module register_file(
     output rs_entry rs_b_op,
     output rob_entry rob_a_op,
     output rob_entry rob_b_op,
-    output [3:0] last_arch_reg
+    output [3:0] last_arch_reg,
+    output logic almost_full
 );
     typedef struct packed {
         logic valid;
@@ -35,13 +39,13 @@ module register_file(
     // Physical Register File (PRF) - 32 Registers
     (* max_fanout = 8 *) logic [31:0] phys_file [0:NUM_PHYS_REGS - 1];
     // Free list that contains free bit for each physical register
-    (* max_fanout = 8 *) logic [0:NUM_PHYS_REGS-1] free_list;
+    (* max_fanout = 8 *) logic [NUM_PHYS_REGS-1:0] free_list;
     // Valid list that contains valid bit for each physical register
     (* max_fanout = 8 *) logic [0:NUM_PHYS_REGS-1] valid_list;
 
     // Register Retirement Table (RRT) - Structurally same as RAT
     logic [PHYS_REGS_BITS - 1:0] retire_table [0:NUM_ARCH_REGS - 1];
-    logic [0:NUM_PHYS_REGS-1] free_retire_list;
+    logic [NUM_PHYS_REGS-1:0] free_retire_list;
 
     logic [31:0] free_bits;
     logic [31:0] onehot_a, onehot_b;
@@ -91,13 +95,13 @@ module register_file(
 
             free_list <= free_retire_list;
         end else begin
-            if(rename_a.valid) begin
+            if(enable && rename_a.valid) begin
                 alias_table[rename_a.arch_reg] <= rename_a.idx;
                 valid_list[rename_a.idx] <= 0;
                 free_list[rename_a.idx] <= 0;
             end
 
-            if(rename_b.valid) begin
+            if(enable && rename_b.valid) begin
                 alias_table[rename_b.arch_reg] <= rename_b.idx;
                 valid_list[rename_b.idx] <= 0;
                 free_list[rename_b.idx] <= 0;
@@ -137,7 +141,7 @@ module register_file(
 
             rob_a_op <= '0;
             rob_b_op <= '0;
-        end else begin
+        end else if(enable) begin
             rs_a_op <= rs_a;
             rs_b_op <= rs_b;
 
@@ -167,6 +171,8 @@ module register_file(
         found_a = |free_bits;
         found_b = |free_bits_masked;
     end
+
+    assign almost_full = !found_b;
 
     // Rename of instruction A
     always_comb begin
@@ -235,7 +241,7 @@ module register_file(
                 rs_a.imm_rs.reg_s = idx_as;
                 rs_a.imm_rs.value_s = value_as;
                 rs_a.imm_rs.check_s = check_as;
-                rs_a.imm_rs.imm = instr_a.imm;
+                rs_a.imm_rs.imm = {instr_a.imm, imm_lo_a};
 
                 rob_a.reg_rob.old_prf = idx_ad;
                 rob_a.reg_rob.code = ROB_REG;
@@ -256,20 +262,20 @@ module register_file(
             end
 
             [27:27] : begin
-                rs_a.store_rs.opcode = instr_a.opcode;        
-                // reg_s position in instruction is register that has value to combine with offset for effective address
-                // Flipped compared to other instructions
+                rs_a.store_rs.opcode = instr_a.opcode;
+                // instr_a.reg_s is the address base register; combines with offset for effective address
                 rs_a.store_rs.reg_d = idx_as;
                 rs_a.store_rs.value_d = value_as;
                 rs_a.store_rs.check_d = check_as;
 
-                // reg_d position in instruction is the source register of the data to put into memory
-                // Flipped compared to other operations
+                // instr_a.reg_t is the source register of the data to put into memory
                 rs_a.store_rs.reg_s = idx_at;
                 rs_a.store_rs.value_s = value_at;
                 rs_a.store_rs.check_s = check_at;
 
                 rs_a.store_rs.offset = instr_a.imm;
+
+                rob_a.reg_rob.code = ROB_STR;
             end
 
             [28:33] : begin
@@ -391,7 +397,7 @@ module register_file(
                 rs_b.imm_rs.reg_s = idx_bs;
                 rs_b.imm_rs.value_s = value_bs;
                 rs_b.imm_rs.check_s = check_bs;
-                rs_b.imm_rs.imm = instr_b.imm;
+                rs_b.imm_rs.imm = {instr_b.imm, imm_lo_b};
 
                 rob_b.reg_rob.old_prf = idx_bd;
                 rob_b.reg_rob.code = ROB_REG;
@@ -413,21 +419,19 @@ module register_file(
 
             [27:27] : begin
                 rs_b.store_rs.opcode = instr_b.opcode;
-                // reg_s position in instruction is register that has value to combine with offset for effective address
-                // Flipped compared to other instructions
-
+                // instr_b.reg_s is the address base register; combines with offset for effective address
                 rs_b.store_rs.reg_d = idx_bs;
                 rs_b.store_rs.value_d = value_bs;
                 rs_b.store_rs.check_d = check_bs;
 
-                // reg_d position in instruction is the source register of the data to put into memory
-                // Flipped compared to other operations
-
+                // instr_b.reg_t is the source register of the data to put into memory
                 rs_b.store_rs.reg_s = idx_bt;
                 rs_b.store_rs.value_s = value_bt;
                 rs_b.store_rs.check_s = check_bt;
 
                 rs_b.store_rs.offset = instr_b.imm;
+
+                rob_b.reg_rob.code = ROB_STR;
             end
 
             [28:33] : begin

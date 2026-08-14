@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module int_branch_processor(
+module scalar2_top(
     input logic clk,
     input logic rst,
 
@@ -11,6 +11,10 @@ module int_branch_processor(
 
     logic predict_flush;
     logic mispredict_flush_rob, mispredict_flush_rs, mispredict_flush_reg;
+    logic pipe_enable;
+
+    logic rs_int_full, rs_imm_full, rs_branch_full, rs_mem_full;
+    logic rob_almost_full, reg_file_almost_full;
 
     instruction instr_a, instr_b;
     logic [ADDRBUS_SIZE-1:0] addr_a, addr_b;
@@ -39,14 +43,26 @@ module int_branch_processor(
     int_rs_entry int_rs_out;
     imm_rs_entry imm_rs_out;
     branch_rs_entry branch_rs_out;
+    str_disp_entry str_rs_out;
+
+    load_fwd_addr load_fwd_rs;
+    load_disp_entry load_disp_rs;
 
     // Functional unit outputs
     cdb_entry int_cdb;
     cdb_entry imm_cdb;
+    cdb_entry load_cdb;
+
+    str_disp_entry str_fu_out;
+    branch_disp_entry branch_disp;
+
+    load_fwd_addr load_fwd_fu;
+    logic [ADDRBUS_SIZE-1:0] read_addr;
+    logic [DATABUS_WIDTH-1:0] read_data;
+
 
     // CDB broadcast
     cdb_entry cdb_arr [0:CDB_SIZE-1];
-    branch_disp_entry branch_disp;
 
     // ROB
     rob_entry rob_out_arr [0:1];
@@ -59,9 +75,9 @@ module int_branch_processor(
     program_counter pc(
         .clk(clk),
         .rst(rst),
-        .enable(1'b1),
+        .enable(pipe_enable),
         .ip_addr(next_pc),
-        
+
         .op_addr(pc_addr)
     );
 
@@ -75,12 +91,19 @@ module int_branch_processor(
         .mispredict_signal(commit_misp),
         .recov_addr(commit_misp_addr),
 
+        .rs_int_full(rs_int_full),
+        .rs_imm_full(rs_imm_full),
+        .rs_branch_full(rs_branch_full),
+        .rs_mem_full(rs_mem_full),
+        .rob_full(rob_almost_full),
+        .reg_file_full(reg_file_almost_full),
+
         .predict_flush(predict_flush),
         .mispredict_flush_rob(mispredict_flush_rob),
         .mispredict_flush_rs(mispredict_flush_rs),
         .mispredict_flush_reg(mispredict_flush_reg),
         .next_pc(next_pc),
-        .enable()
+        .enable(pipe_enable)
     );
 
     instruction_memory instr_mem(
@@ -101,7 +124,7 @@ module int_branch_processor(
         .rst(rst),
         .predict_flush(predict_flush),
         .mispredict_flush(mispredict_flush_rob),
-        .enable(1'b1),
+        .enable(pipe_enable),
         .instr_a(instr_a),
         .addr_a(addr_a),
         .instr_b(instr_b),
@@ -125,7 +148,7 @@ module int_branch_processor(
         .clk(clk),
         .rst(rst),
         .mispredict_flush(mispredict_flush_rob),
-        .enable(1'b1),
+        .enable(pipe_enable),
         .instr_a(mod_instr_a),
         .instr_b(mod_instr_b),
         .recov_a(recov_a),
@@ -149,6 +172,7 @@ module int_branch_processor(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_reg),
+        .enable(pipe_enable),
         .instr_a(instr_a_rslv),
         .instr_b(instr_b_rslv),
         .recov_a(recov_a_rslv),
@@ -165,13 +189,15 @@ module int_branch_processor(
         .rs_b_op(rs_b),
         .rob_a_op(rob_a),
         .rob_b_op(rob_b),
-        .last_arch_reg(last_arch_reg)
+        .last_arch_reg(last_arch_reg),
+        .almost_full(reg_file_almost_full)
     );
 
     dispatch_pl disp_pl(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_reg),
+        .enable(pipe_enable),
         .rename_a(rs_a),
         .rename_b(rs_b),
         .rob_a(rob_a),
@@ -186,74 +212,130 @@ module int_branch_processor(
         .rob_op_b(rob_disp_b)
     );
 
-    res_station_int rs_int(.clk(clk),
-                           .rst(rst),
-                           .mispredict_signal(mispredict_flush_rs),
-                           .instr_a(rs_disp_a[0].int_rs),
-                           .instr_b(rs_disp_b[0].int_rs),
-                           .cdb_arr(cdb_arr),
+    res_station_int rs_int(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .instr_a(rs_disp_a[0].int_rs),
+        .instr_b(rs_disp_b[0].int_rs),
+        .cdb_arr(cdb_arr),
 
-                           .instr_op(int_rs_out),
-                           .almost_full() );
+        .instr_op(int_rs_out),
+        .almost_full(rs_int_full)
+    );
 
-    res_station_imm rs_imm(.clk(clk),
-                           .rst(rst),
-                           .mispredict_signal(mispredict_flush_rs),
-                           .instr_a(rs_disp_a[1].imm_rs),
-                           .instr_b(rs_disp_b[1].imm_rs),
-                           .cdb_arr(cdb_arr),
+    res_station_imm rs_imm(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .instr_a(rs_disp_a[1].imm_rs),
+        .instr_b(rs_disp_b[1].imm_rs),
+        .cdb_arr(cdb_arr),
 
-                           .instr_op(imm_rs_out),
-                           .almost_full() );
+        .instr_op(imm_rs_out),
+        .almost_full(rs_imm_full)
+    );
 
-    res_station_branch rs_branch(.clk(clk),
-                                 .rst(rst),
-                                 .mispredict_signal(mispredict_flush_rs),
-                                 .instr_a(rs_disp_a[3].branch_rs),
-                                 .instr_b(rs_disp_b[3].branch_rs),
-                                 .cdb_arr(cdb_arr),
+    res_station_mem rs_mem(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .instr_a(rs_disp_a[2]),
+        .instr_b(rs_disp_b[2]),
+        .cdb_arr(cdb_arr),
+        .free_id_a(commit_a),
+        .free_id_b(commit_b),
+        .str_fwd_val(str_fu_out),
+        .load_fwd_ip(load_fwd_fu),
 
-                                 .instr_op(branch_rs_out),
-                                 .almost_full() );
+        .str_disp_op(str_rs_out),
+        .load_fwd_op(load_fwd_rs),
+        .load_disp_op(load_disp_rs),
+        .almost_full(rs_mem_full)
+    );
 
-    func_unit_int fu_int(.clk(clk),
-                         .rst(rst),
-                         .mispredict_signal(mispredict_flush_rs),
-                         .int_instr(int_rs_out),
+    res_station_branch rs_branch(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .instr_a(rs_disp_a[3].branch_rs),
+        .instr_b(rs_disp_b[3].branch_rs),
+        .cdb_arr(cdb_arr),
 
-                         .cdb_result(int_cdb) );
+        .instr_op(branch_rs_out),
+        .almost_full(rs_branch_full)
+    );
 
-    func_unit_imm fu_imm(.clk(clk),
-                         .rst(rst),
-                         .mispredict_signal(mispredict_flush_rs),
-                         .imm_instr(imm_rs_out),
+    func_unit_int fu_int(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .int_instr(int_rs_out),
 
-                         .cdb_result(imm_cdb) );
+        .cdb_result(int_cdb)
+    );
 
-    func_unit_branch fu_branch(.clk(clk),
-                               .rst(rst),
-                               .mispredict_signal(mispredict_flush_rs),
-                               .branch_instr(branch_rs_out),
+    func_unit_imm fu_imm(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .imm_instr(imm_rs_out),
 
-                               .result_op(branch_disp) );
+        .cdb_result(imm_cdb)
+    );
 
-    common_data_bus cdb(.int_res(int_cdb),
-                        .imm_res(imm_cdb),
-                        .load_res('0),
+    func_unit_branch fu_branch(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .branch_instr(branch_rs_out),
 
-                        .cdb_arr(cdb_arr) );
+        .result_op(branch_disp)
+    );
 
-    reorder_buffer rob(.clk(clk),
-                       .rst(rst),
-                       .mispredict_signal(mispredict_flush_rob),
-                       .input_a(rob_disp_a),
-                       .input_b(rob_disp_b),
-                       .cdb_arr(cdb_arr),
-                       .str_rob(),
-                       .branch_rob(branch_disp),
+    func_unit_str fu_str(
+        .clk(clk),
+        .rst(rst),
+        .str_op(str_rs_out),
 
-                       .output_arr(rob_out_arr),
-                       .ids_to_free() );
+        .str_rob(str_fu_out)
+    );
+
+    func_unit_load fu_load(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rs),
+        .load_entry(load_fwd_rs),
+        .load_disp_ip(load_disp_rs),
+
+        .mem_rd_data(read_data),
+        .mem_rd_addr(read_addr),
+
+        .fwd_load_addr(load_fwd_fu),
+        .load_cdb(load_cdb)
+    );
+
+    common_data_bus cdb(
+        .int_res(int_cdb),
+        .imm_res(imm_cdb),
+        .load_res('0),
+
+        .cdb_arr(cdb_arr)
+    );
+
+    reorder_buffer rob(
+        .clk(clk),
+        .rst(rst),
+        .mispredict_signal(mispredict_flush_rob),
+        .input_a(rob_disp_a),
+        .input_b(rob_disp_b),
+        .cdb_arr(cdb_arr),
+        .str_rob(str_fu_out),
+        .branch_rob(branch_disp),
+
+        .output_arr(rob_out_arr),
+        .almost_full(rob_almost_full)
+    );
 
     commit_pl commit(
         .clk(clk),
@@ -265,5 +347,15 @@ module int_branch_processor(
         .mispredict_pc(commit_misp_addr),
         .commit_a(commit_a),
         .commit_b(commit_b)
+    );
+
+    data_memory data_mem(
+        .clk(clk),
+        .rst(rst),
+        .commit_a(commit_a),
+        .commit_b(commit_b),
+        .read_addr(read_addr),
+
+        .read_data(read_data)
     );
 endmodule

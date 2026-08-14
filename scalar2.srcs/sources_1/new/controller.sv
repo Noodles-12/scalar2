@@ -12,6 +12,13 @@ module controller(
     input logic mispredict_signal,
     input logic [11:0] recov_addr,
 
+    input logic rs_int_full,
+    input logic rs_imm_full,
+    input logic rs_branch_full,
+    input logic rs_mem_full,
+    input logic rob_full,
+    input logic reg_file_full,
+
     output logic predict_flush,
     output logic mispredict_flush_rob,
     output logic mispredict_flush_rs,
@@ -20,7 +27,9 @@ module controller(
     output logic enable
 );
     logic [1:0] pc_sel;
-    assign enable = 1'b1;
+
+    assign enable = !(rs_int_full || rs_imm_full || rs_branch_full ||
+                       rs_mem_full || rob_full || reg_file_full);
 
     always_comb begin
         predict_flush = 1'b0;

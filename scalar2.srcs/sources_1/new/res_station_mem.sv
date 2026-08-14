@@ -9,16 +9,16 @@ module res_station_mem(
     input rs_entry instr_a,
     input rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
-    input logic [5:0] id_to_free [0:1],
+    input rob_entry free_id_a,
+    input rob_entry free_id_b,
 
     input str_disp_entry str_fwd_val,
     input load_fwd_addr load_fwd_ip,
     
     output str_disp_entry str_disp_op,
-
     output load_fwd_addr load_fwd_op,
-
-    output load_disp load_disp_op
+    output load_disp_entry load_disp_op,
+    output logic almost_full
 );
 
     typedef struct packed {
@@ -38,6 +38,9 @@ module res_station_mem(
     logic [3:0] l_head, l_tail;
     logic [3:0] l_tail_comb;
     logic l_full, l_empty;
+
+    logic [1:0] s_free_count, l_free_count;
+    logic [3:0] s_head_p1, l_head_p1;
 
     insert_req insert_a, insert_b;
     rs_entry instr_a_bypassed, instr_b_bypassed;
@@ -111,6 +114,50 @@ module res_station_mem(
                 end
             end
 
+            case (s_free_count)
+                2'd0 : ;
+                2'd1 : begin
+                    store_buffer[s_head[2:0]] <= '0;
+                    store_valid_addr[s_head[2:0]] <= 1'b0;
+                    store_eff_addr[s_head[2:0]] <= '0;
+                    s_head <= s_head + 1'b1;
+                end
+                2'd2 : begin
+                    store_buffer[s_head[2:0]] <= '0;
+                    store_valid_addr[s_head[2:0]] <= 1'b0;
+                    store_eff_addr[s_head[2:0]] <= '0;
+
+                    store_buffer[s_head_p1[2:0]] <= '0;
+                    store_valid_addr[s_head_p1[2:0]] <= 1'b0;
+                    store_eff_addr[s_head_p1[2:0]] <= '0;
+
+                    s_head <= s_head + 2'd2;
+                end
+                default : ;
+            endcase
+
+            case (l_free_count)
+                2'd0 : ;
+                2'd1 : begin
+                    load_buffer[l_head[2:0]] <= '0;
+                    load_valid_addr[l_head[2:0]] <= 1'b0;
+                    load_eff_addr[l_head[2:0]] <= '0;
+                    l_head <= l_head + 1'b1;
+                end
+                2'd2 : begin
+                    load_buffer[l_head[2:0]] <= '0;
+                    load_valid_addr[l_head[2:0]] <= 1'b0;
+                    load_eff_addr[l_head[2:0]] <= '0;
+
+                    load_buffer[l_head_p1[2:0]] <= '0;
+                    load_valid_addr[l_head_p1[2:0]] <= 1'b0;
+                    load_eff_addr[l_head_p1[2:0]] <= '0;
+
+                    l_head <= l_head + 2'd2;
+                end
+                default : ;
+            endcase
+
             for(int i = 0; i < CDB_SIZE; i++) begin
                 if(!cdb_arr[i].valid) continue;
                 for(int j = 0; j < RS_SIZE; j++) begin
@@ -139,6 +186,7 @@ module res_station_mem(
                 str_disp_op.offset <= store_buffer[store_disp_idx].offset;
                 str_disp_op.value <= store_buffer[store_disp_idx].value_s;
                 str_disp_op.mem_dest <= '0;
+                store_buffer[store_disp_idx].dispatched <= 1'b1;
             end else begin
                 str_disp_op <= '0;
             end
@@ -148,6 +196,7 @@ module res_station_mem(
                 load_fwd_op.idx <= load_fwd_idx;
                 load_fwd_op.offset <= load_buffer[load_fwd_idx].offset;
                 load_fwd_op.base_val <= load_buffer[load_fwd_idx].value_s[11:0];
+                load_buffer[load_fwd_idx].pending_addr <= 1'b1;
             end else begin
                 load_fwd_op <= '0;
             end
@@ -168,11 +217,13 @@ module res_station_mem(
                     load_disp_op.has_dep <= 1'b1;
                     load_disp_op.load_rs = load_buffer[load_disp_idx];
                     load_disp_op.value <= store_buffer[matching_str_idx[load_disp_idx]].value_s;
+                    load_buffer[load_disp_idx].dispatched <= 1'b1;
                 end else begin
                     load_disp_op.valid <= 1'b1;
                     load_disp_op.has_dep <= 1'b0;
                     load_disp_op.load_rs = load_buffer[load_disp_idx];
                     load_disp_op.value <= '0;
+                    load_buffer[load_disp_idx].dispatched <= 1'b1;
                 end
             end
 
@@ -227,7 +278,7 @@ module res_station_mem(
                 insert_a.is_store = 0;
                 insert_a.idx = l_tail_comb[2:0];
                 insert_a.entry = instr_a_bypassed;
-                insert_a.entry.idx_ref = s_tail_comb;
+                insert_a.entry.load_rs.idx_ref = s_tail_comb;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
@@ -248,7 +299,7 @@ module res_station_mem(
                 insert_b.is_store = 0;
                 insert_b.idx = l_tail_comb[2:0];
                 insert_b.entry = instr_b_bypassed;
-                insert_b.entry.idx_ref = s_tail_comb;
+                insert_b.entry.load_rs.idx_ref = s_tail_comb;
                 l_tail_comb = l_tail_comb + 1'b1;
             end
             27 : begin
@@ -271,7 +322,7 @@ module res_station_mem(
         store_disp_idx = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
-            done_stores[i] = store_buffer[i].valid & store_buffer[i].check_s & store_buffer[i].check_d;
+            done_stores[i] = store_buffer[i].valid & store_buffer[i].check_s & store_buffer[i].check_d & !store_buffer[i].dispatched;
         end
 
         store_disp_oh = (~done_stores + 1'b1) & done_stores;
@@ -334,6 +385,34 @@ module res_station_mem(
 
         l_empty = (l_head == l_tail);
         l_full  = (l_head[2:0] == l_tail[2:0]) && (l_head[3] != l_tail[3]);
+
+        s_head_p1 = s_head + 1'b1;
+        l_head_p1 = l_head + 1'b1;
+    end
+
+    always_comb begin
+        almost_full = ((s_tail - s_head) >= 4'd6) || ((l_tail - l_head) >= 4'd6);
+    end
+
+    always_comb begin
+        s_free_count = '0;
+        l_free_count = '0;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (store_buffer[i].valid && free_id_a.reg_rob.valid && store_buffer[i].id == free_id_a.reg_rob.id) begin
+                s_free_count = s_free_count + 1'b1;
+            end
+            if (store_buffer[i].valid && free_id_b.reg_rob.valid && store_buffer[i].id == free_id_b.reg_rob.id) begin
+                s_free_count = s_free_count + 1'b1;
+            end
+
+            if (load_buffer[i].valid && free_id_a.reg_rob.valid && load_buffer[i].id == free_id_a.reg_rob.id) begin
+                l_free_count = l_free_count + 1'b1;
+            end
+            if (load_buffer[i].valid && free_id_b.reg_rob.valid && load_buffer[i].id == free_id_b.reg_rob.id) begin
+                l_free_count = l_free_count + 1'b1;
+            end
+        end
     end
 
     // Store-to-load forwarding logic
