@@ -5,19 +5,23 @@ import config_pkg::*;
 module res_station_mem(
     input logic clk,
     input logic rst,
-    input logic mispredict_signal, 
+    input logic mispredict_signal,
+    input logic enable,
     input rs_entry instr_a,
     input rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
     input rob_entry free_id_a,
     input rob_entry free_id_b,
 
-    input str_disp_entry str_fwd_val,
+    input str_disp_entry str_fwd_val_a,
+    input str_disp_entry str_fwd_val_b,
     input load_fwd_addr load_fwd_ip,
-    
-    output str_disp_entry str_disp_op,
+
+    output str_disp_entry str_disp_op_a,
+    output str_disp_entry str_disp_op_b,
     output load_fwd_addr load_fwd_op,
-    output load_disp_entry load_disp_op,
+    output load_disp_entry load_disp_op_a,
+    output load_disp_entry load_disp_op_b,
     output logic almost_full
 );
 
@@ -55,19 +59,21 @@ module res_station_mem(
     logic [0:7] load_valid_addr;
 
     // Store dispatch logics
-    logic [7:0] done_stores, store_disp_oh;
-    logic [2:0] store_disp_idx;
-    logic store_disp_found;
+    logic [7:0] done_stores, done_stores_masked;
+    logic [7:0] store_disp_oh_a, store_disp_oh_b;
+    logic [2:0] store_disp_idx_a, store_disp_idx_b;
+    logic store_disp_found_a, store_disp_found_b;
 
     // Load Forwarding logics
     logic [7:0] loads_to_fwd, load_fwd_oh;
     logic [2:0] load_fwd_idx;
     logic load_fwd_found;
 
-    // Load dispatch logics
-    logic [RS_SIZE-1:0] done_loads, load_disp_oh;
-    logic [2:0] load_disp_idx;
-    logic load_disp_found;
+    // Load dispatch logics -- two-wide, mirrors the insert side's onehot_a/onehot_b picker
+    logic [RS_SIZE-1:0] done_loads, done_loads_masked;
+    logic [RS_SIZE-1:0] load_disp_oh_a, load_disp_oh_b;
+    logic [2:0] load_disp_idx_a, load_disp_idx_b;
+    logic load_disp_found_a, load_disp_found_b;
 
     // Store-to-load forwarding logics
     logic [RS_SIZE-1:0] matching_loads;
@@ -88,9 +94,11 @@ module res_station_mem(
 
             load_fwd_op <= '0;
 
-            str_disp_op <= '0;
+            str_disp_op_a <= '0;
+            str_disp_op_b <= '0;
 
-            load_disp_op <= '0;
+            load_disp_op_a <= '0;
+            load_disp_op_b <= '0;
 
             store_eff_addr <= '{default: '0};
             store_valid_addr <= '{default: '0};
@@ -178,17 +186,30 @@ module res_station_mem(
                 end
             end
 
-            if (store_disp_found) begin
-                str_disp_op.valid <= 1'b1;
-                str_disp_op.id <= store_buffer[store_disp_idx].id;
-                str_disp_op.idx <= store_disp_idx;
-                str_disp_op.base_val <= store_buffer[store_disp_idx].value_d[11:0];
-                str_disp_op.offset <= store_buffer[store_disp_idx].offset;
-                str_disp_op.value <= store_buffer[store_disp_idx].value_s;
-                str_disp_op.mem_dest <= '0;
-                store_buffer[store_disp_idx].dispatched <= 1'b1;
+            if (store_disp_found_a) begin
+                str_disp_op_a.valid <= 1'b1;
+                str_disp_op_a.id <= store_buffer[store_disp_idx_a].id;
+                str_disp_op_a.idx <= store_disp_idx_a;
+                str_disp_op_a.base_val <= store_buffer[store_disp_idx_a].value_d[11:0];
+                str_disp_op_a.offset <= store_buffer[store_disp_idx_a].offset;
+                str_disp_op_a.value <= store_buffer[store_disp_idx_a].value_s;
+                str_disp_op_a.mem_dest <= '0;
+                store_buffer[store_disp_idx_a].dispatched <= 1'b1;
             end else begin
-                str_disp_op <= '0;
+                str_disp_op_a <= '0;
+            end
+
+            if (store_disp_found_b) begin
+                str_disp_op_b.valid <= 1'b1;
+                str_disp_op_b.id <= store_buffer[store_disp_idx_b].id;
+                str_disp_op_b.idx <= store_disp_idx_b;
+                str_disp_op_b.base_val <= store_buffer[store_disp_idx_b].value_d[11:0];
+                str_disp_op_b.offset <= store_buffer[store_disp_idx_b].offset;
+                str_disp_op_b.value <= store_buffer[store_disp_idx_b].value_s;
+                str_disp_op_b.mem_dest <= '0;
+                store_buffer[store_disp_idx_b].dispatched <= 1'b1;
+            end else begin
+                str_disp_op_b <= '0;
             end
 
             if (load_fwd_found) begin
@@ -201,9 +222,14 @@ module res_station_mem(
                 load_fwd_op <= '0;
             end
 
-            if (str_fwd_val.valid) begin
-                store_eff_addr[str_fwd_val.idx] <= str_fwd_val.mem_dest;
-                store_valid_addr[str_fwd_val.idx] <= 1;
+            if (str_fwd_val_a.valid) begin
+                store_eff_addr[str_fwd_val_a.idx] <= str_fwd_val_a.mem_dest;
+                store_valid_addr[str_fwd_val_a.idx] <= 1;
+            end
+
+            if (str_fwd_val_b.valid) begin
+                store_eff_addr[str_fwd_val_b.idx] <= str_fwd_val_b.mem_dest;
+                store_valid_addr[str_fwd_val_b.idx] <= 1;
             end
 
             if(load_fwd_ip.valid) begin
@@ -211,20 +237,40 @@ module res_station_mem(
                 load_valid_addr[load_fwd_ip.idx] <= 1;
             end
 
-            if(load_disp_found) begin
-                if(matching_loads[load_disp_idx]) begin
-                    load_disp_op.valid <= 1'b1;
-                    load_disp_op.has_dep <= 1'b1;
-                    load_disp_op.load_rs = load_buffer[load_disp_idx];
-                    load_disp_op.value <= store_buffer[matching_str_idx[load_disp_idx]].value_s;
-                    load_buffer[load_disp_idx].dispatched <= 1'b1;
+            if(load_disp_found_a) begin
+                if(matching_loads[load_disp_idx_a]) begin
+                    load_disp_op_a.valid <= 1'b1;
+                    load_disp_op_a.has_dep <= 1'b1;
+                    load_disp_op_a.load_rs <= load_buffer[load_disp_idx_a];
+                    load_disp_op_a.value <= store_buffer[matching_str_idx[load_disp_idx_a]].value_s;
+                    load_buffer[load_disp_idx_a].dispatched <= 1'b1;
                 end else begin
-                    load_disp_op.valid <= 1'b1;
-                    load_disp_op.has_dep <= 1'b0;
-                    load_disp_op.load_rs = load_buffer[load_disp_idx];
-                    load_disp_op.value <= '0;
-                    load_buffer[load_disp_idx].dispatched <= 1'b1;
+                    load_disp_op_a.valid <= 1'b1;
+                    load_disp_op_a.has_dep <= 1'b0;
+                    load_disp_op_a.load_rs <= load_buffer[load_disp_idx_a];
+                    load_disp_op_a.value <= '0;
+                    load_buffer[load_disp_idx_a].dispatched <= 1'b1;
                 end
+            end else begin
+                load_disp_op_a <= '0;
+            end
+
+            if(load_disp_found_b) begin
+                if(matching_loads[load_disp_idx_b]) begin
+                    load_disp_op_b.valid <= 1'b1;
+                    load_disp_op_b.has_dep <= 1'b1;
+                    load_disp_op_b.load_rs <= load_buffer[load_disp_idx_b];
+                    load_disp_op_b.value <= store_buffer[matching_str_idx[load_disp_idx_b]].value_s;
+                    load_buffer[load_disp_idx_b].dispatched <= 1'b1;
+                end else begin
+                    load_disp_op_b.valid <= 1'b1;
+                    load_disp_op_b.has_dep <= 1'b0;
+                    load_disp_op_b.load_rs <= load_buffer[load_disp_idx_b];
+                    load_disp_op_b.value <= '0;
+                    load_buffer[load_disp_idx_b].dispatched <= 1'b1;
+                end
+            end else begin
+                load_disp_op_b <= '0;
             end
 
             // Might remove this & just use comb logic
@@ -316,31 +362,40 @@ module res_station_mem(
 
     // Finding finished store
     always_comb begin
-        store_dispatch = '0;
         done_stores = '0;
-        store_disp_oh = '0;
-        store_disp_idx = '0;
+        done_stores_masked = '0;
+        store_disp_oh_a = '0;
+        store_disp_oh_b = '0;
+        store_disp_idx_a = '0;
+        store_disp_idx_b = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
             done_stores[i] = store_buffer[i].valid & store_buffer[i].check_s & store_buffer[i].check_d & !store_buffer[i].dispatched;
         end
 
-        store_disp_oh = (~done_stores + 1'b1) & done_stores;
+        store_disp_oh_a = (~done_stores + 1'b1) & done_stores;
 
         for (int i = 0; i < RS_SIZE; i++) begin
-            if (store_disp_oh[i]) store_disp_idx |= i;
+            if (store_disp_oh_a[i]) store_disp_idx_a |= i;
         end
 
-        store_disp_found = |done_stores;
+        store_disp_found_a = |done_stores;
 
-        if(store_disp_found) begin
-            store_dispatch = store_dispatch + 1'b1;
+        done_stores_masked = done_stores & (~store_disp_oh_a);
+        store_disp_oh_b = (~done_stores_masked + 1'b1) & done_stores_masked;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (store_disp_oh_b[i]) store_disp_idx_b |= i;
         end
+
+        store_disp_found_b = |done_stores_masked;
     end
 
     // Forwarding loads to get their effective addresses
     always_comb begin
         loads_to_fwd = '0;
+        load_fwd_oh = '0;
+        load_fwd_idx = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
             loads_to_fwd[i] = load_buffer[i].valid & load_buffer[i].check_s & !load_buffer[i].pending_addr;
@@ -355,9 +410,13 @@ module res_station_mem(
         load_fwd_found = |loads_to_fwd;
     end
 
-    // Finding finished loads to dispatch
     always_comb begin
         done_loads = '0;
+        done_loads_masked = '0;
+        load_disp_oh_a = '0;
+        load_disp_oh_b = '0;
+        load_disp_idx_a = '0;
+        load_disp_idx_b = '0;
 
         for(int i = 0; i < RS_SIZE; i++) begin
             if(load_buffer[i].valid && load_valid_addr[i] && load_no_deps[i] && !load_buffer[i].dispatched) begin
@@ -370,13 +429,22 @@ module res_station_mem(
             end
         end
 
-        load_disp_oh = (~done_loads + 1'b1) & done_loads;
+        load_disp_oh_a = (~done_loads + 1'b1) & done_loads;
 
         for (int i = 0; i < RS_SIZE; i++) begin
-            if (load_disp_oh[i]) load_disp_idx |= i;
+            if (load_disp_oh_a[i]) load_disp_idx_a |= i;
         end
 
-        load_disp_found = |done_loads;
+        load_disp_found_a = |done_loads;
+
+        done_loads_masked = done_loads & (~load_disp_oh_a);
+        load_disp_oh_b = (~done_loads_masked + 1'b1) & done_loads_masked;
+
+        for (int i = 0; i < RS_SIZE; i++) begin
+            if (load_disp_oh_b[i]) load_disp_idx_b |= i;
+        end
+
+        load_disp_found_b = |done_loads_masked;
     end
 
     always_comb begin
@@ -433,6 +501,12 @@ module res_station_mem(
                 Making fervent prayers for even half decent hardware/physical efficiency of this
             */
             idx = load_buffer[i].idx_ref;
+
+            if(idx == s_head) begin
+                load_no_deps_comb[i] = 1'b1;
+                continue;
+            end
+
             for(int j = 0; j < RS_SIZE; j++) begin
                 idx = idx - 1'b1;
                 // In case store was dispatched OOO (theoretically shouldn't happen)

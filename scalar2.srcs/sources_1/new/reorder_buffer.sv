@@ -9,8 +9,10 @@ module reorder_buffer(
     input rob_entry input_a,
     input rob_entry input_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
-    input str_disp_entry str_rob,
-    input branch_disp_entry branch_rob,
+    input str_disp_entry str_rob_a,
+    input str_disp_entry str_rob_b,
+    input branch_disp_entry branch_rob_a,
+    input branch_disp_entry branch_rob_b,
     
     output rob_entry output_arr [0:1],
     output logic almost_full
@@ -203,10 +205,16 @@ module reorder_buffer(
         str_result = '{default: '0};
         str_dest = '{default: '0};
 
-        if (str_rob.valid && lut_valid[str_rob.id]) begin
-            str_hit[lut[str_rob.id]] = 1;
-            str_result[lut[str_rob.id]] = str_rob.value;
-            str_dest[lut[str_rob.id]] = str_rob.mem_dest;
+        if (str_rob_a.valid && lut_valid[str_rob_a.id]) begin
+            str_hit[lut[str_rob_a.id]] = 1;
+            str_result[lut[str_rob_a.id]] = str_rob_a.value;
+            str_dest[lut[str_rob_a.id]] = str_rob_a.mem_dest;
+        end
+
+        if (str_rob_b.valid && lut_valid[str_rob_b.id]) begin
+            str_hit[lut[str_rob_b.id]] = 1;
+            str_result[lut[str_rob_b.id]] = str_rob_b.value;
+            str_dest[lut[str_rob_b.id]] = str_rob_b.mem_dest;
         end
     end
 
@@ -215,9 +223,14 @@ module reorder_buffer(
         branch_hit = '0;
         branch_actual = '{default: '0};
 
-        if (branch_rob.valid && lut_valid[branch_rob.id]) begin
-            branch_hit[lut[branch_rob.id]] = 1;
-            branch_actual[lut[branch_rob.id]] = branch_rob.result;
+        if (branch_rob_a.valid && lut_valid[branch_rob_a.id]) begin
+            branch_hit[lut[branch_rob_a.id]] = 1;
+            branch_actual[lut[branch_rob_a.id]] = branch_rob_a.result;
+        end
+
+        if (branch_rob_b.valid && lut_valid[branch_rob_b.id]) begin
+            branch_hit[lut[branch_rob_b.id]] = 1;
+            branch_actual[lut[branch_rob_b.id]] = branch_rob_b.result;
         end
     end
 endmodule

@@ -44,7 +44,7 @@ module branch_predictor(
     assign return_b = addr_b + 1;
 
     always_ff @ (posedge clk) begin
-        if(rst || predict_flush || mispredict_flush) begin
+        if(rst || mispredict_flush) begin
             instr_a_op <= '0;
             instr_b_op <= '0;
 
@@ -60,46 +60,63 @@ module branch_predictor(
             imm_lo_a <= '0;
             imm_lo_b <= '0;
         end else if(enable) begin
-            instr_a_op <= mod_instr_a;
-            instr_b_op <= mod_instr_b;
+            if(predict_flush) begin
+                instr_a_op <= '0;
+                instr_b_op <= '0;
 
-            hist_a <= addr_a[4:0];
-            hist_b <= addr_b[4:0];
+                predict_addr_a <= '0;
+                predict_addr_b <= '0;
 
-            imm_lo_a <= instr_a.code;
-            imm_lo_b <= instr_b.code;
+                recov_addr_a <= '0;
+                recov_addr_b <= '0;
 
-            unique case(code_a)
-                NORMAL:         predict_addr_a <= '0;
-                JUMP:           predict_addr_a <= taken_a;
-                UNTAKEN_BRANCH: predict_addr_a <= return_a;
-                TAKEN_BRANCH:   predict_addr_a <= taken_a;
-                default:        predict_addr_a <= '0;
-            endcase
+                hist_a <= '0;
+                hist_b <= '0;
 
-            unique case(code_a)
-                NORMAL:         recov_addr_a <= '0;
-                JUMP:           recov_addr_a <= '0;
-                UNTAKEN_BRANCH: recov_addr_a <= taken_a;
-                TAKEN_BRANCH:   recov_addr_a <= return_a;
-                default:        recov_addr_a <= '0;
-            endcase
+                imm_lo_a <= '0;
+                imm_lo_b <= '0;
+            end else begin
+                instr_a_op <= mod_instr_a;
+                instr_b_op <= mod_instr_b;
 
-            unique case(code_b)
-                NORMAL:         predict_addr_b <= '0;
-                JUMP:           predict_addr_b <= taken_b;
-                UNTAKEN_BRANCH: predict_addr_b <= return_b;
-                TAKEN_BRANCH:   predict_addr_b <= taken_b;
-                default:        predict_addr_b <= '0;
-            endcase
+                hist_a <= addr_a[4:0];
+                hist_b <= addr_b[4:0];
 
-            unique case(code_b)
-                NORMAL:         recov_addr_b <= '0;
-                JUMP:           recov_addr_b <= '0;
-                UNTAKEN_BRANCH: recov_addr_b <= taken_b;
-                TAKEN_BRANCH:   recov_addr_b <= return_b;
-                default:        recov_addr_b <= '0;
-            endcase
+                imm_lo_a <= instr_a.code;
+                imm_lo_b <= instr_b.code;
+
+                unique case(code_a)
+                    NORMAL:         predict_addr_a <= '0;
+                    JUMP:           predict_addr_a <= taken_a;
+                    UNTAKEN_BRANCH: predict_addr_a <= return_a;
+                    TAKEN_BRANCH:   predict_addr_a <= taken_a;
+                    default:        predict_addr_a <= '0;
+                endcase
+
+                unique case(code_a)
+                    NORMAL:         recov_addr_a <= '0;
+                    JUMP:           recov_addr_a <= '0;
+                    UNTAKEN_BRANCH: recov_addr_a <= taken_a;
+                    TAKEN_BRANCH:   recov_addr_a <= return_a;
+                    default:        recov_addr_a <= '0;
+                endcase
+
+                unique case(code_b)
+                    NORMAL:         predict_addr_b <= '0;
+                    JUMP:           predict_addr_b <= taken_b;
+                    UNTAKEN_BRANCH: predict_addr_b <= return_b;
+                    TAKEN_BRANCH:   predict_addr_b <= taken_b;
+                    default:        predict_addr_b <= '0;
+                endcase
+
+                unique case(code_b)
+                    NORMAL:         recov_addr_b <= '0;
+                    JUMP:           recov_addr_b <= '0;
+                    UNTAKEN_BRANCH: recov_addr_b <= taken_b;
+                    TAKEN_BRANCH:   recov_addr_b <= return_b;
+                    default:        recov_addr_b <= '0;
+                endcase
+            end
         end
     end
 

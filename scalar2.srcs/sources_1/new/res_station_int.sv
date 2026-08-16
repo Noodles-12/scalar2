@@ -6,11 +6,13 @@ module res_station_int(
     input logic clk,
     input logic rst,
     input logic mispredict_signal,
+    input logic enable,
     input int_rs_entry instr_a,
     input int_rs_entry instr_b,
     input cdb_entry cdb_arr [0:CDB_SIZE - 1],
 
-    output int_rs_entry instr_op,
+    output int_rs_entry instr_op_a,
+    output int_rs_entry instr_op_b,
     output logic almost_full
 );
 
@@ -28,19 +30,23 @@ module res_station_int(
     logic [3:0] filled_stations;
 
     int_rs_entry res_station [0:RS_SIZE - 1];
-    
+
     // Insert logics
     insert_req insert_reqs [0:1];
 
-    // Dispatch logics
-    dispatch_req disp_req;
+    // Dispatch logics -- two-wide, mirrors the insert side's onehot_a/onehot_b picker
+    dispatch_req disp_req_a, disp_req_b;
 
-    // a & b used for finding available entries; c used for pushing first finished instructions
-    logic done_a, done_b, done_c;
-    logic [2:0] idx_a, idx_b, idx_c;
+    // a & b used for finding available entries; c/d used for picking the two
+    // ready-to-dispatch entries (mirrors the insert side's a/b picker)
+    logic done_a, done_b, done_c, done_d;
+    logic [2:0] idx_a, idx_b, idx_c, idx_d;
 
     logic [RS_SIZE-1:0] free_bits, free_bits_masked;
     logic [RS_SIZE-1:0] onehot_a, onehot_b;
+
+    logic [RS_SIZE-1:0] ready_bits, ready_bits_masked;
+    logic [RS_SIZE-1:0] disp_onehot_a, disp_onehot_b;
 
     int_rs_entry instr_a_bypassed, instr_b_bypassed;
 
@@ -50,7 +56,8 @@ module res_station_int(
         if (rst || mispredict_signal) begin
             res_station <= '{default: '0};
 
-            instr_op <= '0;
+            instr_op_a <= '0;
+            instr_op_b <= '0;
         end else begin
             for(int i = 0; i < 2; i++) begin
                 if(insert_reqs[i].valid) begin
@@ -58,11 +65,17 @@ module res_station_int(
                 end
             end
 
-            if(disp_req.valid) begin
-                instr_op <= disp_req.entry;
-                res_station[disp_req.idx] <= '0;
+            if(disp_req_a.valid) begin
+                instr_op_a <= disp_req_a.entry;
+                res_station[disp_req_a.idx] <= '0;
             end else
-                instr_op <= '0;
+                instr_op_a <= '0;
+
+            if(disp_req_b.valid) begin
+                instr_op_b <= disp_req_b.entry;
+                res_station[disp_req_b.idx] <= '0;
+            end else
+                instr_op_b <= '0;
 
             for (int i = 0; i < CDB_SIZE; i++) begin
                 if (!cdb_arr[i].valid) continue;
@@ -120,7 +133,8 @@ module res_station_int(
         for(int i = 0; i < RS_SIZE; i++) begin
             if(!res_station[i].valid) free_bits[i] = 1'b1;
         end
-        if(disp_req.valid) free_bits[disp_req.idx] = 1'b0;
+        if(disp_req_a.valid) free_bits[disp_req_a.idx] = 1'b0;
+        if(disp_req_b.valid) free_bits[disp_req_b.idx] = 1'b0;
 
         onehot_a = free_bits & (~free_bits + 1'b1);
 
@@ -153,24 +167,50 @@ module res_station_int(
         end
     end
 
-    // Dispatch to FU block
+    // Dispatch to FU block -- two-wide, same onehot-priority-picker pattern as
+    // the insert side above: first ready entry goes out disp_req_a, second
+    // (excluding the first) goes out disp_req_b.
     always_comb begin
-        disp_req = '0;
+        disp_req_a = '0;
+        disp_req_b = '0;
         done_c = 0; idx_c = '0;
+        done_d = 0; idx_d = '0;
 
+        ready_bits = '0;
         for(int i = 0; i < RS_SIZE; i++) begin
-            if(res_station[i].check_s && res_station[i].check_t) begin
-                if(!done_c) begin
-                    idx_c = i;
-                    done_c = 1;
-                end
+            if(res_station[i].valid && res_station[i].check_s && res_station[i].check_t) begin
+                ready_bits[i] = 1'b1;
             end
         end
 
+        disp_onehot_a = ready_bits & (~ready_bits + 1'b1);
+
+        ready_bits_masked = ready_bits & (~disp_onehot_a);
+        disp_onehot_b = ready_bits_masked & (~ready_bits_masked + 1'b1);
+
+        idx_c = '0;
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(disp_onehot_a[i]) idx_c |= i;
+        end
+
+        idx_d = '0;
+        for(int i = 0; i < RS_SIZE; i++) begin
+            if(disp_onehot_b[i]) idx_d |= i;
+        end
+
+        done_c = |ready_bits;
+        done_d = |ready_bits_masked;
+
         if(done_c) begin
-            disp_req.valid = 1;
-            disp_req.idx = idx_c;
-            disp_req.entry = res_station[idx_c];
+            disp_req_a.valid = 1;
+            disp_req_a.idx = idx_c;
+            disp_req_a.entry = res_station[idx_c];
+        end
+
+        if(done_d) begin
+            disp_req_b.valid = 1;
+            disp_req_b.idx = idx_d;
+            disp_req_b.entry = res_station[idx_d];
         end
     end
 

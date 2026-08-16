@@ -30,12 +30,12 @@ module dispatch_pl(
     logic [1:0] code_a, code_b;
 
     // CDB match signals — instruction A
-    logic match_as_i, match_as_j, match_as_k;
-    logic match_at_i, match_at_j, match_at_k;
+    logic match_as_i, match_as_j, match_as_k, match_as_l, match_as_m, match_as_n;
+    logic match_at_i, match_at_j, match_at_k, match_at_l, match_at_m, match_at_n;
 
     // CDB match signals — instruction B
-    logic match_bs_i, match_bs_j, match_bs_k;
-    logic match_bt_i, match_bt_j, match_bt_k;
+    logic match_bs_i, match_bs_j, match_bs_k, match_bs_l, match_bs_m, match_bs_n;
+    logic match_bt_i, match_bt_j, match_bt_k, match_bt_l, match_bt_m, match_bt_n;
 
     // Each entry: 1 = free, 0 = taken
     (* max_fanout = 8 *) logic id_list [0:31];
@@ -67,11 +67,6 @@ module dispatch_pl(
                 if(done_b && rename_b.int_rs.valid)
                     id_list[avail_b] <= 0;
             end else begin
-                // Downstream (RS's and ROB) re-insert unconditionally on
-                // any valid input every cycle, with no dedup — so a held,
-                // still-valid rob_op_a/rs_op_a during a stall would get
-                // re-inserted into a fresh slot every cycle. Must present
-                // "nothing new this cycle" while stalled, not just freeze.
                 for (int i = 0; i < 4; i++) begin
                     rs_op_a[i] <= '0;
                     rs_op_b[i] <= '0;
@@ -111,10 +106,10 @@ module dispatch_pl(
         rob_disp_a = rob_a;
         rob_disp_b = rob_b;
 
-        match_as_i = 0; match_as_j = 0; match_as_k = 0;
-        match_at_i = 0; match_at_j = 0; match_at_k = 0;
-        match_bs_i = 0; match_bs_j = 0; match_bs_k = 0;
-        match_bt_i = 0; match_bt_j = 0; match_bt_k = 0;
+        match_as_i = 0; match_as_j = 0; match_as_k = 0; match_as_l = 0; match_as_m = 0; match_as_n = 0;
+        match_at_i = 0; match_at_j = 0; match_at_k = 0; match_at_l = 0; match_at_m = 0; match_at_n = 0;
+        match_bs_i = 0; match_bs_j = 0; match_bs_k = 0; match_bs_l = 0; match_bs_m = 0; match_bs_n = 0;
+        match_bt_i = 0; match_bt_j = 0; match_bt_k = 0; match_bt_l = 0; match_bt_m = 0; match_bt_n = 0;
 
         // Assigning & freeing ids if id was found & instruction is valid
         if(done_a && rename_a.int_rs.valid) begin
@@ -135,11 +130,17 @@ module dispatch_pl(
                     match_as_i = (rs_disp_a.int_rs.reg_s == cdb_arr[0].prf);
                     match_as_j = (rs_disp_a.int_rs.reg_s == cdb_arr[1].prf);
                     match_as_k = (rs_disp_a.int_rs.reg_s == cdb_arr[2].prf);
+                    match_as_l = (rs_disp_a.int_rs.reg_s == cdb_arr[3].prf);
+                    match_as_m = (rs_disp_a.int_rs.reg_s == cdb_arr[4].prf);
+                    match_as_n = (rs_disp_a.int_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_as_i: begin rs_disp_a.int_rs.value_s = cdb_arr[0].result; rs_disp_a.int_rs.check_s = 1'b1; end
                         match_as_j: begin rs_disp_a.int_rs.value_s = cdb_arr[1].result; rs_disp_a.int_rs.check_s = 1'b1; end
                         match_as_k: begin rs_disp_a.int_rs.value_s = cdb_arr[2].result; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_l: begin rs_disp_a.int_rs.value_s = cdb_arr[3].result; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_m: begin rs_disp_a.int_rs.value_s = cdb_arr[4].result; rs_disp_a.int_rs.check_s = 1'b1; end
+                        match_as_n: begin rs_disp_a.int_rs.value_s = cdb_arr[5].result; rs_disp_a.int_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -149,11 +150,17 @@ module dispatch_pl(
                     match_at_i = (rs_disp_a.int_rs.reg_t == cdb_arr[0].prf);
                     match_at_j = (rs_disp_a.int_rs.reg_t == cdb_arr[1].prf);
                     match_at_k = (rs_disp_a.int_rs.reg_t == cdb_arr[2].prf);
+                    match_at_l = (rs_disp_a.int_rs.reg_t == cdb_arr[3].prf);
+                    match_at_m = (rs_disp_a.int_rs.reg_t == cdb_arr[4].prf);
+                    match_at_n = (rs_disp_a.int_rs.reg_t == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_at_i: begin rs_disp_a.int_rs.value_t = cdb_arr[0].result; rs_disp_a.int_rs.check_t = 1'b1; end
                         match_at_j: begin rs_disp_a.int_rs.value_t = cdb_arr[1].result; rs_disp_a.int_rs.check_t = 1'b1; end
                         match_at_k: begin rs_disp_a.int_rs.value_t = cdb_arr[2].result; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_l: begin rs_disp_a.int_rs.value_t = cdb_arr[3].result; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_m: begin rs_disp_a.int_rs.value_t = cdb_arr[4].result; rs_disp_a.int_rs.check_t = 1'b1; end
+                        match_at_n: begin rs_disp_a.int_rs.value_t = cdb_arr[5].result; rs_disp_a.int_rs.check_t = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -165,11 +172,17 @@ module dispatch_pl(
                     match_as_i = (rs_disp_a.imm_rs.reg_s == cdb_arr[0].prf);
                     match_as_j = (rs_disp_a.imm_rs.reg_s == cdb_arr[1].prf);
                     match_as_k = (rs_disp_a.imm_rs.reg_s == cdb_arr[2].prf);
+                    match_as_l = (rs_disp_a.imm_rs.reg_s == cdb_arr[3].prf);
+                    match_as_m = (rs_disp_a.imm_rs.reg_s == cdb_arr[4].prf);
+                    match_as_n = (rs_disp_a.imm_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_as_i: begin rs_disp_a.imm_rs.value_s = cdb_arr[0].result; rs_disp_a.imm_rs.check_s = 1'b1; end
                         match_as_j: begin rs_disp_a.imm_rs.value_s = cdb_arr[1].result; rs_disp_a.imm_rs.check_s = 1'b1; end
                         match_as_k: begin rs_disp_a.imm_rs.value_s = cdb_arr[2].result; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_l: begin rs_disp_a.imm_rs.value_s = cdb_arr[3].result; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_m: begin rs_disp_a.imm_rs.value_s = cdb_arr[4].result; rs_disp_a.imm_rs.check_s = 1'b1; end
+                        match_as_n: begin rs_disp_a.imm_rs.value_s = cdb_arr[5].result; rs_disp_a.imm_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -181,11 +194,17 @@ module dispatch_pl(
                     match_as_i = (rs_disp_a.store_rs.reg_d == cdb_arr[0].prf);
                     match_as_j = (rs_disp_a.store_rs.reg_d == cdb_arr[1].prf);
                     match_as_k = (rs_disp_a.store_rs.reg_d == cdb_arr[2].prf);
+                    match_as_l = (rs_disp_a.store_rs.reg_d == cdb_arr[3].prf);
+                    match_as_m = (rs_disp_a.store_rs.reg_d == cdb_arr[4].prf);
+                    match_as_n = (rs_disp_a.store_rs.reg_d == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_as_i: begin rs_disp_a.store_rs.value_d = cdb_arr[0].result; rs_disp_a.store_rs.check_d = 1'b1; end
                         match_as_j: begin rs_disp_a.store_rs.value_d = cdb_arr[1].result; rs_disp_a.store_rs.check_d = 1'b1; end
                         match_as_k: begin rs_disp_a.store_rs.value_d = cdb_arr[2].result; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_l: begin rs_disp_a.store_rs.value_d = cdb_arr[3].result; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_m: begin rs_disp_a.store_rs.value_d = cdb_arr[4].result; rs_disp_a.store_rs.check_d = 1'b1; end
+                        match_as_n: begin rs_disp_a.store_rs.value_d = cdb_arr[5].result; rs_disp_a.store_rs.check_d = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -194,11 +213,17 @@ module dispatch_pl(
                     match_at_i = (rs_disp_a.store_rs.reg_s == cdb_arr[0].prf);
                     match_at_j = (rs_disp_a.store_rs.reg_s == cdb_arr[1].prf);
                     match_at_k = (rs_disp_a.store_rs.reg_s == cdb_arr[2].prf);
+                    match_at_l = (rs_disp_a.store_rs.reg_s == cdb_arr[3].prf);
+                    match_at_m = (rs_disp_a.store_rs.reg_s == cdb_arr[4].prf);
+                    match_at_n = (rs_disp_a.store_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_at_i: begin rs_disp_a.store_rs.value_s = cdb_arr[0].result; rs_disp_a.store_rs.check_s = 1'b1; end
                         match_at_j: begin rs_disp_a.store_rs.value_s = cdb_arr[1].result; rs_disp_a.store_rs.check_s = 1'b1; end
                         match_at_k: begin rs_disp_a.store_rs.value_s = cdb_arr[2].result; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_l: begin rs_disp_a.store_rs.value_s = cdb_arr[3].result; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_m: begin rs_disp_a.store_rs.value_s = cdb_arr[4].result; rs_disp_a.store_rs.check_s = 1'b1; end
+                        match_at_n: begin rs_disp_a.store_rs.value_s = cdb_arr[5].result; rs_disp_a.store_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -214,11 +239,17 @@ module dispatch_pl(
                     match_bs_i = (rs_disp_b.int_rs.reg_s == cdb_arr[0].prf);
                     match_bs_j = (rs_disp_b.int_rs.reg_s == cdb_arr[1].prf);
                     match_bs_k = (rs_disp_b.int_rs.reg_s == cdb_arr[2].prf);
+                    match_bs_l = (rs_disp_b.int_rs.reg_s == cdb_arr[3].prf);
+                    match_bs_m = (rs_disp_b.int_rs.reg_s == cdb_arr[4].prf);
+                    match_bs_n = (rs_disp_b.int_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_bs_i: begin rs_disp_b.int_rs.value_s = cdb_arr[0].result; rs_disp_b.int_rs.check_s = 1'b1; end
                         match_bs_j: begin rs_disp_b.int_rs.value_s = cdb_arr[1].result; rs_disp_b.int_rs.check_s = 1'b1; end
                         match_bs_k: begin rs_disp_b.int_rs.value_s = cdb_arr[2].result; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_l: begin rs_disp_b.int_rs.value_s = cdb_arr[3].result; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_m: begin rs_disp_b.int_rs.value_s = cdb_arr[4].result; rs_disp_b.int_rs.check_s = 1'b1; end
+                        match_bs_n: begin rs_disp_b.int_rs.value_s = cdb_arr[5].result; rs_disp_b.int_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -227,11 +258,17 @@ module dispatch_pl(
                     match_bt_i = (rs_disp_b.int_rs.reg_t == cdb_arr[0].prf);
                     match_bt_j = (rs_disp_b.int_rs.reg_t == cdb_arr[1].prf);
                     match_bt_k = (rs_disp_b.int_rs.reg_t == cdb_arr[2].prf);
+                    match_bt_l = (rs_disp_b.int_rs.reg_t == cdb_arr[3].prf);
+                    match_bt_m = (rs_disp_b.int_rs.reg_t == cdb_arr[4].prf);
+                    match_bt_n = (rs_disp_b.int_rs.reg_t == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_bt_i: begin rs_disp_b.int_rs.value_t = cdb_arr[0].result; rs_disp_b.int_rs.check_t = 1'b1; end
                         match_bt_j: begin rs_disp_b.int_rs.value_t = cdb_arr[1].result; rs_disp_b.int_rs.check_t = 1'b1; end
                         match_bt_k: begin rs_disp_b.int_rs.value_t = cdb_arr[2].result; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_l: begin rs_disp_b.int_rs.value_t = cdb_arr[3].result; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_m: begin rs_disp_b.int_rs.value_t = cdb_arr[4].result; rs_disp_b.int_rs.check_t = 1'b1; end
+                        match_bt_n: begin rs_disp_b.int_rs.value_t = cdb_arr[5].result; rs_disp_b.int_rs.check_t = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -242,11 +279,17 @@ module dispatch_pl(
                     match_bs_i = (rs_disp_b.imm_rs.reg_s == cdb_arr[0].prf);
                     match_bs_j = (rs_disp_b.imm_rs.reg_s == cdb_arr[1].prf);
                     match_bs_k = (rs_disp_b.imm_rs.reg_s == cdb_arr[2].prf);
+                    match_bs_l = (rs_disp_b.imm_rs.reg_s == cdb_arr[3].prf);
+                    match_bs_m = (rs_disp_b.imm_rs.reg_s == cdb_arr[4].prf);
+                    match_bs_n = (rs_disp_b.imm_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_bs_i: begin rs_disp_b.imm_rs.value_s = cdb_arr[0].result; rs_disp_b.imm_rs.check_s = 1'b1; end
                         match_bs_j: begin rs_disp_b.imm_rs.value_s = cdb_arr[1].result; rs_disp_b.imm_rs.check_s = 1'b1; end
                         match_bs_k: begin rs_disp_b.imm_rs.value_s = cdb_arr[2].result; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_l: begin rs_disp_b.imm_rs.value_s = cdb_arr[3].result; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_m: begin rs_disp_b.imm_rs.value_s = cdb_arr[4].result; rs_disp_b.imm_rs.check_s = 1'b1; end
+                        match_bs_n: begin rs_disp_b.imm_rs.value_s = cdb_arr[5].result; rs_disp_b.imm_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -257,11 +300,17 @@ module dispatch_pl(
                     match_bs_i = (rs_disp_b.store_rs.reg_d == cdb_arr[0].prf);
                     match_bs_j = (rs_disp_b.store_rs.reg_d == cdb_arr[1].prf);
                     match_bs_k = (rs_disp_b.store_rs.reg_d == cdb_arr[2].prf);
+                    match_bs_l = (rs_disp_b.store_rs.reg_d == cdb_arr[3].prf);
+                    match_bs_m = (rs_disp_b.store_rs.reg_d == cdb_arr[4].prf);
+                    match_bs_n = (rs_disp_b.store_rs.reg_d == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_bs_i: begin rs_disp_b.store_rs.value_d = cdb_arr[0].result; rs_disp_b.store_rs.check_d = 1'b1; end
                         match_bs_j: begin rs_disp_b.store_rs.value_d = cdb_arr[1].result; rs_disp_b.store_rs.check_d = 1'b1; end
                         match_bs_k: begin rs_disp_b.store_rs.value_d = cdb_arr[2].result; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_l: begin rs_disp_b.store_rs.value_d = cdb_arr[3].result; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_m: begin rs_disp_b.store_rs.value_d = cdb_arr[4].result; rs_disp_b.store_rs.check_d = 1'b1; end
+                        match_bs_n: begin rs_disp_b.store_rs.value_d = cdb_arr[5].result; rs_disp_b.store_rs.check_d = 1'b1; end
                         default: ;
                     endcase
                 end
@@ -270,11 +319,17 @@ module dispatch_pl(
                     match_bt_i = (rs_disp_b.store_rs.reg_s == cdb_arr[0].prf);
                     match_bt_j = (rs_disp_b.store_rs.reg_s == cdb_arr[1].prf);
                     match_bt_k = (rs_disp_b.store_rs.reg_s == cdb_arr[2].prf);
+                    match_bt_l = (rs_disp_b.store_rs.reg_s == cdb_arr[3].prf);
+                    match_bt_m = (rs_disp_b.store_rs.reg_s == cdb_arr[4].prf);
+                    match_bt_n = (rs_disp_b.store_rs.reg_s == cdb_arr[5].prf);
 
                     unique case (1'b1)
                         match_bt_i: begin rs_disp_b.store_rs.value_s = cdb_arr[0].result; rs_disp_b.store_rs.check_s = 1'b1; end
                         match_bt_j: begin rs_disp_b.store_rs.value_s = cdb_arr[1].result; rs_disp_b.store_rs.check_s = 1'b1; end
                         match_bt_k: begin rs_disp_b.store_rs.value_s = cdb_arr[2].result; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_l: begin rs_disp_b.store_rs.value_s = cdb_arr[3].result; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_m: begin rs_disp_b.store_rs.value_s = cdb_arr[4].result; rs_disp_b.store_rs.check_s = 1'b1; end
+                        match_bt_n: begin rs_disp_b.store_rs.value_s = cdb_arr[5].result; rs_disp_b.store_rs.check_s = 1'b1; end
                         default: ;
                     endcase
                 end

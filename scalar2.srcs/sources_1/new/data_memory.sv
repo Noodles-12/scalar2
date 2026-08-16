@@ -7,16 +7,22 @@ module data_memory(
     input logic rst,
     input rob_entry commit_a,
     input rob_entry commit_b,
-    input logic [ADDRBUS_SIZE-1:0] read_addr,
+    input logic [ADDRBUS_SIZE-1:0] read_addr_a,
+    input logic [ADDRBUS_SIZE-1:0] read_addr_b,
 
-    output logic [DATABUS_WIDTH-1:0] read_data
+    output logic [DATABUS_WIDTH-1:0] read_data_a,
+    output logic [DATABUS_WIDTH-1:0] read_data_b
 );
 
     // Using a LUT to implement memory, since Vivado doesn't support 2W/1R BRAMs
     logic [0:DATABUS_WIDTH - 1] memory [0:DATA_MEM_SIZE - 1];
 
     always_ff @ (posedge clk) begin
-        read_data <= memory[read_addr];
+        read_data_a <= memory[read_addr_a];
+    end
+
+    always_ff @ (posedge clk) begin
+        read_data_b <= memory[read_addr_b];
     end
 
     always_ff @(posedge clk) begin

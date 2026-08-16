@@ -19,11 +19,6 @@ module scalar2_top(
     instruction instr_a, instr_b;
     logic [ADDRBUS_SIZE-1:0] addr_a, addr_b;
 
-    logic pipe_enable_prev;
-    logic skid_valid;
-    instruction skid_instr_a, skid_instr_b;
-    logic [ADDRBUS_SIZE-1:0] skid_addr_a, skid_addr_b;
-
     instruction bp_instr_a, bp_instr_b;
     logic [ADDRBUS_SIZE-1:0] bp_addr_a, bp_addr_b;
 
@@ -48,25 +43,25 @@ module scalar2_top(
     rob_entry rob_disp_a, rob_disp_b;
 
     // Reservation station outputs
-    int_rs_entry int_rs_out;
-    imm_rs_entry imm_rs_out;
-    branch_rs_entry branch_rs_out;
-    str_disp_entry str_rs_out;
+    int_rs_entry int_rs_out_a, int_rs_out_b;
+    imm_rs_entry imm_rs_out_a, imm_rs_out_b;
+    branch_rs_entry branch_rs_out_a, branch_rs_out_b;
+    str_disp_entry str_rs_out_a, str_rs_out_b;
 
     load_fwd_addr load_fwd_rs;
-    load_disp_entry load_disp_rs;
+    load_disp_entry load_disp_rs_a, load_disp_rs_b;
 
     // Functional unit outputs
-    cdb_entry int_cdb;
-    cdb_entry imm_cdb;
-    cdb_entry load_cdb;
+    cdb_entry int_cdb_a, int_cdb_b;
+    cdb_entry imm_cdb_a, imm_cdb_b;
+    cdb_entry load_cdb_a, load_cdb_b;
 
-    str_disp_entry str_fu_out;
-    branch_disp_entry branch_disp;
+    str_disp_entry str_fu_out_a, str_fu_out_b;
+    branch_disp_entry branch_disp_a, branch_disp_b;
 
     load_fwd_addr load_fwd_fu;
-    logic [ADDRBUS_SIZE-1:0] read_addr;
-    logic [DATABUS_WIDTH-1:0] read_data;
+    logic [ADDRBUS_SIZE-1:0] read_addr_a, read_addr_b;
+    logic [DATABUS_WIDTH-1:0] read_data_a, read_data_b;
 
 
     // CDB broadcast
@@ -225,11 +220,13 @@ module scalar2_top(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
+        .enable(pipe_enable),
         .instr_a(rs_disp_a[0].int_rs),
         .instr_b(rs_disp_b[0].int_rs),
         .cdb_arr(cdb_arr),
 
-        .instr_op(int_rs_out),
+        .instr_op_a(int_rs_out_a),
+        .instr_op_b(int_rs_out_b),
         .almost_full(rs_int_full)
     );
 
@@ -237,11 +234,13 @@ module scalar2_top(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
+        .enable(pipe_enable),
         .instr_a(rs_disp_a[1].imm_rs),
         .instr_b(rs_disp_b[1].imm_rs),
         .cdb_arr(cdb_arr),
 
-        .instr_op(imm_rs_out),
+        .instr_op_a(imm_rs_out_a),
+        .instr_op_b(imm_rs_out_b),
         .almost_full(rs_imm_full)
     );
 
@@ -249,17 +248,21 @@ module scalar2_top(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
+        .enable(pipe_enable),
         .instr_a(rs_disp_a[2]),
         .instr_b(rs_disp_b[2]),
         .cdb_arr(cdb_arr),
         .free_id_a(commit_a),
         .free_id_b(commit_b),
-        .str_fwd_val(str_fu_out),
+        .str_fwd_val_a(str_fu_out_a),
+        .str_fwd_val_b(str_fu_out_b),
         .load_fwd_ip(load_fwd_fu),
 
-        .str_disp_op(str_rs_out),
+        .str_disp_op_a(str_rs_out_a),
+        .str_disp_op_b(str_rs_out_b),
         .load_fwd_op(load_fwd_rs),
-        .load_disp_op(load_disp_rs),
+        .load_disp_op_a(load_disp_rs_a),
+        .load_disp_op_b(load_disp_rs_b),
         .almost_full(rs_mem_full)
     );
 
@@ -267,11 +270,13 @@ module scalar2_top(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
+        .enable(pipe_enable),
         .instr_a(rs_disp_a[3].branch_rs),
         .instr_b(rs_disp_b[3].branch_rs),
         .cdb_arr(cdb_arr),
 
-        .instr_op(branch_rs_out),
+        .instr_op_a(branch_rs_out_a),
+        .instr_op_b(branch_rs_out_b),
         .almost_full(rs_branch_full)
     );
 
@@ -279,35 +284,43 @@ module scalar2_top(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
-        .int_instr(int_rs_out),
+        .int_instr_a(int_rs_out_a),
+        .int_instr_b(int_rs_out_b),
 
-        .cdb_result(int_cdb)
+        .cdb_result_a(int_cdb_a),
+        .cdb_result_b(int_cdb_b)
     );
 
     func_unit_imm fu_imm(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
-        .imm_instr(imm_rs_out),
+        .imm_instr_a(imm_rs_out_a),
+        .imm_instr_b(imm_rs_out_b),
 
-        .cdb_result(imm_cdb)
+        .cdb_result_a(imm_cdb_a),
+        .cdb_result_b(imm_cdb_b)
     );
 
     func_unit_branch fu_branch(
         .clk(clk),
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
-        .branch_instr(branch_rs_out),
+        .branch_instr_a(branch_rs_out_a),
+        .branch_instr_b(branch_rs_out_b),
 
-        .result_op(branch_disp)
+        .result_op_a(branch_disp_a),
+        .result_op_b(branch_disp_b)
     );
 
     func_unit_str fu_str(
         .clk(clk),
         .rst(rst),
-        .str_op(str_rs_out),
+        .str_op_a(str_rs_out_a),
+        .str_op_b(str_rs_out_b),
 
-        .str_rob(str_fu_out)
+        .str_rob_a(str_fu_out_a),
+        .str_rob_b(str_fu_out_b)
     );
 
     func_unit_load fu_load(
@@ -315,19 +328,26 @@ module scalar2_top(
         .rst(rst),
         .mispredict_signal(mispredict_flush_rs),
         .load_entry(load_fwd_rs),
-        .load_disp_ip(load_disp_rs),
+        .load_disp_ip_a(load_disp_rs_a),
+        .load_disp_ip_b(load_disp_rs_b),
 
-        .mem_rd_data(read_data),
-        .mem_rd_addr(read_addr),
+        .mem_rd_data_a(read_data_a),
+        .mem_rd_data_b(read_data_b),
+        .mem_rd_addr_a(read_addr_a),
+        .mem_rd_addr_b(read_addr_b),
 
         .fwd_load_addr(load_fwd_fu),
-        .load_cdb(load_cdb)
+        .load_cdb_a(load_cdb_a),
+        .load_cdb_b(load_cdb_b)
     );
 
     common_data_bus cdb(
-        .int_res(int_cdb),
-        .imm_res(imm_cdb),
-        .load_res(load_cdb),
+        .int_res_a(int_cdb_a),
+        .int_res_b(int_cdb_b),
+        .imm_res_a(imm_cdb_a),
+        .imm_res_b(imm_cdb_b),
+        .load_res_a(load_cdb_a),
+        .load_res_b(load_cdb_b),
 
         .cdb_arr(cdb_arr)
     );
@@ -339,8 +359,10 @@ module scalar2_top(
         .input_a(rob_disp_a),
         .input_b(rob_disp_b),
         .cdb_arr(cdb_arr),
-        .str_rob(str_fu_out),
-        .branch_rob(branch_disp),
+        .str_rob_a(str_fu_out_a),
+        .str_rob_b(str_fu_out_b),
+        .branch_rob_a(branch_disp_a),
+        .branch_rob_b(branch_disp_b),
 
         .output_arr(rob_out_arr),
         .almost_full(rob_almost_full)
@@ -363,8 +385,10 @@ module scalar2_top(
         .rst(rst),
         .commit_a(commit_a),
         .commit_b(commit_b),
-        .read_addr(read_addr),
+        .read_addr_a(read_addr_a),
+        .read_addr_b(read_addr_b),
 
-        .read_data(read_data)
+        .read_data_a(read_data_a),
+        .read_data_b(read_data_b)
     );
 endmodule

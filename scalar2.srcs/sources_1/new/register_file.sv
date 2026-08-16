@@ -60,9 +60,9 @@ module register_file(
     logic [31:0] value_as, value_at;
     logic check_as, check_at;
 
-    logic match_ai, match_aj, match_ak;
-    logic match_ax, match_ay, match_az;
-    
+    logic match_ai, match_aj, match_ak, match_al, match_am, match_an;
+    logic match_ax, match_ay, match_az, match_aw, match_av, match_au;
+
     rs_entry rs_b;
     rob_entry rob_b;
     rat_rename rename_b;
@@ -71,8 +71,8 @@ module register_file(
     logic [31:0] value_bs, value_bt;
     logic check_bs, check_bt;
 
-    logic match_bi, match_bj, match_bk;
-    logic match_bx, match_by, match_bz;
+    logic match_bi, match_bj, match_bk, match_bl, match_bm, match_bn;
+    logic match_bx, match_by, match_bz, match_bw, match_bv, match_bu;
 
     logic retire_override;
 
@@ -134,19 +134,51 @@ module register_file(
         retire_override <= mispredict_signal;
     end
 
+    rs_entry rs_a_op_reg, rs_b_op_reg;
+
     always_ff @ (posedge clk) begin
         if(rst || mispredict_signal) begin
-            rs_a_op <= '0;
-            rs_b_op <= '0;
+            rs_a_op_reg <= '0;
+            rs_b_op_reg <= '0;
 
             rob_a_op <= '0;
             rob_b_op <= '0;
         end else if(enable) begin
-            rs_a_op <= rs_a;
-            rs_b_op <= rs_b;
+            rs_a_op_reg <= rs_a;
+            rs_b_op_reg <= rs_b;
 
             rob_a_op <= rob_a;
             rob_b_op <= rob_b;
+        end
+    end
+
+    always_comb begin
+        rs_a_op = rs_a_op_reg;
+
+        if (rs_a_op.int_rs.valid && !rs_a_op.int_rs.check_s && valid_list[rs_a_op.int_rs.reg_s]) begin
+            rs_a_op.int_rs.value_s = phys_file[rs_a_op.int_rs.reg_s];
+            rs_a_op.int_rs.check_s = 1'b1;
+        end
+
+        if (rs_a_op.int_rs.valid && (rs_a_op.int_rs.opcode inside {[1:14], [27:27], [28:33]})
+                && !rs_a_op.int_rs.check_t && valid_list[rs_a_op.int_rs.reg_t]) begin
+            rs_a_op.int_rs.value_t = phys_file[rs_a_op.int_rs.reg_t];
+            rs_a_op.int_rs.check_t = 1'b1;
+        end
+    end
+
+    always_comb begin
+        rs_b_op = rs_b_op_reg;
+
+        if (rs_b_op.int_rs.valid && !rs_b_op.int_rs.check_s && valid_list[rs_b_op.int_rs.reg_s]) begin
+            rs_b_op.int_rs.value_s = phys_file[rs_b_op.int_rs.reg_s];
+            rs_b_op.int_rs.check_s = 1'b1;
+        end
+
+        if (rs_b_op.int_rs.valid && (rs_b_op.int_rs.opcode inside {[1:14], [27:27], [28:33]})
+                && !rs_b_op.int_rs.check_t && valid_list[rs_b_op.int_rs.reg_t]) begin
+            rs_b_op.int_rs.value_t = phys_file[rs_b_op.int_rs.reg_t];
+            rs_b_op.int_rs.check_t = 1'b1;
         end
     end
 
@@ -191,30 +223,42 @@ module register_file(
         match_ai = cdb_arr[0].valid && (idx_as == cdb_arr[0].prf);
         match_aj = cdb_arr[1].valid && (idx_as == cdb_arr[1].prf);
         match_ak = cdb_arr[2].valid && (idx_as == cdb_arr[2].prf);
+        match_al = cdb_arr[3].valid && (idx_as == cdb_arr[3].prf);
+        match_am = cdb_arr[4].valid && (idx_as == cdb_arr[4].prf);
+        match_an = cdb_arr[5].valid && (idx_as == cdb_arr[5].prf);
 
         unique case (1'b1)
             match_ai: value_as = cdb_arr[0].result;
             match_aj: value_as = cdb_arr[1].result;
             match_ak: value_as = cdb_arr[2].result;
+            match_al: value_as = cdb_arr[3].result;
+            match_am: value_as = cdb_arr[4].result;
+            match_an: value_as = cdb_arr[5].result;
             default:  value_as = phys_file[idx_as];
         endcase
 
-        check_as = (match_ai || match_aj || match_ak) ? 1'b1 : valid_list[idx_as];
+        check_as = (match_ai || match_aj || match_ak || match_al || match_am || match_an) ? 1'b1 : valid_list[idx_as];
 
         idx_at = alias_table[instr_a.reg_t];
 
         match_ax = cdb_arr[0].valid && (idx_at == cdb_arr[0].prf);
         match_ay = cdb_arr[1].valid && (idx_at == cdb_arr[1].prf);
         match_az = cdb_arr[2].valid && (idx_at == cdb_arr[2].prf);
+        match_aw = cdb_arr[3].valid && (idx_at == cdb_arr[3].prf);
+        match_av = cdb_arr[4].valid && (idx_at == cdb_arr[4].prf);
+        match_au = cdb_arr[5].valid && (idx_at == cdb_arr[5].prf);
 
         unique case (1'b1)
             match_ax: value_at = cdb_arr[0].result;
             match_ay: value_at = cdb_arr[1].result;
             match_az: value_at = cdb_arr[2].result;
+            match_aw: value_at = cdb_arr[3].result;
+            match_av: value_at = cdb_arr[4].result;
+            match_au: value_at = cdb_arr[5].result;
             default:  value_at = phys_file[idx_at];
         endcase
 
-        check_at = (match_ax || match_ay || match_az) ? 1'b1 : valid_list[idx_at];
+        check_at = (match_ax || match_ay || match_az || match_aw || match_av || match_au) ? 1'b1 : valid_list[idx_at];
 
         idx_ad = alias_table[instr_a.reg_d];
 
@@ -330,9 +374,6 @@ module register_file(
         rob_b.reg_rob.valid = (instr_b.opcode != 0);
 
         // Only match against instr_a if it actually renames a destination register
-        // (stores 27, branches 28-33, jumps & invalid ops leave reg_d meaningless);
-        // matching a non-renaming instr_a would point instr_b at free_a, which is
-        // never written -> check bit stuck at 0 -> deadlock
         s_match = (instr_b.reg_s == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
         t_match = (instr_b.reg_t == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
         d_match = (instr_b.reg_d == instr_a.reg_d) && (instr_a.opcode inside {[1:26]}) && found_a;
@@ -342,16 +383,22 @@ module register_file(
         match_bi = !s_match && cdb_arr[0].valid && (idx_bs == cdb_arr[0].prf);
         match_bj = !s_match && cdb_arr[1].valid && (idx_bs == cdb_arr[1].prf);
         match_bk = !s_match && cdb_arr[2].valid && (idx_bs == cdb_arr[2].prf);
+        match_bl = !s_match && cdb_arr[3].valid && (idx_bs == cdb_arr[3].prf);
+        match_bm = !s_match && cdb_arr[4].valid && (idx_bs == cdb_arr[4].prf);
+        match_bn = !s_match && cdb_arr[5].valid && (idx_bs == cdb_arr[5].prf);
 
         unique case (1'b1)
             match_bi: value_bs = cdb_arr[0].result;
             match_bj: value_bs = cdb_arr[1].result;
             match_bk: value_bs = cdb_arr[2].result;
+            match_bl: value_bs = cdb_arr[3].result;
+            match_bm: value_bs = cdb_arr[4].result;
+            match_bn: value_bs = cdb_arr[5].result;
             default:  value_bs = phys_file[idx_bs];
         endcase
 
         check_bs = s_match ? 1'b0
-            : (match_bi || match_bj || match_bk) ? 1'b1
+            : (match_bi || match_bj || match_bk || match_bl || match_bm || match_bn) ? 1'b1
             : valid_list[idx_bs];
 
 
@@ -360,16 +407,22 @@ module register_file(
         match_bx = !t_match && cdb_arr[0].valid && (idx_bt == cdb_arr[0].prf);
         match_by = !t_match && cdb_arr[1].valid && (idx_bt == cdb_arr[1].prf);
         match_bz = !t_match && cdb_arr[2].valid && (idx_bt == cdb_arr[2].prf);
+        match_bw = !t_match && cdb_arr[3].valid && (idx_bt == cdb_arr[3].prf);
+        match_bv = !t_match && cdb_arr[4].valid && (idx_bt == cdb_arr[4].prf);
+        match_bu = !t_match && cdb_arr[5].valid && (idx_bt == cdb_arr[5].prf);
 
         unique case (1'b1)
             match_bx: value_bt = cdb_arr[0].result;
             match_by: value_bt = cdb_arr[1].result;
             match_bz: value_bt = cdb_arr[2].result;
+            match_bw: value_bt = cdb_arr[3].result;
+            match_bv: value_bt = cdb_arr[4].result;
+            match_bu: value_bt = cdb_arr[5].result;
             default:  value_bt = phys_file[idx_bt];
         endcase
 
         check_bt = t_match ? 1'b0
-            : (match_bx || match_by || match_bz) ? 1'b1
+            : (match_bx || match_by || match_bz || match_bw || match_bv || match_bu) ? 1'b1
             : valid_list[idx_bt];
 
         idx_bd = d_match ? free_a : alias_table[instr_b.reg_d];
