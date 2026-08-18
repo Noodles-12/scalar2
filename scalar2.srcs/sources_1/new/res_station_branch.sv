@@ -102,8 +102,6 @@ module res_station_branch(
 
         filled_stations = '0;
 
-        // Snoop the CDB for values arriving the same cycle an instruction is
-        // dispatched into this RS, so a producer broadcasting this cycle isn't missed.
         instr_a_bypassed = instr_a;
         instr_b_bypassed = instr_b;
 

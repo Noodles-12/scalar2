@@ -33,6 +33,13 @@ module scalar2_tb();
     int golden_checked;
     int golden_errors;
 
+    // --- Simulation-only stats (nothing here affects checking/pass-fail) ---
+    longint cycle_count;
+    longint last_commit_cycle;
+    int reg_commit_count, store_commit_count, branch_commit_count;
+    int mispredict_count;
+    int stall_cycle_count;
+
     task automatic golden_run();
         logic [31:0] gold_mem_instr [0:DATA_MEM_SIZE-1];
         logic [31:0] gold_regs [0:NUM_ARCH_REGS-1];
@@ -200,9 +207,11 @@ module scalar2_tb();
 
         exp = golden_q.pop_front();
         golden_checked++;
+        last_commit_cycle = cycle_count;
 
         case (exp.kind)
             COMMIT_BRANCH : begin
+                branch_commit_count++;
                 if (entry_kind !== ROB_BRN || entry.branch_rob.actual !== exp.actual_taken) begin
                     $error("[%0t] branch commit #%0d mismatch: hw kind=%0d actual=%0b golden actual=%0b",
                         $time, golden_checked, entry_kind, entry.branch_rob.actual, exp.actual_taken);
@@ -214,6 +223,7 @@ module scalar2_tb();
             end
 
             COMMIT_STORE : begin
+                store_commit_count++;
                 if (entry_kind !== ROB_STR || entry.str_rob.mem_dest !== exp.mem_addr || entry.str_rob.value !== exp.value) begin
                     $error("[%0t] store commit #%0d mismatch: hw kind=%0d addr=0x%03x value=0x%08x golden addr=0x%03x value=0x%08x",
                         $time, golden_checked, entry_kind, entry.str_rob.mem_dest, entry.str_rob.value, exp.mem_addr, exp.value);
@@ -225,6 +235,7 @@ module scalar2_tb();
             end
 
             default : begin // COMMIT_REG
+                reg_commit_count++;
                 if (entry_kind !== ROB_REG || entry.reg_rob.arch !== exp.arch_reg || entry.reg_rob.result !== exp.value) begin
                     $error("[%0t] reg commit #%0d mismatch: hw kind=%0d arch=r%0d result=0x%08x golden arch=r%0d value=0x%08x",
                         $time, golden_checked, entry_kind, entry.reg_rob.arch, entry.reg_rob.result, exp.arch_reg, exp.value);
@@ -244,10 +255,27 @@ module scalar2_tb();
         end
     end
 
+    // Simulation-only stats: cycle count, stall cycles (enable deasserted --
+    // structural back-pressure from a full RS/ROB/reg file), mispredict count.
+    always @ (posedge clk) begin
+        if (!rst) begin
+            cycle_count++;
+            if (!dut.pipe_enable) stall_cycle_count++;
+            if (dut.commit_misp) mispredict_count++;
+        end
+    end
+
     initial begin
         clk = 0; rst = 1;
         golden_checked = 0;
         golden_errors = 0;
+        cycle_count = 0;
+        last_commit_cycle = 0;
+        reg_commit_count = 0;
+        store_commit_count = 0;
+        branch_commit_count = 0;
+        mispredict_count = 0;
+        stall_cycle_count = 0;
         golden_run();
         #10;
         rst = 0;
@@ -266,6 +294,22 @@ module scalar2_tb();
                 golden_errors++;
             end
         end
+
+        $display("---------------------------------------------");
+        $display("SIMULATION STATS");
+        $display("  Simulated cycles     : %0d (includes idle padding after last commit)", cycle_count);
+        $display("  Active cycles        : %0d (reset deassert -> last commit)", last_commit_cycle);
+        $display("  Total commits        : %0d", golden_checked);
+        $display("  IPC (avg, active)    : %0.4f", real'(golden_checked) / real'(last_commit_cycle));
+        $display("  Reg commits          : %0d", reg_commit_count);
+        $display("  Store commits        : %0d", store_commit_count);
+        $display("  Branch commits       : %0d", branch_commit_count);
+        $display("  Mispredicts          : %0d", mispredict_count);
+        $display("  Branch mispredict %%  : %0.2f%%",
+            (branch_commit_count > 0) ? (100.0 * real'(mispredict_count) / real'(branch_commit_count)) : 0.0);
+        $display("  Stall cycles         : %0d", stall_cycle_count);
+        $display("  Stall %% (active)     : %0.2f%%", 100.0 * real'(stall_cycle_count) / real'(last_commit_cycle));
+        $display("---------------------------------------------");
 
         if (golden_errors == 0)
             $display("SCALAR2_TB PASS: %0d commits checked, 0 errors", golden_checked);

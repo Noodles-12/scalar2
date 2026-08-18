@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-import config_pkg::*; 
+import config_pkg::*;
 
 module res_station_mem(
     input logic clk,
@@ -273,7 +273,6 @@ module res_station_mem(
                 load_disp_op_b <= '0;
             end
 
-            // Might remove this & just use comb logic
             load_no_deps <= load_no_deps_comb;
         end
     end
@@ -410,6 +409,9 @@ module res_station_mem(
         load_fwd_found = |loads_to_fwd;
     end
 
+    // Finding finished loads to dispatch -- two-wide, same onehot-priority-picker
+    // pattern as the insert side: first ready entry goes out slot A, second
+    // (excluding the first) goes out slot B.
     always_comb begin
         done_loads = '0;
         done_loads_masked = '0;
@@ -494,12 +496,6 @@ module res_station_mem(
             if(!load_buffer[i].valid) continue;
             if(!load_valid_addr[i]) continue;
 
-            /*
-                Compared to previous RTL, this one is much better because we start from the store index that 
-                the load entry was given on insert. Guaranteed to go through older stores; no need to check
-
-                Making fervent prayers for even half decent hardware/physical efficiency of this
-            */
             idx = load_buffer[i].idx_ref;
 
             if(idx == s_head) begin
@@ -509,7 +505,6 @@ module res_station_mem(
 
             for(int j = 0; j < RS_SIZE; j++) begin
                 idx = idx - 1'b1;
-                // In case store was dispatched OOO (theoretically shouldn't happen)
                 if(!store_buffer[idx[2:0]].valid) begin
                     if(idx == s_head) begin
                         if(!matching_loads[i]) load_no_deps_comb[i] = 1'b1;
@@ -518,19 +513,8 @@ module res_station_mem(
                     continue;
                 end
 
-                // Conservative check; if store doesn't have valid address, it can't be a match
                 if(!store_valid_addr[idx[2:0]]) break;
 
-                /*
-                    This is a check for matching addresses
-                    If all other stores checked before were not a match AND had an effective address, then
-                        this should be the first store that matches the load's effective address especially
-                        since this won't happen if there's an unresolved address
-
-                    Store also needs its s register to be ready, could possibly add more functionality
-                        to have the s register from the CDB also update on a separate table for loads but
-                        this is okay for now
-                */
                 if((store_eff_addr[idx[2:0]] == load_eff_addr[i]) && store_buffer[idx[2:0]].check_s) begin
                     matching_loads[i] = 1'b1;
                     matching_str_idx[i] = idx[2:0];
@@ -538,11 +522,6 @@ module res_station_mem(
                 end
 
                 if(idx == s_head) begin
-                    /*
-                        If we reach the head of the store queue without finding a match, then we know that all stores before this load
-                        have been checked and none of them match. This means that this load is not dependent on
-                        any previous store and can be dispatched
-                    */
                     if(!matching_loads[i]) begin
                         load_no_deps_comb[i] = 1'b1;
                     end

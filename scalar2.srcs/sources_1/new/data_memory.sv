@@ -14,7 +14,6 @@ module data_memory(
     output logic [DATABUS_WIDTH-1:0] read_data_b
 );
 
-    // Using a LUT to implement memory, since Vivado doesn't support 2W/1R BRAMs
     logic [0:DATABUS_WIDTH - 1] memory [0:DATA_MEM_SIZE - 1];
 
     always_ff @ (posedge clk) begin

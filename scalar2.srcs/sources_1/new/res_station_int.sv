@@ -220,13 +220,4 @@ module res_station_int(
             if(res_station[i].valid) filled_stations = filled_stations + 1'b1;
         end
     end
-
-    /* always_comb begin
-        // Get amount of filled
-        for(int i = 0; i < RS_SIZE; i++) begin
-            if(next_res_station[i].id != 0) begin
-                filled_stations++;
-            end
-        end
-    end */
 endmodule

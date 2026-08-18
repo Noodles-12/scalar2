@@ -215,7 +215,7 @@ module register_file(
         rename_a = '0;
 
         // Valid bit should be in same position for any type of RS entry
-        rs_a.int_rs.valid = (instr_a.opcode != 0); 
+        rs_a.int_rs.valid = (instr_a.opcode != 0);
         rob_a.reg_rob.valid = (instr_a.opcode != 0);
 
         idx_as = alias_table[instr_a.reg_s];
@@ -299,7 +299,7 @@ module register_file(
                 rs_a.load_rs.value_s = value_as;
                 rs_a.load_rs.check_s = check_as;
                 rs_a.load_rs.offset = instr_a.imm;
-                
+
                 rob_a.reg_rob.old_prf = idx_ad;
                 rob_a.reg_rob.code = ROB_REG;
                 rob_a.reg_rob.arch = instr_a.reg_d;
@@ -337,7 +337,7 @@ module register_file(
                 rob_a.branch_rob.predict = instr_a.code[0];
                 rob_a.branch_rob.code = ROB_BRN;
             end
-            
+
             default : begin end
         endcase
 
@@ -346,7 +346,7 @@ module register_file(
             rename_a.valid = 1;
             rename_a.idx = free_a;
             rename_a.arch_reg = instr_a.reg_d;
-            
+
             unique case(instr_a.opcode) inside
                 [1:14] : begin
                     rs_a.int_rs.dest = free_a;
@@ -370,7 +370,7 @@ module register_file(
         rename_b = '0;
 
         // Valid bit should be in same position for any type of RS entry
-        rs_b.int_rs.valid = (instr_b.opcode != 0); 
+        rs_b.int_rs.valid = (instr_b.opcode != 0);
         rob_b.reg_rob.valid = (instr_b.opcode != 0);
 
         // Only match against instr_a if it actually renames a destination register
@@ -430,7 +430,7 @@ module register_file(
         unique case(instr_b.opcode) inside
             [1:14] : begin
                 rs_b.int_rs.opcode = instr_b.opcode;
-    
+
                 rs_b.int_rs.reg_s = idx_bs;
                 rs_b.int_rs.value_s = value_bs;
                 rs_b.int_rs.check_s = check_bs;
@@ -489,7 +489,7 @@ module register_file(
 
             [28:33] : begin
                 rs_b.branch_rs.opcode = instr_b.opcode;
-    
+
                 rs_b.branch_rs.reg_s = idx_bs;
                 rs_b.branch_rs.value_s = value_bs;
                 rs_b.branch_rs.check_s = check_bs;
@@ -503,7 +503,7 @@ module register_file(
                 rob_b.branch_rob.predict = instr_b.code[0];
                 rob_b.branch_rob.code = ROB_BRN;
             end
-            
+
             default : begin end
         endcase
 

@@ -13,7 +13,7 @@ module reorder_buffer(
     input str_disp_entry str_rob_b,
     input branch_disp_entry branch_rob_a,
     input branch_disp_entry branch_rob_b,
-    
+
     output rob_entry output_arr [0:1],
     output logic almost_full
 );
