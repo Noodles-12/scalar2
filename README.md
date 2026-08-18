@@ -58,6 +58,40 @@ A few design choices might look odd without context. They are on purpose. Scalar
 
 **Data memory needs two write ports.** Since commit can retire two instructions per cycle and both can be stores, data memory needs to accept two writes in the same cycle. A normal dual-port memory only supports one read and one write, or two reads, not two writes. Data memory is sized to fit the test programs used, keeping this small rather than adding bank splitting and conflict handling for a larger memory.
 
+## Instruction Set
+ 
+Scalar2 implements a custom 32-bit fixed-width ISA. Each instruction is
+one of five formats, encoded as `opcode(6) | rd(4) | r1(4) | r2(4) |
+imm/offset | pad`, with the immediate field width and padding varying by
+instruction class.
+ 
+| Format | Layout |
+|---|---|
+| Register | `opcode(6) \| rd(4) \| r1(4) \| r2(4) \| 000000000000(12) \| 00(2)` |
+| Immediate | `opcode(6) \| rd(4) \| r1(4) \| 0000(4) \| imm(14)` |
+| Memory | `opcode(6) \| rd(4) \| r1(4) \| 0000(4) \| offset(12) \| 00(2)` |
+| Branch | `opcode(6) \| 0000(4) \| r1(4) \| r2(4) \| imm(12) \| 00(2)` |
+| Jump | `opcode(6) \| 0000(4) \| 0000(4) \| 0000(4) \| imm(12) \| 00(2)` |
+ 
+Immediate-type instructions use a 14-bit signed immediate. All other
+formats with an immediate or offset field use 12 bits, with an explicit
+2-bit pad. Branch and jump immediates are absolute, word-indexed
+instruction addresses, not PC-relative offsets.
+ 
+### Supported Instructions
+ 
+| Type | Instructions |
+|---|---|
+| Register-register | `add` `sub` `lsh` `rsh` `eq` `gte` `lte` `gt` `lt` `and` `or` `nor` `nand` `xor` |
+| Register-immediate | `addi` `subi` `rshi` `lshi` `andi` `ori` `eqi` `gtei` `ltei` `gti` `lti` |
+| Memory | `lw` `sw` |
+| Branch | `beq` `bne` `bge` `blt` `bltu` `bgeu` |
+| Jump | `jmp` |
+ 
+16 general-purpose registers (`r0`-`r15`) are addressable via the 4-bit
+`rd`/`r1`/`r2` fields. `r0` is not hardwired to zero; it behaves as an
+ordinary register and is left unused by convention in test programs
+rather than by hardware enforcement.
 ## Architecture
 
 This architecture shows the general structure of the design and the overall flow. Each stage is labelled and connections that would make the diagram otherwise super messy have been encoded with a color and pattern that should show up on other modules.
