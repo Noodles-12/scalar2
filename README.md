@@ -13,7 +13,8 @@ Key features:
 - Dynamic 2-bit branch prediction with misprediction recovery
 
 Scalar2 is verified entirely in simulation. See Performance and Verification below for details and for what that scope does and does not cover.
-<p style="color: red;"><strong>CURRENTLY NOT IMPLEMENTABLE:</strong> Reduce CDB width to 3, only allow one store to leave the RO/CO stages, and make data_memory only have one write port to make it able to implement.</p>
+> [!WARNING]
+> **CURRENTLY NOT SYNTHESIZABLE:** Reduce CDB width to 3, only allow one store to leave the RO/CO stages, and make data_memory only have one write port to make it synthesizable.
 
 ## Performance
 
@@ -26,6 +27,9 @@ Scalar2 is verified and benchmarked entirely in simulation. The figures below co
 | RS/ROB stall rate | 5-10% of cycles |
 
 These numbers are related. Some IPC is lost to branch mispredictions and to stalls, so 1.25 out of a possible 2.0 makes sense given the other two numbers.
+
+### Synthesis and Implementation
+Scalar2 was successfully synthesized and implemented on the Arty Z7-20 (Zynq-7000) in Vivado, achieving timing closure at 65MHz with approximately 27k LUT utilization. Three changes are required to reach a synthesizable state from the current repository: reducing CDB width to 3 ports, restricting stores to one per RO/CO stage, and limiting data_memory to a single write port.
 
 ### CDB Width Validation
 
