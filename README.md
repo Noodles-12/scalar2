@@ -13,6 +13,7 @@ Key features:
 - Dynamic 2-bit branch prediction with misprediction recovery
 
 Scalar2 is verified entirely in simulation. See Performance and Verification below for details and for what that scope does and does not cover.
+<p style="color: red;"><strong>CURRENTLY NOT IMPLEMENTABLE:</strong> Reduce CDB width to 3, only allow one store to leave the RO/CO stages, and make data_memory only have one write port to make it able to implement.</p>
 
 ## Performance
 
